@@ -77,19 +77,19 @@ public class AppController {
      * REST endpoint for handling POST requests with JSON body containing two
      * Java files.
      *
-     * @param evoSuiteCode JSON request con i due file.
+     * @param projectCode JSON request con i due file.
      * @return A JSON response con il risultato della console e il file di
      * coverage
      * @throws IOException
      * @throws InterruptedException
      */
     @PostMapping(value = "/coverage/evosuite", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> evoSuitRobotCoverage(@RequestParam(name = "evoSuiteCode") MultipartFile evoSuiteCode) throws IOException, InterruptedException {
+    public ResponseEntity<String> evoSuitRobotCoverage(@RequestParam(name = "project") MultipartFile projectCode) throws IOException, InterruptedException {
         try {
-            System.out.println(evoSuiteCode.getOriginalFilename());
+            System.out.println(projectCode.getOriginalFilename());
 
             CompilationService compilationService = new CompilationService(mvn_path);
-            compilationService.compileAndTestEvoSuiteTests(evoSuiteCode);
+            compilationService.compileAndTestEvoSuiteTests(projectCode);
             JSONObject result = new JSONObject();
             result.put("outCompile", compilationService.outputMaven);
             result.put("coverage", compilationService.Coverage);

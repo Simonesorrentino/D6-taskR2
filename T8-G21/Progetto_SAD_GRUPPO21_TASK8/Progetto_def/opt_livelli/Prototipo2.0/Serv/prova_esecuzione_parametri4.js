@@ -24,7 +24,7 @@ const server = http.createServer((req, res) => {
     //Verifica che la richiesta sia presso un endpoint API controllando che l'URL inizi con /api/
     console.log("(prova_esecuzione_parametri4.js) Verifica che la richiesta sia presso un endpoint API");
 
-    if (req.url.startsWith('/api/VolumeT8')) {
+    if (req.url.startsWith('/api/VolumeT0')) {
 
         console.log("(prova_esecuzione_parametri4.js) endpoint /api/");
         //Imposta l'header per consentire le richieste da tutte le origini '*'
@@ -309,98 +309,50 @@ const server = http.createServer((req, res) => {
             const jsonBody = JSON.parse(body); // Converte la stringa in JSON
             console.log("body: ", jsonBody);
 
-            const sourceClassName = jsonBody.sourceClassName;
-            const sourceClassPath = jsonBody.sourceClassPath;
+            const classUTName = jsonBody.classUTName;
+            const classUTPath = jsonBody.classUTPath;
+            const classUTPackage = jsonBody.classUTPackage;
+            const unitTestPath = jsonBody.unitTestPath;
             const evoSuitWorkingDir = jsonBody.evoSuitWorkingDir;
-            const testClassPath = jsonBody.testClassPath;
-            const saveDirPath = jsonBody.saveDirPath;
 
-            console.log("sourceClassName: " + sourceClassName);
-            console.log("sourceClassPath: " + sourceClassPath);
+            console.log("sourceClassName: " + classUTName);
+            console.log("classUTPackage: " + classUTPackage);
+            console.log("sourceClassPath: " + classUTPath);
+            console.log("unitTestPath: " + unitTestPath);
             console.log("evoSuitWorkingDir: " + evoSuitWorkingDir);
-            console.log("testClassPath: " + testClassPath);
-            console.log("saveDirPath: " + saveDirPath);
 
             //Gestione evento di completamento della ricezione dei dati della richiesta
-            fs.readdir(testClassPath, (err, folders) => {
-                if (err) {
-                    console.error("Errore nella lettura delle cartelle: ", err);
-                    res.statusCode = 500;
-                    return res.end(JSON.stringify({error: "Errore nella lettura delle cartelle"}));
-                }
+            const parametri = `${classUTPath} ${classUTName} ${classUTPackage} ${unitTestPath} ${evoSuitWorkingDir}`;
+            const command = `sh coverage_randoop.sh ${parametri}`;
 
-                let results = {};
-                let completed = 0;
-                for (const folder of folders) {
-                    const fullTestPath = `${testClassPath}/${folder}`;
-                    const parametri = `${sourceClassPath} ${sourceClassName} ${fullTestPath} ${evoSuitWorkingDir} ${saveDirPath}`;
-                    const command = `sh coverage_randoop.sh ${parametri}`;
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(`Errore durante l'esecuzione dello script: `, error);
+                } else {
+                    console.log(`stdout: ${stdout}`);
+                    console.log(`stderr: ${stderr}`);
 
-                    console.log(`Esecuzione dello script su: ${fullTestPath}`);
-
-                    exec(command, (error, stdout, stderr) => {
-                        if (error) {
-                            console.error(`Errore durante l'esecuzione per ${fullTestPath}: `, error);
-                            results[folder] = `Errore nell'esecuzione dello script`;
-                        } else {
-                            console.log(`stdout: ${stdout}`);
-                            console.log(`stderr: ${stderr}`);
-
-                            // Se non ci sono errori nello stderr, leggiamo il CSV
-                            if (stderr === "") {
-                                try {
-                                    const csvContent = fs.readFileSync(`${fullTestPath}/statistics.csv`, 'utf8');
-                                    results[folder] = csvContent;
-                                } catch (readErr) {
-                                    console.error(`Errore nella lettura del CSV per ${fullTestPath}: `, readErr);
-                                    results[folder] = `Errore nella lettura del CSV`;
-                                }
-                            } else {
-                                results[folder] = `Errore nello script: ${stderr}`;
-                            }
-                        }
-
-                        completed++;
-                        if (completed === folders.length) {
-                            // Configura le intestazioni della risposta HTTP
+                    // Se non ci sono errori nello stderr, leggiamo il CSV
+                    if (stderr === "") {
+                        try {
+                            let result = {}
+                            result[classUTPackage] = fs.readFileSync(`${unitTestPath}/statistics.csv`, 'utf8')
                             res.setHeader('Content-Type', 'application/json');
                             console.log("Invio del contenuto aggregato in formato JSON");
-                            res.end(JSON.stringify(results, null, 2));
+                            res.end(JSON.stringify(result, null, 2));
+                        } catch (readErr) {
+                            console.error(`Errore nella lettura del CSV per ${unitTestPath}: `, readErr);
                         }
-                    });
+                    } else {
+                        console.error(`Errore nello script: ${stderr}`);
+                    }
                 }
             });
         });
     }
-
-    else if (req.url.startsWith("/api/coverage/robot")) {
-        const splitted = req.url.split("/");
-        const classUT = splitted[splitted.length - 2];
-        const levelFolder = "0" + splitted[splitted.length - 1] + "Level";
-
-        console.log("ClassUT: ", classUT);
-        console.log("level: ", levelFolder);
-
-        //Reading the content of a file named 'GameData.csv'= /VolumeT8/FolderTreeEvo/Calcolatrice/StudentLogin/Player1/Game93/Round93/Turn1/TestReport/GameData.csv
-        console.log("(prova_esecuzione_parametri4.js) Lettura del file 'statistics.csv'...\n");
-        const coverageFile = "/VolumeT8/FolderTree/ClassUT/" + classUT + "/coverage/" + levelFolder + "/statistics.csv"
-        const csvContent = fs.readFileSync(coverageFile, 'utf8');
-        console.log(csvContent);
-
-        // Headers configuration of the HTTP response
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader(
-            'Content-Disposition',
-            `attachment; filename="${classUT}.csv"`
-        );
-
-        //Send the content of the file as the body of the HTTP response
-        console.log("(prova_esecuzione_parametri4.js) Invio del contenuto del file come corpo della risposta HTTP");
-        res.end(csvContent);
-    }
 });
 
-const port = 3080;
+const port = 3081;
 server.listen(port, () => {
     console.log(`(prova_esecuzione_parametri4.js) Server listening on port ${port}`);
 });

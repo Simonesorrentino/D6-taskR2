@@ -1,10 +1,10 @@
 package com.groom.manvsclass.model;
 
 public enum ServiceURL {
+    T2("127.0.0.1", 8082),
     T4("127.0.0.1", 3000),
     T7("127.0.0.1", 1234),
-    T8("127.0.0.1", 3080),
-    T9("127.0.0.1", 9999);
+    T8("127.0.0.1", 3081);
 
     private final String host;
     private final int port;

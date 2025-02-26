@@ -19,7 +19,7 @@ public class Main {
         randoopSubject.registerObserver(randoopObserver);
 
         // Esecuzione del file batch e notifica degli osservatori
-        File folder = new File("./FolderTree");
+        File folder = new File("./FolderTree/ClassUT");
         File[] listOfFiles = folder.listFiles();
 
         for (int i = 0; i < listOfFiles.length; i++) {

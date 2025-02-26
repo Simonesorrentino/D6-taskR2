@@ -116,8 +116,8 @@ function handleResponse(response, formData, isGameEnd, loadingKey, buttonKey) {
             coverage, gameId, roundId,
             userJacocoCoverage, robotJacocoCoverage } = response;
 
-    console.log(response);
-    console.log(robotJacocoCoverage);
+    console.log("Response: ", response)
+    console.log("RobotScore: ", robotScore);
 
     // Aggiorna i dati del modulo con gameId e roundId
     formData.append("gameId", gameId);
@@ -129,20 +129,22 @@ function handleResponse(response, formData, isGameEnd, loadingKey, buttonKey) {
         handleCompileError(loadingKey, buttonKey); // Gestisce l'errore
         return;
     }
+
     // Se la copertura è disponibile, la processa
-    processCoverage(coverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, userJacocoCoverage, robotJacocoCoverage);
+    const robotCoverage = robotJacocoCoverage.coverage;
+    processCoverage(coverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, userJacocoCoverage, robotJacocoCoverage, robotCoverage);
 }
 
 // Processa la copertura del codice e aggiorna i dati di gioco
-async function processCoverage(coverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, userJacocoCoverage, robotJacocoCoverage) {
-    highlightCodeCoverage($.parseXML(coverage), editor_robot); // Evidenzia la copertura del codice nell'editor
+async function processCoverage(coverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, userJacocoCoverage, robotJacocoCoverage, robotCoverage) {
+    highlightCodeCoverage($.parseXML(coverage), robotCoverage ? $.parseXML(robotCoverage) : undefined, editor_robot); // Evidenzia la copertura del codice nell'editor
     orderTurno++; // Incrementa l'ordine del turno
 
     const userEvoSuiteCoverageCsv = await fetchCoverageReport(formData); // Recupera il report di coverage
     const robotEvoSuiteCoverageCsv = await fetchRobotEvoSuiteCoverageReport(formData); // Recupera il report di coverage
 
     setStatus("loading"); // Aggiorna lo stato a "loading"
-    const robotEvoSuiteCoverage = extractThirdColumn(robotEvoSuiteCoverageCsv); // Estrae i valori dalla terza colonna del CSV
+    const robotEvoSuiteCoverage = Object.values(JSON.parse(robotEvoSuiteCoverageCsv));
     const userEvoSuiteCoverage = extractThirdColumn(userEvoSuiteCoverageCsv); // Estrae i valori dalla terza colonna del CSV
 
     updateStorico(orderTurno, userScore, userEvoSuiteCoverage[0]); // Aggiorna lo storico del gioco
@@ -160,7 +162,7 @@ async function processCoverage(coverage, formData, robotScore, userScore, isGame
 function displayUserPoints(isGameEnd, valori_csv, robotEvoSuiteCoverage, coverageDetails, robotJacocoCoverage, userScore, robotScore) {
     const displayUserPoints = isGameEnd 
         ? getConsoleTextRun(valori_csv, robotEvoSuiteCoverage, coverageDetails, robotJacocoCoverage, userScore, robotScore) // Testo per la fine del gioco
-        : getConsoleTextCoverage(valori_csv, userScore, coverageDetails); // Testo per la copertura
+        : getConsoleTextCoverage(valori_csv, robotEvoSuiteCoverage, coverageDetails, robotJacocoCoverage); // Testo per la copertura
 
     console_robot.setValue(displayUserPoints); // Aggiorna la console del robot con i punti
 }
@@ -181,9 +183,17 @@ async function fetchCoverageReport(formData) {
 
 // Recupera il report di coverage per il robot da T8
 async function fetchRobotEvoSuiteCoverageReport(formData) {
-    const url = `/api/coverage/robot/${formData.get("className")}/${formData.get("difficulty")}`
+    const url = `/api/robots/evosuitecoverage` //coverage/robot/${formData.get("className")}/${formData.get("difficulty")}`
+
+
+    console.log("formData: ", formData)
+    const data = {
+        testClassId: formData.get("className"),
+        robotType: formData.get("type"),
+        difficulty: formData.get("difficulty")
+    }
     console.log("url T8 fetch: ", url);
-    return await ajaxRequest(url, "GET", null, false, "text"); // Esegue la richiesta AJAX
+    return await ajaxRequest(url, "GET", data, true, "text"); // Esegue la richiesta AJAX
 }
 
 // Gestisce la fine del gioco, mostra un messaggio e pulisce i dati

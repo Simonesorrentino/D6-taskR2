@@ -132,13 +132,15 @@ type Robot struct {
 	UpdatedAt                 time.Time `gorm:"autoUpdateTime"`
 	TestClassId               string    `gorm:"not null;index:idx_robotquery"`
 	Difficulty                string    `gorm:"not null;index:idx_robotquery"`
-	Type                      int8      `gorm:"not null;index:idx_robotquery"`
+	Type                      string    `gorm:"not null;index:idx_robotquery"`
+	Coverage                  string    `gorm:"not null;index:idx_robotquery"`
 	JacocoLineCovered         int       `gorm:"default:0"`
 	JacocoBranchCovered       int       `gorm:"default:0"`
 	JacocoInstructionCovered  int       `gorm:"default:0"`
 	JacocoLineMissed          int       `gorm:"default:0"`
 	JacocoBranchMissed        int       `gorm:"default:0"`
 	JacocoInstructionMissed   int       `gorm:"default:0"`
+	EvoSuiteLine              int       `gorm:"default:0"`
 	EvoSuiteBranch            int       `gorm:"default:0"`
 	EvoSuiteException         int       `gorm:"default:0"`
 	EvoSuiteWeakMutation      int       `gorm:"default:0"`

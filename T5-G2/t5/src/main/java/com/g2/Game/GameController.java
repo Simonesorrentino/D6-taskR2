@@ -143,6 +143,7 @@ public class GameController {
             JSONObject robotCoverage = new JSONObject();
 
             JSONObject coverageDetails = new JSONObject();
+            coverageDetails.put("coverage", jsonObject.get("coverage"));
             coverageDetails.put("line", new JSONObject()
                     .put("covered", jsonObject.get("jacocoLineCovered"))
                     .put("missed", jsonObject.get("jacocoLineMissed")));
@@ -161,6 +162,33 @@ public class GameController {
         } catch (Exception e) {
             logger.error("[GAMECONTROLLER] GetRobotScore:", e);
             return null;
+        }
+    }
+
+    /*
+     *  Partendo dai dati dell'utente ottengo la sua percentuale di coverage
+     */
+    public int InstructionCoverage(String cov) {
+        try {
+            // Parsing del documento XML con Jsoup
+            Document doc = Jsoup.parse(cov, "", Parser.xmlParser());
+            // Selezione dell'elemento counter di tipo "LINE"
+            Element line = doc.selectFirst("report > counter[type=INSTRUCTION]");
+            // Verifica se l'elemento è stato trovato
+            if (line == null) {
+                throw new IllegalArgumentException("Elemento 'counter' di tipo 'LINE' non trovato nel documento XML.");
+            }
+            // Lettura degli attributi "covered" e "missed" e calcolo della percentuale di copertura
+            int covered = Integer.parseInt(line.attr("covered"));
+            int missed = Integer.parseInt(line.attr("missed"));
+            // Calcolo della percentuale di copertura
+            return 100 * covered / (covered + missed);
+        } catch (NumberFormatException e) {
+            logger.error("[GAMECONTROLLER] LineCoverage:", e);
+            throw new IllegalArgumentException("Gli attributi 'covered' e 'missed' devono essere numeri interi validi.", e);
+        } catch (Exception e) {
+            logger.error("[GAMECONTROLLER] LineCoverage:", e);
+            throw new RuntimeException("Errore durante l'elaborazione del documento XML.", e);
         }
     }
 
@@ -338,14 +366,14 @@ public class GameController {
             int[] branchCoverage = getCoverage(userData.get("coverage"), "BRANCH");
             int[] instructionCoverage = getCoverage(userData.get("coverage"), "INSTRUCTION");
 
-            int lineCov = LineCoverage(userData.get("coverage"));
-            logger.info("[GAMECONTROLLER] /run: LineCov {}", lineCov);
+            int instructionCov = InstructionCoverage(userData.get("coverage"));
+            logger.info("[GAMECONTROLLER] /run: LineCov {}", instructionCov);
 
-            int userScore = gameLogic.GetScore(lineCov);
+            int userScore = gameLogic.GetScore(instructionCov);
             logger.info("[GAMECONTROLLER] /run: user_score {}", userScore);
 
-            int covered = robotCoverage.getJSONObject("robotCoverage").getJSONObject("line").getInt("covered");
-            int missed = robotCoverage.getJSONObject("robotCoverage").getJSONObject("line").getInt("missed");
+            int covered = robotCoverage.getJSONObject("robotCoverage").getJSONObject("instruction").getInt("covered");
+            int missed = robotCoverage.getJSONObject("robotCoverage").getJSONObject("instruction").getInt("missed");
             int robotLineCov = 100 * covered / (missed + covered);
             logger.info("[GAMECONTROLLER] /run: RobotLineCov {}", robotLineCov);
 
