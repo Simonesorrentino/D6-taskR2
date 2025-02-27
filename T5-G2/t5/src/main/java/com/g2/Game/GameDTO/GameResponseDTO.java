@@ -20,8 +20,11 @@ public class GameResponseDTO {
     @JsonProperty("GameOver")
     private boolean gameOver;
 
-    @JsonProperty("coverageDetails")
+    @JsonProperty("userJacocoCoverage")
     private CoverageDetails coverageDetails;
+
+    @JsonProperty("robotJacocoCoverage")
+    private CoverageDetails coveragerobot;
 
     @JsonProperty("isWinner")
     private Boolean isWinner;
@@ -136,6 +139,14 @@ public class GameResponseDTO {
 
     public void setIsWinner(Boolean isWinner) {
         this.isWinner = isWinner;
+    }
+
+    public CoverageDetails getCoveragerobot() {
+        return coveragerobot;
+    }
+
+    public void setCoveragerobot(CoverageDetails coveragerobot) {
+        this.coveragerobot = coveragerobot;
     }
 
     // Classe interna che rappresenta la struttura di coverageDetails

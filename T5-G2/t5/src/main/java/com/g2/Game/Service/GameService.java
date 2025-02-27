@@ -65,6 +65,40 @@ public class GameService {
         }
     }
 
+    private JSONObject GetRobotCoverage(String testClass, String robot_type, String difficulty) {
+        try {
+            logger.info(robot_type);
+
+            String response_T4 = (String) serviceManager.handleRequest("T4", "GetRisultati",
+                    testClass, robot_type, difficulty);
+
+            JSONObject jsonObject = new JSONObject(response_T4);
+            JSONObject robotCoverage = new JSONObject();
+
+            JSONObject coverageDetails = new JSONObject();
+            coverageDetails.put("coverage", jsonObject.get("coverage"));
+            coverageDetails.put("line", new JSONObject()
+                    .put("covered", jsonObject.get("jacocoLineCovered"))
+                    .put("missed", jsonObject.get("jacocoLineMissed")));
+            coverageDetails.put("branch", new JSONObject()
+                    .put("covered", jsonObject.get("jacocoBranchCovered"))
+                    .put("missed", jsonObject.get("jacocoBranchMissed")));
+            coverageDetails.put("instruction", new JSONObject()
+                    .put("covered", jsonObject.get("jacocoInstructionCovered"))
+                    .put("missed", jsonObject.get("jacocoInstructionMissed")));
+            // Aggiungi l'oggetto di copertura al risultato finale
+            robotCoverage.put("robotCoverage", coverageDetails);
+
+            logger.info(jsonObject.toString());
+            //anche se scritto al plurale scores è un solo punteggio, cioè quello del robot
+            return robotCoverage;
+        } catch (Exception e) {
+            logger.error("[GAMECONTROLLER] GetRobotScore:", e);
+            return null;
+        }
+    }
+
+
     public GameLogic CreateGame(String playerId, String mode,
             String underTestClassName,
             String type_robot,
@@ -124,7 +158,7 @@ public class GameService {
          *  Lo score è definito dalle performance del file XML del test 
          */
         int userscore = currentGame.GetScore(compileResult);
-        int robotScore = GetRobotScore(currentGame.getClasseUT(), currentGame.getType_robot(), currentGame.getDifficulty());
+        JSONObject robotScore = GetRobotCoverage(currentGame.getClasseUT(), currentGame.getType_robot(), currentGame.getDifficulty());
         /*
          *  Avanzo nel gioco 
          */
