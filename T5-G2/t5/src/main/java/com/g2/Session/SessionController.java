@@ -1,19 +1,17 @@
 package com.g2.Session;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @CrossOrigin
 @RestController
-@RequestMapping("/session")
+@RequestMapping("/sessions")
 public class SessionController {
 
     private final SessionService sessionService;
@@ -125,7 +123,7 @@ public class SessionController {
      * GET /session/gamemode/{playerId}?mode={mode}
      * Ottiene la modalità (gamemode) associata alla sessione del player.
      */
-    @GetMapping("/gamemode/{playerId}")
+    @GetMapping("/gamemodes/{playerId}")
     public ResponseEntity<Sessione.ModalitaWrapper> getGameMode(@PathVariable String playerId, @RequestParam String mode) {
         String sessionKey = sessionService.getExistingSessionKeyForPlayer(playerId);
         if (sessionKey == null) {
@@ -147,7 +145,7 @@ public class SessionController {
      * Crea una nuova entry per la modalità nella sessione del player.
      * Il corpo della richiesta contiene il gameObject (in formato JSON) da associare.
      */
-    @PostMapping("/gamemode/{playerId}")
+    @PostMapping("/gamemodes/{playerId}")
     public ResponseEntity<String> createGameMode(@PathVariable String playerId,
                                                  @RequestParam String mode,
                                                  @RequestBody Object gameObject) {
@@ -180,7 +178,7 @@ public class SessionController {
      * PUT /session/gamemode/{playerId}?mode={mode}
      * Aggiorna la modalità esistente nella sessione del player.
      */
-    @PutMapping("/gamemode/{playerId}")
+    @PutMapping("/gamemodes/{playerId}")
     public ResponseEntity<String> updateGameMode(@PathVariable String playerId,
                                                  @RequestParam String mode,
                                                  @RequestBody Object gameObject) {
@@ -215,7 +213,7 @@ public class SessionController {
      * DELETE /session/gamemode/{playerId}?mode={mode}
      * Elimina la modalità specificata dalla sessione del player.
      */
-    @DeleteMapping("/gamemode/{playerId}")
+    @DeleteMapping("/gamemodes/{playerId}")
     public ResponseEntity<String> deleteGameMode(@PathVariable String playerId, @RequestParam String mode) {
         String sessionKey = sessionService.getExistingSessionKeyForPlayer(playerId);
         if (sessionKey == null) {

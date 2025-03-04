@@ -22,6 +22,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -31,6 +32,7 @@ import com.g2.Interfaces.ServiceManager;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class GameLogic implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     // Il serviceManager non deve essere serializzato (lo reinietteremo se necessario)
@@ -96,15 +98,21 @@ public abstract class GameLogic implements Serializable {
 
     // Crea e gestisce un nuovo turno
     protected void CreateTurn(String Time, int userScore) {
-        //Apro un nuovo turno
-        String response = serviceManager.handleRequest("T4", "CreateTurn", String.class, this.playerID, this.roundID, Time);
-        //Chiudo il turno
-        JSONArray jsonArray = new JSONArray(response);
-        this.turnID = jsonArray.getJSONObject(0).getInt("id");
-        System.out.println("CReate turn id: " + this.turnID);
-        String userScore_string = String.valueOf(userScore);
-        String TurnID_string = String.valueOf(this.turnID);
-        serviceManager.handleRequest("T4", "EndTurn", userScore_string, Time, TurnID_string);
+        try {
+            //Apro un nuovo turno
+            String response = serviceManager.handleRequest("T4", "CreateTurn", String.class, this.playerID, this.roundID, Time);
+            //Chiudo il turno
+            JSONArray jsonArray;
+            jsonArray = new JSONArray(response);
+            this.turnID = jsonArray.getJSONObject(0).getInt("id");
+            System.out.println("CReate turn id: " + this.turnID);
+            String userScore_string = String.valueOf(userScore);
+            String TurnID_string = String.valueOf(this.turnID);
+            serviceManager.handleRequest("T4", "EndTurn", userScore_string, Time, TurnID_string);
+        } catch (JSONException ex) {
+            //Errore lettura json 
+            serviceManager.handleRequest("T4", "EndTurn", 0, Time, 0);
+        }
     }
 
     // Conclude il round corrente
