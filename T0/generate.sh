@@ -1,26 +1,26 @@
 #!/bin/bash
 
 # Verify if the correct parameters are provided
-if [ "$#" -lt 6 ] || [ "$#" -gt 7 ]; then
-    echo "Usage: $0 <container_id> <tool> <class_name> [<package_name>] <class_path> <num_levels> <host_output_dir>"
+if [ "$#" -lt 5 ] || [ "$#" -gt 6 ]; then
+    echo "Usage: $0 <tool> <class_name> [<package_name>] <class_path> <num_levels> <host_output_dir>"
     echo "<tool>: randoop | evosuite"
     exit 1
 fi
 
 TOOL=$1
-CONTAINER_ID=$2
-CLASS_NAME=$3
+CLASS_NAME=$2
+CONTAINER_ID=t0-generator
 
-if [ "$#" -eq 7 ]; then
-    PACKAGE_NAME=$4
-    CLASS_PATH=$5
-    NUM_LEVELS=$6
-    HOST_OUTPUT_DIR=$7
-else
-    PACKAGE_NAME=""
+if [ "$#" -eq 6 ]; then
+    PACKAGE_NAME=$3
     CLASS_PATH=$4
     NUM_LEVELS=$5
     HOST_OUTPUT_DIR=$6
+else
+    PACKAGE_NAME=""
+    CLASS_PATH=$3
+    NUM_LEVELS=$4
+    HOST_OUTPUT_DIR=$5
 fi
 
 

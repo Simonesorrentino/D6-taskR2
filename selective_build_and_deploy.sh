@@ -17,7 +17,7 @@ echo "5 - T7-G31"
 echo "6 - T8-G21"
 echo "7 - ui_gateway"
 echo "8 - api_gateway"
-echo "8 - T0"
+echo "9 - T0"
 echo "Select: "
 read -r -a SELECTION
 
