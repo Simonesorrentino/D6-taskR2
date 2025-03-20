@@ -16,12 +16,11 @@
  */
 package com.g2.Controllers;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import com.g2.Model.*;
+import com.g2.Components.GenericObjectComponent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -37,11 +36,10 @@ import com.g2.Components.PageBuilder;
 import com.g2.Components.ServiceObjectComponent;
 import com.g2.Components.VariableValidationLogicComponent;
 import com.g2.Interfaces.ServiceManager;
-import com.g2.Model.ClassUT;
-import com.g2.Session.SessionService;
-import com.g2.Session.Sessione;
 import com.g2.Session.Exceptions.SessionAlredyExist;
 import com.g2.Session.Exceptions.SessionDontExist;
+import com.g2.Session.SessionService;
+import com.g2.Session.Sessione;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -94,7 +92,7 @@ public class GuiController {
             @CookieValue(name = "jwt", required = false) String jwt,
             @RequestParam(value = "mode", required = false) String mode) {
 
-        if ("Sfida".equals(mode) || "Allenamento".equals(mode)) {
+        if ("Sfida".equals(mode) || "Allenamento".equals(mode) || "PartitaSingola".equals(mode)) {
             PageBuilder gamemode = new PageBuilder(serviceManager, "gamemode", model);
             VariableValidationLogicComponent valida = new VariableValidationLogicComponent(mode);
             valida.setCheckNull();
@@ -118,8 +116,10 @@ public class GuiController {
     // altrimenti, l'utente viene reindirizzato a /main.
     @GetMapping("/editor")
     public String editorPage(Model model,
-            @CookieValue(name = "jwt", required = false) String jwt,
-            @RequestParam(value = "ClassUT", required = false) String ClassUT) {
+                            @CookieValue(name = "jwt") String jwt,
+                            @RequestParam(value = "ClassUT") String ClassUT,
+                            @RequestParam(value = "mode") String mode)
+    {
 
         PageBuilder editor = new PageBuilder(serviceManager, "editor", model, jwt);
         editor.SetAuth();
@@ -130,30 +130,22 @@ public class GuiController {
          */
         try {
             Sessione sessione = sessionService.getSession(editor.getUserId());
-            //se esiste, ma l'utente non ha impostato un gioco 
-            if (sessione.getModalita() == null || sessione.getModalita().isEmpty()) {
-                return "redirect:/main";
-            }
+            System.out.println("loading sessione");
+            System.out.println("sessione classUT: " + sessione.getGame(mode).getClasseUT());
+            System.out.println("sessione testingClassCode: " + sessione.getGame(mode).getTestingClassCode());
+            editor.setObjectComponents(new GenericObjectComponent("previousGameObject", sessione.getGame(mode)));
+            /*
+             *  se non è settata la modalità che si sta provando a usare
+             */
+            // if (!sessione.hasModalita(mode)) {
+            //    return "redirect:/main";
+            // }
         } catch (SessionDontExist e) {
             return "redirect:/main";
         }
-
-        VariableValidationLogicComponent valida = new VariableValidationLogicComponent(ClassUT);
-        valida.setCheckNull();
-        @SuppressWarnings("unchecked")
-        List<ClassUT> listaClassiUT = (List<ClassUT>) serviceManager.handleRequest("T1", "getClasses");
-        List<String> nomiClassiUT = new ArrayList<>();
-        for (ClassUT element : listaClassiUT) {
-            nomiClassiUT.add(element.getName());
-        }
-        System.out.println(nomiClassiUT);
-        valida.setCheckAllowedValues(nomiClassiUT);
+        
         ServiceObjectComponent classeUT = new ServiceObjectComponent(serviceManager, "classeUT", "T1", "getClassUnderTest", ClassUT);
         editor.setObjectComponents(classeUT);
-        editor.SetAuth(jwt);
-        editor.setLogicComponents(valida);
-        editor.setErrorPage("NULL_VARIABLE", "redirect:/main");
-        editor.setErrorPage("VALUE_NOT_ALLOWED", "redirect:/main");
         return editor.handlePageRequest();
     }
 

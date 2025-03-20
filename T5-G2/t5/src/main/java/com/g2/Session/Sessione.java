@@ -1,3 +1,20 @@
+/*
+ *   Copyright (c) 2025 Stefano Marano https://github.com/StefanoMarano80017
+ *   All rights reserved.
+
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+
+ *   http://www.apache.org/licenses/LICENSE-2.0
+
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package com.g2.Session;
 
 import java.io.Serializable;
@@ -6,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -46,7 +64,10 @@ public class Sessione implements Serializable {
      * @param idSessione Identificativo univoco della sessione
      * @param userId Identificativo dell'utente proprietario della sessione
      */
-    public Sessione(String idSessione, String userId) {
+    public Sessione(
+        String idSessione, 
+        String userId
+    ) {
         this.idSessione = Objects.requireNonNull(idSessione, "idSessione non può essere null");
         this.userId = Objects.requireNonNull(userId, "userId non può essere null");
         this.createdAt = Instant.now();
@@ -54,7 +75,33 @@ public class Sessione implements Serializable {
         this.modalita = new HashMap<>();
     }
 
-    // Getters
+    /*
+     * Costruttore per serializzare 
+     */
+    @JsonCreator
+    public Sessione(
+        @JsonProperty("id_sess")    String idSessione,
+        @JsonProperty("id_user")    String userId,
+        @JsonProperty("created_at") Instant createdAt,
+        @JsonProperty("updated_at") Instant updatedAt,
+        @JsonProperty("modalita")   Map<String, ModalitaWrapper> modalita
+    ) {
+        this.idSessione = idSessione;
+        this.userId = userId;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.modalita = modalita != null ? modalita : new HashMap<>();
+    }
+
+    // Costruttore vuoto per deserializzazione
+    public Sessione() {
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+        this.modalita = new HashMap<>();
+        this.userId = "";
+    }
+
+    // Getters e setters
     public String getIdSessione() {
         return idSessione;
     }
@@ -145,14 +192,15 @@ public class Sessione implements Serializable {
      */
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
     public record ModalitaWrapper(
-            @JsonProperty("gameobject") GameLogic gameobject,
+            @JsonProperty("gameobject") 
+                GameLogic gameobject,
             @JsonProperty("created_at")
-            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC") Instant createdAt,
+            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC") 
+                Instant createdAt,
             @JsonProperty("updated_at")
-            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC") Instant updatedAt) implements Serializable {
-
+            @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC") 
+                Instant updatedAt) implements Serializable {
         private static final long serialVersionUID = 1L;
-
         public ModalitaWrapper(GameLogic gameobject) {
             this(gameobject, Instant.now(), Instant.now());
         }

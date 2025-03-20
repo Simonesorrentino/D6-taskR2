@@ -21,6 +21,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.g2.Game.GameModes.Compile.CompileResult;
 import com.g2.Interfaces.ServiceManager;
@@ -28,8 +29,11 @@ import com.g2.Interfaces.ServiceManager;
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public class Sfida extends GameLogic {
 
+    @JsonProperty("currentTurn")
     private int currentTurn;
+    @JsonProperty("userScore")
     private int userScore;
+    @JsonProperty("robotScore")
     private int robotScore;
 
     public Sfida(){
@@ -38,8 +42,8 @@ public class Sfida extends GameLogic {
 
     //Questa classe si specializza in una partita semplice basata sui turni, prende il nome di Sfida nella UI
     public Sfida(ServiceManager serviceManager, String PlayerID, String ClasseUT,
-                                String type_robot, String difficulty, String gamemode) {
-        super(serviceManager, PlayerID, ClasseUT, type_robot, difficulty, gamemode);
+                                String type_robot, String difficulty, String gamemode, String testingClassCode) {
+        super(serviceManager, PlayerID, ClasseUT, type_robot, difficulty, gamemode, testingClassCode);
         currentTurn = 0;
     }
 
@@ -78,5 +82,4 @@ public class Sfida extends GameLogic {
         this.userScore = (int) Math.ceil(score);
         return userScore;
     }
-
 }

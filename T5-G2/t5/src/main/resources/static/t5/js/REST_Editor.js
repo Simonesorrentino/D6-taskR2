@@ -20,11 +20,32 @@
    (Dipende da Util_Editor.js, che deve essere caricato prima.)
 */
 
+async function getGameActionRequestBody() {
+    let requestBody = {
+        playerId: jwtData.userId,
+        mode: GetMode(),
+        testingClassCode: editor_utente.getValue(),
+    };
+
+    if (GetMode() === "PartitaSingola")
+        requestBody["remainingTime"] = timer_remainingTime.toString();
+
+	return requestBody;
+}
+
+// Funzione per salvare la sessione quando l'utente lascia la pagina (necessaria per implementare il timer)
+async function handleBeforeUnload(e) {
+    let leaveGameRequestBody = await getGameActionRequestBody();
+    console.log("[POST /leave] Sending request upon leaving");
+    navigator.sendBeacon("/leave", JSON.stringify(leaveGameRequestBody));
+}
+window.addEventListener("beforeunload", handleBeforeUnload);
+
 // === FUNZIONE PER LA RICHIESTA AJAX DEL GIOCO ===
-async function runGameAction(url, formData, isGameEnd) {
+async function runGameAction(url, runGameRequestBody) {
     try {
-        formData.append("isGameEnd", isGameEnd);
-        const response = await ajaxRequest_ForRun(url, "POST", formData, false, "json");
+        console.log("runGameRequestBody", runGameRequestBody);
+        const response = await ajaxRequest_ForRun(url, "POST", runGameRequestBody, false, "json");
         return response;
     } catch (error) {
         console.error("Errore nella richiesta AJAX:", error);
@@ -38,7 +59,7 @@ $(document).ready(function () {
         const currentDate = new Date();
         const formattedDate = `${String(currentDate.getDate()).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")}/${currentDate.getFullYear()}`;
         const replacements = {
-            TestClasse: `Test${localStorage.getItem("underTestClassName")}`,
+            TestClasse: `Test${ClassName}`,
             username: jwtData.sub,
             userID: jwtData.userId,
             date: formattedDate,
@@ -48,6 +69,7 @@ $(document).ready(function () {
         editor_utente.setValue(savedContent);
         editor_utente.refresh();
     }
+    
     if (localStorage.getItem('storico')) {
         viewStorico();
     }
@@ -56,49 +78,73 @@ $(document).ready(function () {
 let isActionInProgress = false; // Flag per indicare se un'azione è attualmente in corso
 
 // Funzione principale per gestire l'azione del gioco
-async function handleGameAction(isGameEnd) {
+async function handleGameAction(isGameEnd, compileUponEndTime=false) {
     isActionInProgress = true; // Imposta il flag per bloccare altre azioni
     run_button.disabled = true; // Disabilita il pulsante di esecuzione
     coverage_button.disabled = true; // Disabilita il pulsante di coverage
-
     // Determina le chiavi per il caricamento e il pulsante in base a isGameEnd
     const loadingKey = isGameEnd ? "loading_run" : "loading_cov";
     const buttonKey = isGameEnd ? "runButton" : "coverageButton";
-
     // Mostra l'indicatore di caricamento
     toggleLoading(true, loadingKey, buttonKey);
     // Aggiorna lo stato a "sending"
-    setStatus("sending"); 
+    setStatus("sending");
+    // Otteniamo il requestBody (con debug sul codice dell'editor)
+    let requestBody = await getGameActionRequestBody()
 
-    // Otteniamo il FormData (con debug sul codice dell'editor)
-    const formData = await getFormData();
-    console.log("[handleGameAction] Dati inviati:", Object.fromEntries(formData.entries()));
-    try {
-        //Esegue l'azione di gioco 
-        const response = await runGameAction("/run", formData, isGameEnd);
-        setStatus("compiling");
-        handleResponse(response, formData, isGameEnd, loadingKey, buttonKey);
-    } catch (error) {
-        console.error("[handleGameAction] Errore durante l'esecuzione:", error);
+    if (isGameEnd) {
+        try {
+            //Esegue l'azione di gioco
+            if (!compileUponEndTime)
+                requestBody["testingClassCode"] = "";
+            const response = await runGameAction("/EndGame", requestBody);
+            console.log("/EndGame", response);
+            setStatus("game_end");
+            handleGameEnd(response, loadingKey, buttonKey);
+        } catch (error) {
+            console.error("[handleGameAction] Errore durante l'esecuzione:", error);
+        }
+    } else {
+        try {
+            //Esegue l'azione di gioco
+            const response = await runGameAction("/run", requestBody);
+            setStatus("compiling");
+            handleGameRun(response, loadingKey, buttonKey);
+        } catch (error) {
+            console.error("[handleGameAction] Errore durante l'esecuzione:", error);
+        }
     }
     isActionInProgress = false;
 }
 
-function handleResponse(response, formData, isGameEnd, loadingKey, buttonKey) {
-    const { robotScore, userScore, gameId, roundId,
-            userJacocoCoverage, robotJacocoCoverage,
-            isWinner} = response;
+function handleGameEnd(response, loadingKey, buttonKey) {
+    const {userScore, robotScore, isWinner, expGained} = response;
+    generateEndGameMessage(userScore, robotScore, isWinner, expGained); // Gestisce la fine del gioco
 
-    const userOutputCompile = userJacocoCoverage.compileOutput;
-    const userCoverage = userJacocoCoverage.xml_coverage;
-    const robotCoverage = robotJacocoCoverage.xml_coverage;
+    // Disattivo il timer
+    if (GetMode() === "PartitaSingola")
+        stopTimer();
 
-    // Aggiorna i dati del modulo con gameId e roundId
-    formData.append("gameId", gameId);
-    formData.append("roundId", roundId);
+    // Disattivo la chiamata a POST /leave all'uscita dalla pagina
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+
+    toggleLoading(false, loadingKey, buttonKey);
+}
+
+function handleGameRun(response, loadingKey, buttonKey) {
+    const {
+            userCoverageDetails, robotCoverageDetails,
+            canWin, unlockedAchievements,
+            userScore, robotScore,
+        } = response;
+
+    const userOutputCompile = userCoverageDetails.compileOutput;
+    const userCoverage_ForHighlight = userCoverageDetails.xml_coverage;
+    const robotCoverage_ForHighlight = robotCoverageDetails.xml_coverage;
+
     console_utente.setValue(userOutputCompile); // Mostra l'output della compilazione nella console utente
     parseMavenOutput(userOutputCompile); // Analizza l'output di Maven
-    if (!userCoverage) { // Se non c'è copertura, gestisce l'errore di compilazione
+    if (!userCoverage_ForHighlight) { // Se non c'è copertura, gestisce l'errore di compilazione
         setStatus("error");
         //Gestione degli errori 
         handleCompileError(loadingKey, buttonKey);
@@ -106,37 +152,35 @@ function handleResponse(response, formData, isGameEnd, loadingKey, buttonKey) {
     }
 
     // Se la copertura è disponibile, la processa
-    processCoverage(userCoverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, userJacocoCoverage, robotJacocoCoverage, robotCoverage, isWinner);
+    processCoverage(
+        userCoverage_ForHighlight, robotCoverage_ForHighlight,
+        userCoverageDetails, robotCoverageDetails,
+        userScore, robotScore,
+        canWin, unlockedAchievements,
+        loadingKey, buttonKey
+    );
 }
 
 // Processa la copertura del codice e aggiorna i dati di gioco
-async function processCoverage(coverage, formData, robotScore, userScore, isGameEnd, loadingKey, buttonKey, userJacocoCoverage, robotJacocoCoverage, robotCoverage, isWinner) {
-    highlightCodeCoverage($.parseXML(coverage), $.parseXML(robotCoverage), editor_robot); // Evidenzia la copertura del codice nell'editor
+async function processCoverage(userCoverage_ForHighlight, robotCoverage_ForHighlight, userCoverageDetails, robotCoverageDetails, userScore, robotScore, canWin, unlockedAchievements, loadingKey, buttonKey) {
+    highlightCodeCoverage($.parseXML(userCoverage_ForHighlight), $.parseXML(robotCoverage_ForHighlight), editor_robot); // Evidenzia la copertura del codice nell'editor
     orderTurno++; // Incrementa l'ordine del turno
 
-    const userEvoSuiteCoverageCsv = await fetchCoverageReport(formData); // Recupera il report di coverage
-    const robotEvoSuiteCoverageCsv = await fetchRobotEvoSuiteCoverageReport(formData); // Recupera il report di coverage
-
     setStatus("loading"); // Aggiorna lo stato a "loading"
-    const robotEvoSuiteCoverage = Object.values(JSON.parse(robotEvoSuiteCoverageCsv));
-    const userEvoSuiteCoverage = extractThirdColumn(userEvoSuiteCoverageCsv); // Estrae i valori dalla terza colonna del CSV
+    updateStorico(orderTurno, userScore, userCoverageDetails.evosuite_line); // Aggiorna lo storico del gioco
 
-    updateStorico(orderTurno, userScore, userEvoSuiteCoverage[0]); // Aggiorna lo storico del gioco
-    setStatus(isGameEnd ? "game_end" : "turn_end"); // Imposta lo stato di fine gioco o fine turno
+    setStatus("turn_end"); // Imposta lo stato di fine gioco o fine turno
     toggleLoading(false, loadingKey, buttonKey); // Nasconde l'indicatore di caricamento
-    displayUserPoints(isGameEnd, userEvoSuiteCoverage, robotEvoSuiteCoverage, userJacocoCoverage, robotJacocoCoverage, userScore, robotScore, isWinner); // Mostra i punti dell'utente
-    if (isGameEnd) { // Se il gioco è finito
-        handleEndGame(userScore); // Gestisce la fine del gioco
-    } else {
-        resetButtons();
-    }
+    displayUserPoints(userCoverageDetails, robotCoverageDetails, canWin, userScore, robotScore); // Mostra i punti dell'utente
+    if (unlockedAchievements.length !== 0)
+        handleUnlockedAchievements(unlockedAchievements);
+
+    resetButtons();
 }
 
 // Mostra i punti dell'utente nella console
-function displayUserPoints(isGameEnd, valori_csv, robotEvoSuiteCoverage, coverageDetails, robotJacocoCoverage, userScore, robotScore) {
-    const displayUserPoints = isGameEnd 
-        ? getConsoleTextRun(valori_csv, robotEvoSuiteCoverage, coverageDetails, robotJacocoCoverage, userScore, robotScore) // Testo per la fine del gioco
-        : getConsoleTextCoverage(valori_csv, robotEvoSuiteCoverage, coverageDetails, robotJacocoCoverage); // Testo per la copertura
+function displayUserPoints(userCoverageDetails, robotCoverageDetails, canWin, userScore, robotScore) {
+    const displayUserPoints = getConsoleTextRun(userCoverageDetails, robotCoverageDetails, canWin, userScore, robotScore)
     console_robot.setValue(displayUserPoints); // Aggiorna la console del robot con i punti
 }
 
@@ -147,36 +191,42 @@ function handleCompileError(loadingKey, buttonKey) {
     resetButtons(); // Reimposta i pulsanti
 }
 
-
-// Recupera il report di coverage da T8
-async function fetchCoverageReport(formData) {
-    const url = createApiUrl(formData, orderTurno); // Crea l'URL dell'API
-    return await ajaxRequest_ForT8(url, "POST", formData.get("testingClassCode"), false, "text"); // Esegue la richiesta AJAX
-}
-
-// Recupera il report di coverage per il robot da T8
-async function fetchRobotEvoSuiteCoverageReport(formData) {
-    const url = `/robots/evosuitecoverage` //coverage/robot/${formData.get("className")}/${formData.get("difficulty")}`
-    const data = {
-        testClassId: localStorage.getItem("underTestClassName"),
-        robotType: localStorage.getItem("robot"),
-        difficulty: localStorage.getItem("difficulty")
-    }
-    return await ajaxRequest(url, "GET", data, true, "text"); // Esegue la richiesta AJAX
-}
-
 // Gestisce la fine del gioco, mostra un messaggio e pulisce i dati
-function handleEndGame(userScore) {
+function generateEndGameMessage(userScore, robotScore, isWinner, expGained) {
+    let resultMessage = isWinner ? gameEndData.game_win : gameEndData.game_lose;
+    let expMessage = "";
+
+    if (isWinner) {
+        if (expGained === 0) {
+            expMessage = gameEndData.game_exp.zero;
+        } else if (expGained === 1) {
+            expMessage = `${gameEndData.game_exp.base} ${gameEndData.game_exp.one}`;
+        } else {
+            expMessage = `${gameEndData.game_exp.base} ${expGained} ${gameEndData.game_exp.multi}`;
+        }
+    } else {
+        expMessage = gameEndData.game_retry;
+    }
+
     openModalWithText(
-        status_game_end,
-        `${score_partita_text} ${userScore} pt.`, // Mostra il punteggio dell'utente
-        [{ text: vai_home, href: '/main', class: 'btn btn-primary' }] // Pulsante per tornare alla home
+        gameEndData.game_end,
+        `${gameEndData.game_score}: ${userScore} pt.\n${resultMessage}\n${expMessage}`,
+        [{ tagName: "a", text: "Vai alla home", href: '/main', class: 'btn btn-primary' }]
     );
 }
 
+function handleUnlockedAchievements(unlockedAchievements) {
+    openModalWithText(
+        unlockedNewAchievementMessage.title,
+        `${unlockedNewAchievementMessage.text}\n${unlockedAchievements.map(a => ` - ${achievementData[a]?.name || a}\n`).join("")}`,
+        [{ tagName: "button", text: "Chiudi", data_bs_dismiss: "modal", class: 'btn btn-primary' }]
+    );
+}
+
+
 // Reimposta i pulsanti per consentire nuove azioni
 function resetButtons() {
-    run_button.disabled = (localStorage.getItem("modalita") === "Allenamento"); // Abilita/disabilita in base alla modalità
+    run_button.disabled = (mode === "Allenamento"); // Abilita/disabilita in base alla modalità
     coverage_button.disabled = false; // Abilita il pulsante di coverage
 }
 
@@ -197,6 +247,9 @@ window.addEventListener('beforeunload', (event) => {
         // Il messaggio predefinito non può essere personalizzato, ma il modal può apparire
         return ''; // Restituisce una stringa vuota per attivare il messaggio predefinito
     }
+    // Pulisco il localstorage dal test scritto dall'utente 
+    localStorage.removeItem('codeMirrorContent');
+    localStorage.removeItem('storico');
 });
 
 // Pulsante "Run/Submit"

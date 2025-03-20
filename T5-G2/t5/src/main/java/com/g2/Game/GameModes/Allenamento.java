@@ -1,27 +1,28 @@
 package com.g2.Game.GameModes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.g2.Game.GameModes.Compile.CompileResult;
 import com.g2.Interfaces.ServiceManager;
 
 public class Allenamento extends GameLogic{
 
+    @JsonProperty("currentTurn")
     private int currentTurn;
+    @JsonProperty("userScore")
     private int userScore;
-    private int robotScore;
     
     public Allenamento() {
     }
 
     public Allenamento(ServiceManager serviceManager, String PlayerID, String ClasseUT,
-            String type_robot, String difficulty, String gamemode) {
-        super(serviceManager, PlayerID, ClasseUT, type_robot, difficulty, gamemode);
+            String type_robot, String difficulty, String gamemode, String testingClassCode) {
+        super(serviceManager, PlayerID, ClasseUT, type_robot, difficulty, gamemode, testingClassCode);
         currentTurn = 0;
     }
 
     @Override
     public void NextTurn(int userScore, int robotScore) {
         currentTurn++;
-        this.robotScore = robotScore;
         System.out.println("[GAME] Turn " + currentTurn + " played. User Score: " + userScore + ", Robot Score: " + robotScore);
     }
 
@@ -32,7 +33,7 @@ public class Allenamento extends GameLogic{
 
     @Override
     public Boolean isWinner() {
-        return userScore > robotScore;
+        return true;
     }
 
     @Override
