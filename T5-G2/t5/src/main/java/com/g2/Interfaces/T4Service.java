@@ -59,6 +59,10 @@ public class T4Service extends BaseService {
                         (String) params[3], (String) params[4]), Integer.class, String.class, String.class, String.class, String.class
         ));
 
+        registerAction("getAllUserGameProgresses", new ServiceActionDefinition(
+                params -> getAllUserGameProgresses((int) params[0]), Integer.class
+        ));
+
         registerAction("updateUserRecordForVictory", new ServiceActionDefinition(
                 params -> updateUserRecordForVictory((int) params[0], (String) params[1], (String) params[2],
                         (String) params[3], (String) params[4]), Integer.class, String.class, String.class, String.class, String.class
@@ -157,6 +161,13 @@ public class T4Service extends BaseService {
     private UserGameProgress getUserGameProgress(int playerId, String gameMode, String classUT, String robotType, String difficulty) {
         final String endpoint =  String.format("/progress/%s/%s/%s/%s/%s", playerId, gameMode, classUT, robotType, difficulty);
         return callRestGET(endpoint, null, UserGameProgress.class);
+    }
+
+    // Usa GET /progress/{playerId} per ottenere tutti i progressi dell'utente
+    private List<UserGameProgress> getAllUserGameProgresses(int playerId) {
+        final String endpoint =  String.format("/progress/%s", playerId);
+        return callRestGET(endpoint, null, new ParameterizedTypeReference<List<UserGameProgress>>() {
+        });
     }
 
     // Usa PUT /progress/achievements/{matchId} per aggiungere nuovi achievement ottenuti dall'utente su quel match
