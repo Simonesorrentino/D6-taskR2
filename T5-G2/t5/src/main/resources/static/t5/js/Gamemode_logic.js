@@ -281,7 +281,7 @@ function updateDOMWithPreviousGameData(previousGameObject) {
 		document.getElementById("gamemode_robot").innerText =
 			previousGameObject.type_robot || "";
 		document.getElementById("gamemode_difficulty").innerText =
-			previousGameObject.difficulty || "";
+			difficulty[previousGameObject.difficulty] || "";
 		document.getElementById("gamemode_modalita").innerText =
 			previousGameObject.mode || "";
 
