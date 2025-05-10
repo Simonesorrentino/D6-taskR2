@@ -31,7 +31,7 @@ function Login() {
       }
       else {
         response.text().then(errorMessage => {
-          alert(errorMessage);
+          alert(loginErrorMessages[errorMessage]);
         })
       }
     })

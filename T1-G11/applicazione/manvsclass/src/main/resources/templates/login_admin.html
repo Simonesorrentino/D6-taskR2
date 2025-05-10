@@ -101,7 +101,15 @@
         const loginAdmin_required_field = /*[[#{loginAdmin_required_field}]]*/ "campo obbligatorio";
         const loginAdmin_psw_reset_link = /*[[#{loginAdmin_psw_reset_link}]]*/ "Hai dimenticato la password?";
         const loginAdmin_login_success = /*[[#{loginAdmin_login_success}]]*/ "Autenticazione avvenuta con successo";
-        const loginAdmin_login_error = /*[[#{loginAdmin_login_error}]]*/ "";
+
+        const loginErrorMessages = {
+          loginAdmin_login_success: /*[[#{loginAdmin_login_success}]]*/ "Authentication successful",
+          loginAdmin_login_error_fields_incomplete: /*[[#{loginAdmin_login_error_fields_incomplete}]]*/ "Please fill in all fields!",
+          loginAdmin_login_error_not_found: /*[[#{loginAdmin_login_error_not_found}]]*/ "Login error, admin not found.",
+          loginAdmin_login_error_already_logged: /*[[#{loginAdmin_login_error_already_logged}]]*/ "You are already logged in.",
+          loginAdmin_login_error_fields_incorrect: /*[[#{loginAdmin_login_error_fields_incorrect}]]*/ "Login error, incorrect credentials."
+        };
+
       </script>
 
       <script>

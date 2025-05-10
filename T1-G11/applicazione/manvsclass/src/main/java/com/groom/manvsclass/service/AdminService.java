@@ -114,7 +114,7 @@ public class AdminService {
 
     public ResponseEntity<?> registraAdmin(Admin admin1, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Already logged in");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("registraAdmin_already_logged_in");
         }
 
         //Controlli
@@ -122,38 +122,38 @@ public class AdminService {
         if (admin1.getNome().length() >= 2 && admin1.getNome().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s[a-zA-Z]+)*", admin1.getNome())) {
             this.userAdmin.setNome(admin1.getNome());
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nome non valido");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("registraAdmin_invalid_name");
         }
 
         //2: Possibilità di inserire più parole separate da uno spazio ed eventualmente da un apostrofo
         if (admin1.getCognome().length() >= 2 && admin1.getCognome().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s?[a-zA-Z]+\\'?)*", admin1.getCognome())) {
             this.userAdmin.setCognome(admin1.getCognome());
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cognome non valido");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("registraAdmin_invalid_surname");
         }
 
         //3: L'username deve rispettare necessariamente il seguente formato: "[username di lunghezza compresa tra 2 e 30 caratteri]"
         if (admin1.getUsername().length() >= 2 && admin1.getUsername().length() <= 30) {
             this.userAdmin.setUsername(admin1.getUsername());
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Username non valido, deve rispettare il seguente formato: [username di lunghezza compresa tra 2 e 30 caratteri]_unina");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("registraAdmin_invalid_username");
         }
 
         //4: L'email deve essere valida
         if (Pattern.matches("^[\\w!#$%&*+/=?{|}~^-]+(?:\\.[\\w!#$%&*+/=?{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,63}$", admin1.getEmail())) {
             Admin existingAdmin = arepo.findById(admin1.getEmail()).orElse(null);
             if (existingAdmin != null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Admin con questa mail già registrato");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("registraAdmin_email_invalid");
             }
             this.userAdmin.setEmail(admin1.getEmail());
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email non valida, registrarsi con le credenziali istituzionali!");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("registraAdmin_email_exists");
         }
 
         //5: La password deve contenere almeno una lettera maiuscola, una minuscola, un numero ed un carattere speciale e deve essere lunga tra gli 8 e i 16 caratteri
         Matcher m = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,16}$").matcher(admin1.getPassword());
         if (admin1.getPassword().length() > 16 || admin1.getPassword().length() < 8 || !m.matches()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password non valida! La password deve contenere almeno una lettera maiuscola, una minuscola, un numero ed un carattere speciale e deve essere lunga tra gli 8 e i 16 caratteri");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("registraAdmin_invalid_password");
         }
 
         String crypted = myPasswordEncoder.encode(admin1.getPassword());
@@ -173,22 +173,22 @@ public class AdminService {
 
     public ResponseEntity<?> changePasswordAdmin(Admin admin1, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Già loggato");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("passwordChange_already_logged");
         }
 
         Admin admin = arepo.findById(admin1.getEmail()).orElse(null);
         if (admin == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email non trovata");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("passwordChange_email_not_found");
         }
 
         Admin admin_reset = srepo.findAdminByResetToken(admin1.getResetToken());
         if (!admin_reset.getResetToken().equals(admin1.getResetToken())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token di reset invalido!");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("passwordChange_invalid_token");
         }
 
         Matcher m = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,16}$").matcher(admin1.getPassword());
         if (admin1.getPassword().length() > 16 || admin1.getPassword().length() < 8 || !m.matches()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password non valida! La password deve contenere almeno una lettera maiuscola, una minuscola, un numero ed un carattere speciale e deve essere lunga tra gli 8 e i 16 caratteri");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("passwordChange_invalid_password");
         }
 
         String crypted = myPasswordEncoder.encode(admin1.getPassword());
@@ -203,12 +203,12 @@ public class AdminService {
 
     public ResponseEntity<?> resetPasswordAdmin(Admin admin1, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Già loggato");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("resetPassword_already_logged");
         }
 
         Admin admin = arepo.findById(admin1.getEmail()).orElse(null);
         if (admin == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email non trovata");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("resetPassword_email_not_found");
         }
 
         String resetToken = jwtService.generateToken(admin);
@@ -219,7 +219,7 @@ public class AdminService {
             emailService.sendPasswordResetEmail(savedAdmin.getEmail(), savedAdmin.getResetToken());
             return ResponseEntity.ok().body(savedAdmin);
         } catch (MessagingException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore nell'invio del messaggio di posta");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("resetPassword_email_send_error");
         }
     }
 
@@ -319,18 +319,18 @@ public class AdminService {
 
     public ResponseEntity<String> loginAdmin(Admin admin1, String jwt, HttpServletResponse response) {
         if (jwtService.isJwtValid(jwt)) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Sei già loggato.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("loginAdmin_login_error_already_logged");
         }
 
         if (admin1.getUsername().isEmpty() || admin1.getPassword().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Per favore, compila tutti i campi!");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("loginAdmin_login_error_fields_incomplete");
         }
 
         Admin admin = srepo.findAdminByUsername(admin1.getUsername());
 
         // (MODIFICA 14/05/2024) Check se admin esiste già
         if (admin == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Errore nella fase di login, admin non trovato.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("loginAdmin_login_error_not_found");
         }
 
         boolean passwordMatches = myPasswordEncoder.matches(admin1.getPassword(), admin.getPassword());
@@ -344,7 +344,7 @@ public class AdminService {
             
             return ResponseEntity.ok("Autenticazione avvenuta con successo");
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Errore nella fase di login, dati non corretti.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("loginAdmin_login_error_fields_incorrect");
         }
     }
 
