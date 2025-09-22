@@ -28,9 +28,9 @@ public class CoverageService {
     private static final Logger logger = LoggerFactory.getLogger(CoverageService.class);
 
     private static final String EVOSUITE_FOLDER = "evosuite";
-    private static final String EVOSUITE_JAR = EVOSUITE_FOLDER + File.separator + "evosuite-1.0.6.jar";
-    private static final String EVOSUITE_RUNTIME_JAR = EVOSUITE_FOLDER + File.separator + "evosuite-standalone-runtime-1.0.6.jar";
-    private static final String EVOSUITE_POM = EVOSUITE_FOLDER + File.separator + "pom2.xml";
+    private static final String EVOSUITE_JAR = "evosuite-1.0.6.jar";
+    private static final String EVOSUITE_RUNTIME_JAR = "evosuite-standalone-runtime-1.0.6.jar";
+    private static final String EVOSUITE_POM = "pom2.xml";
 
 
     public String calculateRobotCoverage(OpponentCoverageRequestDTO request, MultipartFile projectZip) throws IOException {
@@ -47,9 +47,9 @@ public class CoverageService {
 
         // Copio evosuite e pom
         try {
-            Files.copy(Paths.get(cwd, EVOSUITE_JAR), Paths.get(projectDir, EVOSUITE_JAR), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(Paths.get(cwd, EVOSUITE_RUNTIME_JAR), Paths.get(projectDir, EVOSUITE_RUNTIME_JAR), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(Paths.get(cwd, EVOSUITE_POM), Paths.get(projectDir, "pom.xml"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(cwd, EVOSUITE_FOLDER, EVOSUITE_JAR), Paths.get(projectDir, EVOSUITE_JAR), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(cwd, EVOSUITE_FOLDER, EVOSUITE_RUNTIME_JAR), Paths.get(projectDir, EVOSUITE_RUNTIME_JAR), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(cwd, EVOSUITE_FOLDER, EVOSUITE_POM), Paths.get(projectDir, "pom.xml"), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException | NullPointerException e) {
             throw new RuntimeException("[calculateRobotCoverage] Errore durante la copia di evosuite/pom.xml: " + e);
         }
