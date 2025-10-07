@@ -1,6 +1,13 @@
 package com.t4.gamerepo.service;
 
+import com.t4.gamerepo.mapper.MapperFacade;
+import com.t4.gamerepo.mapper.PlayerResultMapper;
 import com.t4.gamerepo.model.*;
+import com.t4.gamerepo.model.dto.request.CloseGameDTO;
+import com.t4.gamerepo.model.dto.request.CloseTurnDTO;
+import com.t4.gamerepo.model.dto.response.GameDTO;
+import com.t4.gamerepo.model.dto.response.RoundDTO;
+import com.t4.gamerepo.model.dto.response.TurnDTO;
 import com.t4.gamerepo.model.repositories.GameRepository;
 import com.t4.gamerepo.model.PlayerResult;
 import com.t4.gamerepo.service.exceptions.*;
@@ -15,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service che gestisce le operazioni di CREATE, READ, UPDATE sulle partite.
@@ -36,34 +44,48 @@ public class GameService {
     }
 
     /**
+     * Utility privata che recupera una partita dal database tramite il suo ID.
+     *
+     * @param gameId    l'ID del gioco
+     * @return          il DTO dell'entità {@link Game} estratta
+     * @throws GameNotFoundException    se la partita non esiste
+     */
+    private Game findGame(Long gameId) {
+        return gameRepository.findById(gameId)
+                .orElseThrow(() -> new GameNotFoundException("Game not found"));
+    }
+
+    /**
      * Recupera una partita dal database tramite il suo ID.
      *
      * @param gameId    l'ID del gioco
-     * @return          l'entità {@link Game} estratta
+     * @return          il DTO dell'entità {@link Game} estratta
      * @throws GameNotFoundException    se la partita non esiste
      */
-    public Game getGameById(Long gameId) {
-        return gameRepository.findById(gameId)
-                .orElseThrow(() -> new GameNotFoundException("Game not found"));
+    public GameDTO getGameById(Long gameId) {
+        Game game = findGame(gameId);
+        return MapperFacade.toDTO(game);
     }
 
     /**
      * Recupera tutte le partite a cui ha partecipato un giocatore.
      *
      * @param playerId      l'ID del giocatore
-     * @return              la lista delle partite
+     * @return              la lista di DTO delle partite estratte
      */
-    public List<Game> getAllPlayerGames(Long playerId) {
-        return gameRepository.findByPlayerId(playerId);
+    public List<GameDTO> getAllPlayerGames(Long playerId) {
+        List<Game> games = gameRepository.findByPlayerId(playerId);
+        return games.stream().map(MapperFacade::toDTO).collect(Collectors.toList());
     }
 
     /**
      * Recupera tutte le partite presenti nel database.
      *
-     * @return  la lista di tutte le partite
+     * @return  la lista dei DTO di tutte le partite
      */
-    public List<Game> getAllGames() {
-        return gameRepository.findAll();
+    public List<GameDTO> getAllGames() {
+        List<Game> games = gameRepository.findAll();
+        return games.stream().map(MapperFacade::toDTO).collect(Collectors.toList());
     }
 
     /**
@@ -71,11 +93,11 @@ public class GameService {
      *
      * @param gameMode      la modalità di gioco
      * @param players       la lista di ID dei giocatori
-     * @return              la partita inizializzata
+     * @return              il DTO della partita inizializzata
      * @throws DuplicatedPlayersInGameException     se ci sono giocatori duplicati nella lista
      */
     @Transactional
-    public Game createGame(GameMode gameMode, List<Long> players) {
+    public GameDTO createGame(GameMode gameMode, List<Long> players) {
         Set<Long> playersSet = new HashSet<>(players);
 
         // Non è previsto che un giocatore possa giocare contro se stesso
@@ -85,7 +107,7 @@ public class GameService {
         Game newGame = new Game(gameMode, players);
         newGame.setStatus(GameStatus.CREATED);
 
-        return gameRepository.save(newGame);
+        return MapperFacade.toDTO(gameRepository.save(newGame));
     }
 
     /**
@@ -96,13 +118,13 @@ public class GameService {
      * @param classUT       la classe sotto test
      * @param type          il tipo di avversario
      * @param difficulty    la difficoltà dell'avversario
-     * @return              il round avviato
+     * @return              il DTO del round avviato
      * @throws GameAlreadyClosedException       se la partita è già conclusa
      * @throws FoundRoundNotClosedException     se l'ultimo round registrato (precedente a questo) non è ancora stato chiuso
      */
     @Transactional
-    public Round startRound(Long gameId, String classUT, OpponentType type, OpponentDifficulty difficulty) {
-        Game game = getGameById(gameId);
+    public RoundDTO startRound(Long gameId, String classUT, OpponentType type, OpponentDifficulty difficulty) {
+        Game game = findGame(gameId);
 
         if (game.getClosedAt() != null)
             throw new GameAlreadyClosedException("Game already closed");
@@ -123,7 +145,7 @@ public class GameService {
         game.setStatus(GameStatus.STARTED);
         gameRepository.save(game);
 
-        return newRound;
+        return MapperFacade.toDTO(newRound);
     }
 
     /**
@@ -132,14 +154,14 @@ public class GameService {
      *
      * @param gameId        l'ID della partita
      * @param playerId      l'ID del giocatore
-     * @return              il turno creato
+     * @return              il DTO del turno creato
      * @throws GameAlreadyClosedException   se la partita è già conclusa
      * @throws PlayerNotInGameException     se il giocatore non è registrato nella partita
      * @throws RoundNotFoundException       se non esistono round nella partita
      */
     @Transactional
-    public Turn startTurn(Long gameId, Long playerId) {
-        Game game = getGameById(gameId);
+    public TurnDTO startTurn(Long gameId, Long playerId) {
+        Game game = findGame(gameId);
         List<Round> rounds = game.getRounds();
 
         if (game.getClosedAt() != null)
@@ -156,25 +178,26 @@ public class GameService {
         game.setStatus(GameStatus.IN_PROGRESS);
         gameRepository.save(game);
 
-        return newTurn;
+        return MapperFacade.toDTO(newTurn);
     }
 
     /**
      * Termina un turno di un giocatore e registra il punteggio.
      *
-     * @param gameId        l'ID della partita
-     * @param playerId      l'ID del giocatore
-     * @param turnNumber    il numero del turno nel round aperto
-     * @param turnScore     il punteggio ottenuto dal giocatore
-     * @return              il turno concluso
+     * @param gameId            l'ID della partita
+     * @param turnNumber        il numero del turno nel round aperto
+     * @param closeTurnDTO      il punteggio ottenuto dal giocatore
+     * @return                  il turno concluso
      * @throws GameAlreadyClosedException   se la partita è già terminata
      * @throws PlayerNotInGameException     se il giocatore non è registrato nella partita
      * @throws RoundNotFoundException       se non esistono round nella partita
      */
     @Transactional
-    public Turn endTurn(Long gameId, Long playerId, int turnNumber, TurnScore turnScore) {
-        Game game = getGameById(gameId);
+    public TurnDTO endTurn(Long gameId, int turnNumber, CloseTurnDTO closeTurnDTO) {
+        Game game = findGame(gameId);
         List<Round> rounds = game.getRounds();
+        Long playerId = closeTurnDTO.getPlayerId();
+        TurnScore turnScore = MapperFacade.toEntity(closeTurnDTO);
 
         logger.info("Game rounds: {}", rounds);
 
@@ -196,7 +219,7 @@ public class GameService {
         Turn closedTurn = roundService.closeTurn(game.getLastRound(), turnNumber, playerId, turnScore);
         gameRepository.save(game);
 
-        return closedTurn;
+        return MapperFacade.toDTO(closedTurn);
     }
 
     /**
@@ -208,8 +231,8 @@ public class GameService {
      * @throws RoundNotFoundException       se non esistono round nella partita
      */
     @Transactional
-    public Round endRound(Long gameId) {
-        Game game = getGameById(gameId);
+    public RoundDTO endRound(Long gameId) {
+        Game game = findGame(gameId);
         List<Round> rounds = game.getRounds();
 
         if (game.getClosedAt() != null)
@@ -221,20 +244,23 @@ public class GameService {
         Round closedRound = roundService.closeRound(game.getLastRound());
         gameRepository.save(game);
 
-        return closedRound;
+        return MapperFacade.toDTO(closedRound);
     }
 
     /**
      * Termina una partita, registrando lo stato finale e i risultati dei giocatori.
      *
      * @param gameId            l'ID della partita
-     * @param playersResult     la mappa dei risultati ottenuti dai giocatori
+     * @param closeGameDTO      il DTO ricevuto come corpo della richiesta
      * @return                  la partita conclusa
      * @throws GameAlreadyClosedException   se la partita è già terminata
      */
     @Transactional
-    public Game endGame(Long gameId, Map<Long, PlayerResult> playersResult) {
-        Game game = getGameById(gameId);
+    public GameDTO endGame(Long gameId, CloseGameDTO closeGameDTO) {
+        Game game = findGame(gameId);
+        Map<Long, PlayerResult> playersResult = new HashMap<>();
+        for (Long playerId : closeGameDTO.getResults().keySet())
+            playersResult.put(playerId, MapperFacade.toEntity(closeGameDTO.getResults().get(playerId)));
 
         if (game.getClosedAt() != null)
             throw new GameAlreadyClosedException("Game already closed");
@@ -243,6 +269,6 @@ public class GameService {
         game.setClosedAt(Timestamp.from(Instant.now()));
         game.setPlayerResults(playersResult);
 
-        return gameRepository.save(game);
+        return MapperFacade.toDTO(gameRepository.save(game));
     }
 }

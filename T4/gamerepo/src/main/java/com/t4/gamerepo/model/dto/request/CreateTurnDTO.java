@@ -1,4 +1,4 @@
-package com.t4.gamerepo.model.dto;
+package com.t4.gamerepo.model.dto.request;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

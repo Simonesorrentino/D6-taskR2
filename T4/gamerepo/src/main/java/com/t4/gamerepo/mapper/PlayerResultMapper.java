@@ -1,6 +1,6 @@
 package com.t4.gamerepo.mapper;
 
-import com.t4.gamerepo.model.dto.CloseGameDTO;
+import com.t4.gamerepo.model.dto.request.CloseGameDTO;
 import com.t4.gamerepo.model.PlayerResult;
 
 /**
@@ -18,7 +18,7 @@ public class PlayerResultMapper {
      * @param playerResultDTO       il DTO da convertire
      * @return                      l'entità PlayerResult corrispondente, o {@code null} se il DTO è {@code null}
      */
-    public static PlayerResult toEntity(CloseGameDTO.PlayerResultDTO playerResultDTO) {
+    public static PlayerResult toPlayerResult(CloseGameDTO.PlayerResultDTO playerResultDTO) {
         if (playerResultDTO == null)
             return null;
 

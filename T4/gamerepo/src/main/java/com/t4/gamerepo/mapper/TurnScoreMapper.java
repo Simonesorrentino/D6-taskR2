@@ -1,7 +1,7 @@
 package com.t4.gamerepo.mapper;
 
 import com.t4.gamerepo.model.TurnScore;
-import com.t4.gamerepo.model.dto.CloseTurnDTO;
+import com.t4.gamerepo.model.dto.request.CloseTurnDTO;
 import testrobotchallenge.commons.mappers.ScoreMapper;
 
 /**
@@ -19,7 +19,7 @@ public class TurnScoreMapper {
      * @param dto   il DTO da convertire
      * @return      entità TurnScore corrispondente, o {@code null} se il DTO è {@code null}
      */
-    public static TurnScore toEntity(CloseTurnDTO dto) {
+    public static TurnScore toTurnScore(CloseTurnDTO dto) {
         if (dto == null) return null;
 
         TurnScore entity = new TurnScore();

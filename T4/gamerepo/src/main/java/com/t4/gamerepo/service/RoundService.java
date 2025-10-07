@@ -5,6 +5,7 @@ import com.t4.gamerepo.model.Turn;
 import com.t4.gamerepo.model.TurnScore;
 import com.t4.gamerepo.model.repositories.RoundRepository;
 import com.t4.gamerepo.service.exceptions.RoundAlreadyClosedException;
+import com.t4.gamerepo.service.exceptions.TurnNotFoundException;
 import org.springframework.stereotype.Service;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
 import testrobotchallenge.commons.models.opponent.OpponentType;
@@ -84,6 +85,8 @@ public class RoundService {
      * @return                  il turno chiuso
      */
     public Turn closeTurn(Round currentRound, int turnNumber, Long playerId, TurnScore turnScore) {
+        if (currentRound.getTurns().size() < turnNumber)
+            throw new TurnNotFoundException("The turn " + turnNumber + " does not exist");
         return turnService.closeTurn(currentRound.getTurns().get(turnNumber - 1), playerId, turnScore);
     }
 
