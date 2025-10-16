@@ -58,8 +58,8 @@ public class GameProgress {
      * Costruttore che inizializza un nuovo GameProgress
      * associandolo al giocatore e all’avversario.
      *
-     * @param playerProgress    il {@link PlayerProgress} del giocatore
-     * @param opponent          l'avversario affrontato
+     * @param playerProgress il {@link PlayerProgress} del giocatore
+     * @param opponent       l'avversario affrontato
      */
     public GameProgress(PlayerProgress playerProgress, Opponent opponent) {
         this.playerProgress = playerProgress;

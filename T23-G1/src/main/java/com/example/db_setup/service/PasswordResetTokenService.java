@@ -1,6 +1,8 @@
 package com.example.db_setup.service;
 
-import com.example.db_setup.model.*;
+import com.example.db_setup.model.Admin;
+import com.example.db_setup.model.PasswordResetToken;
+import com.example.db_setup.model.Player;
 import com.example.db_setup.model.repository.PasswordResetTokenRepository;
 import com.example.db_setup.security.AuthenticationPropertiesConfig;
 import org.slf4j.Logger;
@@ -26,10 +28,9 @@ import java.util.UUID;
 @Service
 public class PasswordResetTokenService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PasswordResetTokenService.class);
     private final AuthenticationPropertiesConfig authProperties;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-
-    private static final Logger logger = LoggerFactory.getLogger(PasswordResetTokenService.class);
 
     public PasswordResetTokenService(AuthenticationPropertiesConfig authProperties, PasswordResetTokenRepository passwordResetTokenRepository) {
         this.authProperties = authProperties;

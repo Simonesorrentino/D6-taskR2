@@ -14,15 +14,15 @@ import java.util.Optional;
 
 public interface GameProgressRepository extends JpaRepository<GameProgress, Long> {
     @Query("""
-    SELECT gp FROM GameProgress gp
-    JOIN gp.opponent o
-    JOIN gp.playerProgress pp
-    WHERE pp.player.ID = :playerId
-      AND o.classUT = :classUT
-      AND o.gameMode = :gameMode
-      AND o.type = :type
-      AND o.difficulty = :difficulty
-""")
+                SELECT gp FROM GameProgress gp
+                JOIN gp.opponent o
+                JOIN gp.playerProgress pp
+                WHERE pp.player.ID = :playerId
+                  AND o.classUT = :classUT
+                  AND o.gameMode = :gameMode
+                  AND o.type = :type
+                  AND o.difficulty = :difficulty
+            """)
     Optional<GameProgress> findByPlayerAndOpponentParams(
             @Param("playerId") Long playerId,
             @Param("gameMode") GameMode gameMode,

@@ -68,10 +68,10 @@ public class Opponent {
      * Costruttore che crea un nuovo avversario specificando
      * modalità di gioco, classe sotto test, tipologia e difficoltà.
      *
-     * @param gameMode      la modalità di gioco
-     * @param classUT       la classe Java sotto test
-     * @param type          la tipologia di avversario
-     * @param difficulty    la difficoltà dell’avversario
+     * @param gameMode   la modalità di gioco
+     * @param classUT    la classe Java sotto test
+     * @param type       la tipologia di avversario
+     * @param difficulty la difficoltà dell’avversario
      */
     public Opponent(GameMode gameMode, String classUT, OpponentType type, OpponentDifficulty difficulty) {
         this.gameMode = gameMode;

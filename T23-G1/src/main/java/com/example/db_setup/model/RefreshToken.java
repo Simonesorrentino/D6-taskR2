@@ -11,7 +11,7 @@ import java.time.Instant;
 /**
  * Entità rappresentante un refresh token salvato nel database.
  * <p>
- * I refresh token vengono utilizzati per generare nuovi JWT senza richiedere nuovamente le credenziali dell’utente 
+ * I refresh token vengono utilizzati per generare nuovi JWT senza richiedere nuovamente le credenziali dell’utente
  * (senza dover passare per la relativa pagina di login). Ogni token è associato a un singolo utente,
  * che può essere un {@link Player} oppure un {@link Admin}.
  * <p>
@@ -21,7 +21,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table (name = "refresh_tokens", schema = "studentsrepo")
+@Table(name = "refresh_tokens", schema = "studentsrepo")
 public class RefreshToken {
 
     /**

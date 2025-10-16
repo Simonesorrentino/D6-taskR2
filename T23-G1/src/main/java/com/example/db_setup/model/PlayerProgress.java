@@ -1,6 +1,8 @@
 package com.example.db_setup.model;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -66,7 +68,7 @@ public class PlayerProgress {
      * Costruttore che inizializza un nuovo progresso per il giocatore,
      * con punti esperienza a 0 e nessun achievement sbloccato.
      *
-     * @param player    il {@link Player} a cui associare i progressi
+     * @param player il {@link Player} a cui associare i progressi
      */
     public PlayerProgress(Player player) {
         this.player = player;

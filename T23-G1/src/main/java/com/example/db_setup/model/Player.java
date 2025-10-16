@@ -17,21 +17,12 @@
 
 package com.example.db_setup.model;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+
+import javax.persistence.*;
 
 /**
  * Entità che rappresenta un utente di tipo giocatore registrato nel sistema.
@@ -40,7 +31,7 @@ import lombok.Setter;
  * {@link UserProfile} e ai progressi giocatore {@link PlayerProgress}.
  * </p>
  */
-@Table (name = "players", schema = "studentsrepo")
+@Table(name = "players", schema = "studentsrepo")
 @Data
 @Entity
 @Getter
@@ -51,7 +42,7 @@ public class Player {
      * Identificatore univoco del giocatore.
      */
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     public long ID;
 
     /**
@@ -110,35 +101,35 @@ public class Player {
         this.userProfile.setPlayer(this);
     }
 
-    public String getName(){
+    public String getName() {
         return this.userProfile.getName();
     }
 
-    public void setName(String name){
+    public void setName(String name) {
         this.userProfile.setName(name);
     }
 
-    public String getSurname(){
+    public String getSurname() {
         return this.userProfile.getSurname();
     }
 
-    public void setSurname(String surname){
+    public void setSurname(String surname) {
         this.userProfile.setSurname(surname);
     }
 
-    public String getNickname(){
+    public String getNickname() {
         return this.userProfile.getNickname();
     }
 
-    public void setNickname(String nickname){
+    public void setNickname(String nickname) {
         this.userProfile.setNickname(nickname);
     }
 
-    public String getEmail(){
+    public String getEmail() {
         return this.userProfile.getEmail();
     }
 
-    public void setEmail(String email){
+    public void setEmail(String email) {
         this.userProfile.setEmail(email);
     }
 }

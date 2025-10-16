@@ -28,8 +28,8 @@ import java.util.Map;
 @Component
 public class AuthEntryPointJwt implements AuthenticationEntryPoint {
 
-    private final MessageSource messageSource;
     private static final Logger logger = LoggerFactory.getLogger(AuthEntryPointJwt.class);
+    private final MessageSource messageSource;
     private final LocaleResolver localeResolver;
 
     /**

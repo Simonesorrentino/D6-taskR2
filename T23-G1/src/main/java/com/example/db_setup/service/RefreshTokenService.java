@@ -30,8 +30,8 @@ public class RefreshTokenService {
      * Genera un nuovo refresh token per un {@link Player}.
      * Eventuali token precedenti dello stesso utente vengono marcati come revocati.
      *
-     * @param player    il giocatore a cui associare il refresh token
-     * @return          il {@link ResponseCookie} contenente il nuovo refresh token
+     * @param player il giocatore a cui associare il refresh token
+     * @return il {@link ResponseCookie} contenente il nuovo refresh token
      */
     public ResponseCookie generateRefreshToken(Player player) {
         return generateTokenForUser(null, player);
@@ -41,8 +41,8 @@ public class RefreshTokenService {
      * Genera un nuovo refresh token per un {@link Admin}.
      * Eventuali token precedenti dello stesso amministratore vengono marcati come revocati.
      *
-     * @param admin     l’amministratore a cui associare il refresh token
-     * @return          il {@link ResponseCookie} contenente il nuovo refresh token
+     * @param admin l’amministratore a cui associare il refresh token
+     * @return il {@link ResponseCookie} contenente il nuovo refresh token
      */
     public ResponseCookie generateRefreshToken(Admin admin) {
         return generateTokenForUser(admin, null);
@@ -53,9 +53,9 @@ public class RefreshTokenService {
      * Supporta sia utenti di tipo {@link Admin} che {@link Player}.
      * Invalida eventuali token precedenti e salva quello nuovo nel database.
      *
-     * @param admin     l’amministratore (se presente, altrimenti {@code null})
-     * @param player    il giocatore (se presente, altrimenti {@code null})
-     * @return          il {@link ResponseCookie} contenente il nuovo refresh token
+     * @param admin  l’amministratore (se presente, altrimenti {@code null})
+     * @param player il giocatore (se presente, altrimenti {@code null})
+     * @return il {@link ResponseCookie} contenente il nuovo refresh token
      */
     private ResponseCookie generateTokenForUser(Admin admin, Player player) {
         // Costruisco il refresh token
@@ -83,7 +83,7 @@ public class RefreshTokenService {
     /**
      * Genera un cookie "pulito" che rimuove il refresh token dal client.
      *
-     * @return      cookie con valore vuoto e {@code maxAge=0}
+     * @return cookie con valore vuoto e {@code maxAge=0}
      */
     public ResponseCookie generateCleanRefreshToken() {
         return ResponseCookie.from(authProperties.getJwtRefreshCookieName(), "").path("/").maxAge(0).build();
@@ -93,8 +93,8 @@ public class RefreshTokenService {
      * Verifica se un refresh token è valido e non scaduto.
      * Se il token è scaduto, viene marcato come revocato.
      *
-     * @param refreshToken      il token da verificare
-     * @return                  il {@link RefreshToken} valido se presente e non scaduto, altrimenti {@code null}
+     * @param refreshToken il token da verificare
+     * @return il {@link RefreshToken} valido se presente e non scaduto, altrimenti {@code null}
      */
     public RefreshToken verifyToken(String refreshToken) {
         Optional<RefreshToken> savedToken = refreshTokenRepository.findByToken(refreshToken);
@@ -114,7 +114,7 @@ public class RefreshTokenService {
     /**
      * Invalida tutti i refresh token di un determinato {@link Player}.
      *
-     * @param player    il giocatore i cui token devono essere invalidati
+     * @param player il giocatore i cui token devono essere invalidati
      */
     public void invalidAllUserRefreshTokens(Player player) {
         refreshTokenRepository.findByPlayer(player).forEach(this::rotate);
@@ -123,7 +123,7 @@ public class RefreshTokenService {
     /**
      * Invalida tutti i refresh token di un determinato {@link Admin}.
      *
-     * @param admin     l’amministratore i cui token devono essere invalidati
+     * @param admin l’amministratore i cui token devono essere invalidati
      */
     public void invalidAllAdminRefreshTokens(Admin admin) {
         refreshTokenRepository.findByAdmin(admin).forEach(this::rotate);
@@ -132,8 +132,8 @@ public class RefreshTokenService {
     /**
      * Marca un refresh token come revocato e lo salva a database.
      *
-     * @param oldRefreshToken   il token da revocare
-     * @return                  il {@link RefreshToken} aggiornato
+     * @param oldRefreshToken il token da revocare
+     * @return il {@link RefreshToken} aggiornato
      */
     private RefreshToken rotate(RefreshToken oldRefreshToken) {
         oldRefreshToken.setRevoked(true);

@@ -5,8 +5,8 @@ import com.example.db_setup.model.repository.AdminRepository;
 import com.example.db_setup.model.repository.PasswordResetTokenRepository;
 import com.example.db_setup.model.repository.PlayerRepository;
 import com.example.db_setup.model.repository.RefreshTokenRepository;
-import com.example.db_setup.security.jwt.JwtValidationResult;
 import com.example.db_setup.security.jwt.JwtProvider;
+import com.example.db_setup.security.jwt.JwtValidationResult;
 import com.example.db_setup.security.service.UserDetailsImpl;
 import com.example.db_setup.service.exception.*;
 import org.slf4j.Logger;
@@ -24,7 +24,8 @@ import testrobotchallenge.commons.models.dto.auth.JwtValidationResponseDTO;
 import testrobotchallenge.commons.models.user.Role;
 
 import javax.mail.MessagingException;
-import java.util.*;
+import java.util.Locale;
+import java.util.Optional;
 
 import static testrobotchallenge.commons.models.user.Role.ADMIN;
 
@@ -89,15 +90,15 @@ public class AuthService {
      * @param password      password scelta
      * @param passwordCheck conferma della password
      * @param studies       informazioni sugli studi del giocatore
-     * @return              l'entità {@link Player} salvata
-     * @throws PasswordMismatchException    se le password non coincidono
-     * @throws UserAlreadyExistsException   se esiste già un {@link Player} con la stessa email
+     * @return l'entità {@link Player} salvata
+     * @throws PasswordMismatchException  se le password non coincidono
+     * @throws UserAlreadyExistsException se esiste già un {@link Player} con la stessa email
      */
     @Transactional
     public Player registerPlayer(String name, String surname, String email,
                                  String password, String passwordCheck, Studies studies) {
         if (!password.equals(passwordCheck))
-           throw new PasswordMismatchException("passwordCheck");
+            throw new PasswordMismatchException("passwordCheck");
 
         if (playerRepository.findByUserProfileEmail(email).isPresent())
             throw new UserAlreadyExistsException("mail");
@@ -108,17 +109,17 @@ public class AuthService {
     /**
      * Registra un nuovo amministratore (docente) nel sistema.
      *
-     * @param name              nome dell'amministratore
-     * @param surname           cognome dell'amministratore
-     * @param email             email dell'amministratore (univoca nella tabella `Admins`)
-     * @param password          password scelta
-     * @param passwordCheck     conferma della password
-     * @return                  l'entita {@link Admin} creata
-     * @throws PasswordMismatchException    se le password non coincidono
-     * @throws UserAlreadyExistsException   se esiste già un {@link Admin} con la stessa mail
+     * @param name          nome dell'amministratore
+     * @param surname       cognome dell'amministratore
+     * @param email         email dell'amministratore (univoca nella tabella `Admins`)
+     * @param password      password scelta
+     * @param passwordCheck conferma della password
+     * @return l'entita {@link Admin} creata
+     * @throws PasswordMismatchException  se le password non coincidono
+     * @throws UserAlreadyExistsException se esiste già un {@link Admin} con la stessa mail
      */
     public Admin registerAdmin(String name, String surname, String email,
-                                                            String password, String passwordCheck) {
+                               String password, String passwordCheck) {
         if (!password.equals(passwordCheck))
             throw new PasswordMismatchException("passwordCheck");
 
@@ -137,7 +138,7 @@ public class AuthService {
      *
      * @param email    email del giocatore
      * @param password password del giocatore
-     * @return         array contenente il JWT e il refresh token in formato stringa
+     * @return array contenente il JWT e il refresh token in formato stringa
      * @throws UserNotFoundException se l'utente non esiste nel database
      */
     public String[] loginPlayer(String email, String password) {
@@ -167,7 +168,7 @@ public class AuthService {
      *
      * @param email    email del giocatore
      * @param password password del giocatore
-     * @return         array contenente il JWT e il refresh token in formato stringa
+     * @return array contenente il JWT e il refresh token in formato stringa
      * @throws UserNotFoundException se l'utente non esiste nel database
      */
     public String[] loginAdmin(String email, String password) {
@@ -193,7 +194,7 @@ public class AuthService {
      * presente nel sistema.
      *
      * @param jwtToken token JWT da validare
-     * @return         DTO contenente il risultato della validazione, con eventuale ruolo associato all'utente
+     * @return DTO contenente il risultato della validazione, con eventuale ruolo associato all'utente
      */
     public JwtValidationResponseDTO validateToken(String jwtToken) {
         // Valido il JWT
@@ -227,7 +228,7 @@ public class AuthService {
      * Rigenera un nuovo JWT a partire da un refresh token valido.
      *
      * @param token refresh token da verificare
-     * @return      nuovo JWT serializzato come stringa per l'invio in cookie
+     * @return nuovo JWT serializzato come stringa per l'invio in cookie
      * @throws InvalidRefreshTokenException se il refresh token non è valido
      */
     public String refreshToken(String token) {
@@ -257,7 +258,7 @@ public class AuthService {
      *
      * @param jwtToken     il JWT dell'utente
      * @param refreshToken il refresh token dell'utente
-     * @return             array contenente i cookie vuoti
+     * @return array contenente i cookie vuoti
      */
     public String[] logout(String jwtToken, String refreshToken) {
         // Genero un JWT e un refresh token puliti per cancellare quelli nel browser
@@ -351,10 +352,10 @@ public class AuthService {
      * @param passwordCheck conferma della nuova password
      * @param resetToken    token di reset ricevuto dall'utente
      * @param role          ruolo dell'utente
-     * @throws PasswordMismatchException            se le password non coincidono
-     * @throws PasswordResetTokenNotFoundException  se il token non è valido
-     * @throws IncompatibleRoleException            se il ruolo non è quello associato al reset token
-     * @throws IncompatibleEmailException           se l'email non è quella associato al reset token
+     * @throws PasswordMismatchException           se le password non coincidono
+     * @throws PasswordResetTokenNotFoundException se il token non è valido
+     * @throws IncompatibleRoleException           se il ruolo non è quello associato al reset token
+     * @throws IncompatibleEmailException          se l'email non è quella associato al reset token
      */
     public void changePassword(String email, String password, String passwordCheck, String resetToken, Role role) {
         if (!password.equals(passwordCheck))

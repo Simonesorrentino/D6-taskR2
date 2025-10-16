@@ -1,6 +1,5 @@
 package com.example.db_setup.security.jwt;
 
-import testrobotchallenge.commons.models.user.Role;
 import com.example.db_setup.security.AuthenticationPropertiesConfig;
 import com.example.db_setup.security.service.AdminDetailsServiceImpl;
 import com.example.db_setup.security.service.PlayerDetailsServiceImpl;
@@ -14,6 +13,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
+import testrobotchallenge.commons.models.user.Role;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -32,12 +32,11 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class AuthTokenFilter extends OncePerRequestFilter {
+    private static final Logger customLogger = LoggerFactory.getLogger(AuthTokenFilter.class);
     private final JwtProvider jwtProvider;
     private final PlayerDetailsServiceImpl playerDetailsService;
     private final AdminDetailsServiceImpl adminDetailsService;
     private final AuthenticationPropertiesConfig authProperties;
-
-    private static final Logger customLogger = LoggerFactory.getLogger(AuthTokenFilter.class);
 
     /**
      * Metodo di implementazione del filtro che intercetta ogni richiesta HTTP e:
@@ -60,11 +59,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         try {
             // Estraggo il JWT dai cookie della richiesta
             Cookie cookie = WebUtils.getCookie(request, authProperties.getJwtCookieName());
-            customLogger.info("jwt cookie found: {}", cookie);
+            customLogger.trace("jwt cookie found: {}", cookie);
             String jwt = cookie != null ? cookie.getValue() : null;
 
             // Loggo la richiesta per debugging
-            customLogger.info("[AuthTokenFilter] Filtering request with jwt {} on request {}", jwt, request);
+            customLogger.trace("[AuthTokenFilter] Filtering request with jwt {} on request {}", jwt, request);
             logRequestInfo(request);
 
             // Verifico se il JWT è presente e se è valido
@@ -86,7 +85,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
                 // Associo le informazioni di autenticazione alla richiesta e imposto il token nel Security Context di Spring.
                 // Fino alla fine della richiesta, l'utente sarà autenticato e i suoi dati saranno recuperabili dal contesto.
-                customLogger.info("[AuthTokenFilter] Jwt is valid, setting authentication context");
+                customLogger.trace("[AuthTokenFilter] Jwt is valid, setting authentication context");
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
@@ -101,7 +100,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     /**
      * Metodo che logga una richiesta HTTP in entrata. Usato per debugging.
-     * @param request   la richiesta HTTP in entrata.
+     *
+     * @param request la richiesta HTTP in entrata.
      */
     private void logRequestInfo(HttpServletRequest request) {
         StringBuilder sb = new StringBuilder();
@@ -119,7 +119,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                     .append(request.getHeader(headerName)).append("\n");
         }
 
-        customLogger.info("{}", sb);
+        customLogger.trace("{}", sb);
     }
 
 }

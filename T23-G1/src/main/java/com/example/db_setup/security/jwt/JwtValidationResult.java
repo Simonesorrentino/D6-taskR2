@@ -16,13 +16,19 @@ import lombok.Setter;
 @Setter
 public class JwtValidationResult {
 
-    /** Indica se il JWT è valido o meno */
+    /**
+     * Indica se il JWT è valido o meno
+     */
     private boolean valid;
 
-    /** Codice identificativo dell'errore, ad esempio "EXPIRED", "MALFORMED", "INVALID" */
+    /**
+     * Codice identificativo dell'errore, ad esempio "EXPIRED", "MALFORMED", "INVALID"
+     */
     private String error;
 
-    /** Messaggio descrittivo dell'errore o informazioni aggiuntive */
+    /**
+     * Messaggio descrittivo dell'errore o informazioni aggiuntive
+     */
     private String message;
 
     /**

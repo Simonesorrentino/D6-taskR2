@@ -2,8 +2,8 @@ package com.example.db_setup.security;
 
 import com.example.db_setup.security.jwt.AuthEntryPointJwt;
 import com.example.db_setup.security.jwt.AuthTokenFilter;
-import com.example.db_setup.security.service.PlayerDetailsServiceImpl;
 import com.example.db_setup.security.service.AdminDetailsServiceImpl;
+import com.example.db_setup.security.service.PlayerDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,6 +46,7 @@ public class WebSecurityConfig {
 
     /**
      * Configura l'authentication provider per i giocatori.
+     *
      * @return un {@link DaoAuthenticationProvider} per gioatori.
      */
     @Bean
@@ -58,6 +59,7 @@ public class WebSecurityConfig {
 
     /**
      * Configura l'authentication provider per gli amministratori.
+     *
      * @return un {@link DaoAuthenticationProvider} per admin.
      */
     @Bean
@@ -134,29 +136,28 @@ public class WebSecurityConfig {
                 .authenticationProvider(userAuthenticationProvider())
                 .authenticationProvider(adminAuthenticationProvider())
                 .authorizeHttpRequests(auth -> auth
-                    // Endpoints pubblici
-                    .requestMatchers(
-                            // player views
-                            new AntPathRequestMatcher("/home"),
-                            new AntPathRequestMatcher("/changeLanguage"),
-                            new AntPathRequestMatcher("/login"),
-                            new AntPathRequestMatcher("/register"),
-                            new AntPathRequestMatcher("/register/success"),    
-                            new AntPathRequestMatcher("/change_password"),
-                            new AntPathRequestMatcher("/reset_password"),    
-                            new AntPathRequestMatcher("/admin/**"), // admin views
-                            new AntPathRequestMatcher("/auth/**"),  // auth api
-                            new AntPathRequestMatcher("/t23/**")  // file statici
-                    ).permitAll()
-                    // Qualsiasi altra richiesta richiede autenticazione
-                    .anyRequest().authenticated()
+                        // Endpoints pubblici
+                        .requestMatchers(
+                                // player views
+                                new AntPathRequestMatcher("/home"),
+                                new AntPathRequestMatcher("/changeLanguage"),
+                                new AntPathRequestMatcher("/login"),
+                                new AntPathRequestMatcher("/register"),
+                                new AntPathRequestMatcher("/register/success"),
+                                new AntPathRequestMatcher("/change_password"),
+                                new AntPathRequestMatcher("/reset_password"),
+                                new AntPathRequestMatcher("/admin/**"), // admin views
+                                new AntPathRequestMatcher("/auth/**"),  // auth api
+                                new AntPathRequestMatcher("/t23/**")  // file statici
+                        ).permitAll()
+                        // Qualsiasi altra richiesta richiede autenticazione
+                        .anyRequest().authenticated()
                 );
 
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 
 
 }
