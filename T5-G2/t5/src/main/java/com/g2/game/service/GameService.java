@@ -17,19 +17,16 @@
 
 package com.g2.game.service;
 
+import com.g2.game.gameFactory.GameRegistry;
 import com.g2.game.gameFactory.params.GameParams;
+import com.g2.game.gameMode.Compile.CompileResult;
+import com.g2.game.gameMode.GameLogic;
+import com.g2.interfaces.ServiceManager;
 import com.g2.model.dto.GameProgressDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import com.g2.game.gameFactory.GameRegistry;
-import com.g2.game.gameMode.Compile.CompileResult;
-import com.g2.game.gameMode.GameLogic;
-import com.g2.interfaces.ServiceManager;
-import com.g2.session.exception.GameModeDontExistException;
-import com.g2.session.SessionService;
 import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
 import testrobotchallenge.commons.models.dto.score.JacocoCoverageDTO;
 import testrobotchallenge.commons.models.opponent.GameMode;
@@ -47,14 +44,13 @@ import testrobotchallenge.commons.models.opponent.GameMode;
 @Service
 public class GameService {
 
+    private static final Logger logger = LoggerFactory.getLogger(GameService.class);
     private final ServiceManager serviceManager;
     private final GameRegistry gameRegistry;
 
-    private static final Logger logger = LoggerFactory.getLogger(GameService.class);
-
     @Autowired
     public GameService(ServiceManager serviceManager,
-                        GameRegistry gameRegistry
+                       GameRegistry gameRegistry
     ) {
         this.serviceManager = serviceManager;
         this.gameRegistry = gameRegistry;
@@ -68,8 +64,8 @@ public class GameService {
      * corretto in base alla modalità di gioco ({@link GameMode}). L'oggetto creato gestirà internamente
      * la logica e lo stato della partita.
      *
-     * @param gameParams        i parametri di configurazione della partita
-     * @return                  un'istanza di {@link GameLogic} inizializzata per la nuova partita.
+     * @param gameParams i parametri di configurazione della partita
+     * @return un'istanza di {@link GameLogic} inizializzata per la nuova partita.
      */
     public GameLogic createNewGame(GameParams gameParams) {
         Long playerId = gameParams.getPlayerId();
@@ -94,8 +90,8 @@ public class GameService {
      * L'avversario è identificato dalla combinazione unica di:
      * <code>gameMode</code>, <code>classUT</code>, <code>opponentType</code> e <code>opponentDifficulty</code>.
      *
-     * @param gameParams        i parametri della partita necessari per identificare il progresso.
-     * @return                  un {@link GameProgressDTO} rappresentante il progresso dell’utente contro l’avversario.
+     * @param gameParams i parametri della partita necessari per identificare il progresso.
+     * @return un {@link GameProgressDTO} rappresentante il progresso dell’utente contro l’avversario.
      */
     public GameProgressDTO createNewGameProgress(GameParams gameParams) {
         return (GameProgressDTO) serviceManager.handleRequest("T23", "createPlayerProgressAgainstOpponent",
@@ -122,11 +118,11 @@ public class GameService {
      * <p>
      * Il metodo invoca il microservizio T7.
      *
-     * @param classUTFileName       il nome del file contenente la classe sotto test.
-     * @param classUTCode           il codice sorgente della classe sotto test.
-     * @param testClassFileName     il nome del file della classe di test.
-     * @param testClassCode         il codice sorgente della classe di test del giocatore.
-     * @return          un {@link JacocoCoverageDTO} contenente i risultati della compilazione e della copertura.
+     * @param classUTFileName   il nome del file contenente la classe sotto test.
+     * @param classUTCode       il codice sorgente della classe sotto test.
+     * @param testClassFileName il nome del file della classe di test.
+     * @param testClassCode     il codice sorgente della classe di test del giocatore.
+     * @return un {@link JacocoCoverageDTO} contenente i risultati della compilazione e della copertura.
      */
     public JacocoCoverageDTO compilePlayerTest(String classUTFileName, String classUTCode, String testClassFileName, String testClassCode) {
         logger.info("Inizio compilazione per ClassName={}.", classUTFileName);
@@ -141,11 +137,11 @@ public class GameService {
      * <p>
      * Il metodo invoca il microservizio T8.
      *
-     * @param classUTFileName       il nome del file contenente la classe sotto test.
-     * @param classUTCode           il codice sorgente della classe sotto test.
-     * @param testClassFileName     il nome del file della classe di test.
-     * @param testClassCode         il codice sorgente della classe di test del giocatore.
-     * @return          un {@link EvosuiteCoverageDTO} contenente i risultati della compilazione e della copertura.
+     * @param classUTFileName   il nome del file contenente la classe sotto test.
+     * @param classUTCode       il codice sorgente della classe sotto test.
+     * @param testClassFileName il nome del file della classe di test.
+     * @param testClassCode     il codice sorgente della classe di test del giocatore.
+     * @return un {@link EvosuiteCoverageDTO} contenente i risultati della compilazione e della copertura.
      */
     public EvosuiteCoverageDTO computeEvosuiteCoverage(String classUTFileName, String classUTCode, String testClassFileName, String testClassCode) {
         logger.info("Inizio compilazione per ClassName={}.", classUTFileName);
@@ -191,10 +187,10 @@ public class GameService {
      * <p>
      * Questo metodo viene utilizzato, ad esempio, quando il giocatore lascia la partita senza averla terminata.
      *
-     * @param userCompileResult         il risultato della compilazione del test del giocatore.
-     * @param robotCompileResult        il risultato della compilazione del test del robot.
-     * @param currentGame               l'istanza della partita corrente.
-     * @param updateParams              i parametri aggiornati da salvare nella sessione.
+     * @param userCompileResult  il risultato della compilazione del test del giocatore.
+     * @param robotCompileResult il risultato della compilazione del test del robot.
+     * @param currentGame        l'istanza della partita corrente.
+     * @param updateParams       i parametri aggiornati da salvare nella sessione.
      */
     public void pauseTurn(CompileResult userCompileResult, CompileResult robotCompileResult, GameLogic currentGame, GameParams updateParams) {
         logger.info("handleGameLogic: Avvio logica di gioco per playerId={}.", currentGame.getPlayerID());
@@ -206,10 +202,10 @@ public class GameService {
      * Apre, aggiorna e chiude un nuovo turno in T4 e nella logica interna. La gestione del numero di turni è affidata a
      * {@link GameLogic}
      *
-     * @param userCompileResult         il risultato della compilazione del test del giocatore.
-     * @param robotCompileResult        il risultato raggiunto dall'avversario.
-     * @param currentGame               l'istanza corrente della partita.
-     * @param updateParams              i parametri aggiornati del turno in corso da salvare nella sessione.
+     * @param userCompileResult  il risultato della compilazione del test del giocatore.
+     * @param robotCompileResult il risultato raggiunto dall'avversario.
+     * @param currentGame        l'istanza corrente della partita.
+     * @param updateParams       i parametri aggiornati del turno in corso da salvare nella sessione.
      */
     public void closeTurn(CompileResult userCompileResult, CompileResult robotCompileResult, GameLogic currentGame, GameParams updateParams) {
         logger.info("handleGameLogic: Avvio logica di gioco per playerId={}.", currentGame.getPlayerID());
@@ -225,18 +221,18 @@ public class GameService {
      * Esegue la chiusura del round, l'aggiornamento e la chiusura della partita su T4.
      * Rimuove infine la sessione associata.
      *
-     * @param currentGame           l'istanza di {@link GameLogic} della partita da chiudere.
-     * @param isGameSurrendered     {@code true} se la chiusura è dovuta a resa del giocatore,
-     *                              {@code false} se la partita è terminata normalmente.
+     * @param currentGame       l'istanza di {@link GameLogic} della partita da chiudere.
+     * @param isGameSurrendered {@code true} se la chiusura è dovuta a resa del giocatore,
+     *                          {@code false} se la partita è terminata normalmente.
      */
     public void closeGame(GameLogic currentGame, boolean isGameSurrendered) {
         logger.info("EndGame: Terminazione partita per playerId={}.", currentGame.getPlayerID());
         /*
-        *       L'utente ha deciso di terminare la partita o
-        *       la modalità di gioco ha determinato il termine
-        *       Salvo la partita
-        *       Distruggo la partita salvata in sessione
-        */
+         *       L'utente ha deciso di terminare la partita o
+         *       la modalità di gioco ha determinato il termine
+         *       Salvo la partita
+         *       Distruggo la partita salvata in sessione
+         */
         currentGame.endRound();
         logger.info("EndGame: Inizio processo chiusura partita per playerId={}.", currentGame.getPlayerID());
         logger.info("Current game = {}", currentGame);

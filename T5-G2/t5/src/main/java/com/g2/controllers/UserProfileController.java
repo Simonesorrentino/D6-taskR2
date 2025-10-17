@@ -1,15 +1,15 @@
 package com.g2.controllers;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.g2.model.*;
+import com.g2.components.GenericObjectComponent;
+import com.g2.components.PageBuilder;
+import com.g2.components.UserProfileComponent;
+import com.g2.interfaces.ServiceManager;
+import com.g2.model.GameConfigData;
+import com.g2.model.User;
 import com.g2.model.dto.GameProgressDTO;
 import com.g2.model.dto.PlayerProgressDTO;
+import com.g2.model.dto.ResponseTeamComplete;
 import com.g2.security.JwtRequestContext;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -22,27 +22,25 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import com.g2.components.GenericObjectComponent;
-import com.g2.components.PageBuilder;
-import com.g2.components.UserProfileComponent;
-import com.g2.interfaces.ServiceManager;
-import com.g2.model.dto.ResponseTeamComplete;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 
 /*
- * Tutte le chiamate legate al profilo utente 
+ * Tutte le chiamate legate al profilo utente
  */
 @CrossOrigin
 @Controller
 public class UserProfileController {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserProfileController.class);
     private final ServiceManager serviceManager;
     private GameConfigData gameConfigData = null;
-
     @Value("${config.gamification.file}")
     private String gamificationConFile;
-
-    private static final Logger logger = LoggerFactory.getLogger(UserProfileController.class);
 
     @Autowired
     public UserProfileController(ServiceManager serviceManager) {
@@ -62,7 +60,7 @@ public class UserProfileController {
     }
 
     @GetMapping("/SearchFriend")
-    public String showSearchFriendPage(Model model){
+    public String showSearchFriendPage(Model model) {
         PageBuilder searchPage = new PageBuilder(serviceManager, "search", model, JwtRequestContext.getJwtToken());
         // search_page.SetAuth();  // Gestisce l'autenticazione
         return searchPage.handlePageRequest();
@@ -73,7 +71,7 @@ public class UserProfileController {
         PageBuilder profilePage = new PageBuilder(serviceManager, "profile", model, JwtRequestContext.getJwtToken());
 
         Long userId = profilePage.getUserId();
-        profilePage.setObjectComponents(new UserProfileComponent(serviceManager,false, userId));
+        profilePage.setObjectComponents(new UserProfileComponent(serviceManager, false, userId));
         return profilePage.handlePageRequest();
     }
 
@@ -82,12 +80,12 @@ public class UserProfileController {
         PageBuilder profile = new PageBuilder(serviceManager, "profile", model, JwtRequestContext.getJwtToken());
 
         Long userId = profile.getUserId();
-        if(userId.equals(playerID)){
+        if (userId.equals(playerID)) {
             return "redirect:/profile";
         }
 
         profile.setObjectComponents(
-            new UserProfileComponent(serviceManager, true, userId, playerID)
+                new UserProfileComponent(serviceManager, true, userId, playerID)
         );
         return profile.handlePageRequest();
     }
@@ -97,7 +95,7 @@ public class UserProfileController {
         PageBuilder teamPage = new PageBuilder(serviceManager, "Team", model, JwtRequestContext.getJwtToken());
 
         ResponseTeamComplete team = (ResponseTeamComplete) serviceManager.handleRequest("T1", "OttieniTeamCompleto", teamPage.getUserId());
-        if(team != null){
+        if (team != null) {
             @SuppressWarnings("unchecked")
             List<User> membri = (List<User>) serviceManager.handleRequest("T23", "GetUsersByList", team.getTeam().getStudenti());
             model.addAttribute("response", team);
@@ -134,7 +132,7 @@ public class UserProfileController {
     }
 
     @GetMapping("/Games")
-    public String showGameHistory(Model model){
+    public String showGameHistory(Model model) {
         PageBuilder gameHistoryPage = new PageBuilder(serviceManager, "GameHistory", model, JwtRequestContext.getJwtToken());
         return gameHistoryPage.handlePageRequest();
     }
@@ -145,7 +143,7 @@ public class UserProfileController {
      */
     @GetMapping("/profile/{playerID}")
     public String profilePage(Model model,
-            @PathVariable(value = "playerID") Long playerID) {
+                              @PathVariable(value = "playerID") Long playerID) {
 
         PageBuilder profile = new PageBuilder(serviceManager, "profile", model, JwtRequestContext.getJwtToken());
         profile.setObjectComponents(
@@ -155,7 +153,7 @@ public class UserProfileController {
     }
 
     /*
-         * Andrebbe gestito che ogni uno può mettere la foto che vuole con i tipi Blob nel DB
+     * Andrebbe gestito che ogni uno può mettere la foto che vuole con i tipi Blob nel DB
      */
     private List<String> getProfilePictures() {
         List<String> images = new ArrayList<>();

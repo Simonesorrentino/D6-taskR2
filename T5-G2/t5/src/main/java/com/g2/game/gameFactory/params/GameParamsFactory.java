@@ -1,7 +1,7 @@
 package com.g2.game.gameFactory.params;
 
-import com.g2.game.gameDTO.CreateSessionDTO.SessionDTO;
 import com.g2.game.gameDTO.CreateSessionDTO.PartitaSingolaSessionDTO;
+import com.g2.game.gameDTO.CreateSessionDTO.SessionDTO;
 import com.g2.game.gameDTO.RunGameDTO.RunGameRequestDTO;
 import com.g2.game.gameDTO.RunGameDTO.RunPartitaSingolaRequestDTO;
 import com.g2.game.gameDTO.StartGameDTO.StartGameRequestDTO;

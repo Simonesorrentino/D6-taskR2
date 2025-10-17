@@ -1,8 +1,8 @@
 package com.g2.game.service;
 
 import com.g2.game.gameMode.Compile.CompileResult;
-import com.g2.model.dto.GameProgressDTO;
 import com.g2.model.OpponentSummary;
+import com.g2.model.dto.GameProgressDTO;
 import com.g2.util.achievement.NumberAllRobotForClassBeaten;
 import com.g2.util.achievement.NumberRobotBeaten;
 import org.slf4j.Logger;
@@ -26,10 +26,10 @@ public class AchievementService {
      * Verifica gli achievement legati alla modalità di gioco, confrontando il risultato di copertura {@link CompileResult},
      * dell'utente e dell'avversario. Questi achievement sono definiti all'interno della modalità di gioco stessa.
      *
-     * @param achievements      la mappa che associa il nome dell'achievement alla funzione di verifica
-     * @param user              il risultato di compilazione dell'utente
-     * @param robot             il risultato di compilazione del robot
-     * @return                  il {@link Set} di nomi degli achievement sbloccati
+     * @param achievements la mappa che associa il nome dell'achievement alla funzione di verifica
+     * @param user         il risultato di compilazione dell'utente
+     * @param robot        il risultato di compilazione del robot
+     * @return il {@link Set} di nomi degli achievement sbloccati
      */
     public Set<String> verifyGameModeAchievement(
             Map<String, BiFunction<CompileResult, CompileResult, Boolean>> achievements,
@@ -50,8 +50,8 @@ public class AchievementService {
     /**
      * Verifica gli achievement basati sul numero di avversari sconfitti complessivamente, definiti in {@link NumberRobotBeaten}
      *
-     * @param gameProgresses    la lista dei progressi di gioco dell'utente
-     * @return                  il {@link Set} di nomi degli achievement sbloccati
+     * @param gameProgresses la lista dei progressi di gioco dell'utente
+     * @return il {@link Set} di nomi degli achievement sbloccati
      */
     public Set<String> verifyNumberRobotBeaten(List<GameProgressDTO> gameProgresses) {
         Map<String, Function<List<GameProgressDTO>, Boolean>> achievements = NumberRobotBeaten.getAchievementFunctions();
@@ -68,9 +68,9 @@ public class AchievementService {
     /**
      * Verifica gli achievement basati sull'aver sconfitto tutti gli avversari disponibili per una o più classi UT.
      *
-     * @param gameProgress      la lista dei progressi di gioco dell'utente
-     * @param robots            la lista degli avversari disponibili nel sistema
-     * @return                  il {@link Set} di nomi degli achievement sbloccati
+     * @param gameProgress la lista dei progressi di gioco dell'utente
+     * @param robots       la lista degli avversari disponibili nel sistema
+     * @return il {@link Set} di nomi degli achievement sbloccati
      */
     public Set<String> verifyNumberAllRobotForClassBeaten(
             List<GameProgressDTO> gameProgress,

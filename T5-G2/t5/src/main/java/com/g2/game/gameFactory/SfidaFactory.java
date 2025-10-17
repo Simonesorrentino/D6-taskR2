@@ -18,15 +18,14 @@
 package com.g2.game.gameFactory;
 
 import com.g2.game.gameFactory.params.GameParams;
-import org.springframework.stereotype.Component;
-
 import com.g2.game.gameMode.GameLogic;
 import com.g2.game.gameMode.Sfida;
 import com.g2.interfaces.ServiceManager;
+import org.springframework.stereotype.Component;
 
 /*
- * La classe SfidaFactory è la fabbrica che si occupa di creare un'istanza di Sfida. 
- * Quando il metodo create viene invocato, la factory costruisce un nuovo oggetto Sfida, 
+ * La classe SfidaFactory è la fabbrica che si occupa di creare un'istanza di Sfida.
+ * Quando il metodo create viene invocato, la factory costruisce un nuovo oggetto Sfida,
  * passando i parametri necessari per il suo costruttore.
  */
 

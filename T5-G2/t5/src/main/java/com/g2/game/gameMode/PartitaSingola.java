@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,18 +35,18 @@ public class PartitaSingola extends GameLogic {
     @JsonProperty("remainingTime")
     private int remainingTime;
 
-    public PartitaSingola(){
+    public PartitaSingola() {
         //Costruttore vuoto
     }
 
     //Questa classe si specializza in una partita singola basata sui turni, prende il nome di Partita Singola nella UI
     public PartitaSingola(ServiceManager serviceManager, Long playerId, String classUT,
-                          OpponentType opponentType, OpponentDifficulty difficulty, GameMode gameMode, String testingClassCode) {
+                          String opponentType, OpponentDifficulty difficulty, GameMode gameMode, String testingClassCode) {
         super(serviceManager, playerId, classUT, opponentType, difficulty, gameMode, testingClassCode);
     }
 
     public PartitaSingola(ServiceManager serviceManager, Long playerId, String classUT,
-                          OpponentType opponentType, OpponentDifficulty difficulty, GameMode gamemode, String testingClassCode, int remainingTime) {
+                          String opponentType, OpponentDifficulty difficulty, GameMode gamemode, String testingClassCode, int remainingTime) {
         super(serviceManager, playerId, classUT, opponentType, difficulty, gamemode, testingClassCode);
         this.remainingTime = remainingTime;
     }
@@ -76,7 +75,7 @@ public class PartitaSingola extends GameLogic {
     }
 
     @Override
-    public boolean isWinner(){
+    public boolean isWinner() {
         return userScore > 0 && robotScore >= 0 && userScore >= robotScore;
     }
 

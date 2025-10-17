@@ -10,15 +10,15 @@ import org.springframework.stereotype.Service;
 public class CoverageService {
     // Funzione migliorata per ottenere la copertura
     public CoverageResult getCoverage(String xmlContent, String coverageType) {
-            Document doc = Jsoup.parse(xmlContent, "", Parser.xmlParser());
-            Element counter = doc.selectFirst("report > counter[type=" + coverageType + "]");
-            if (counter == null) {
-                String errorMessage = "Elemento 'counter' di tipo '" + coverageType + "' non trovato.";
-                return new CoverageResult(errorMessage);
-            }
-            int covered = Integer.parseInt(counter.attr("covered"));
-            int missed = Integer.parseInt(counter.attr("missed"));
-            return new CoverageResult(covered, missed);
+        Document doc = Jsoup.parse(xmlContent, "", Parser.xmlParser());
+        Element counter = doc.selectFirst("report > counter[type=" + coverageType + "]");
+        if (counter == null) {
+            String errorMessage = "Elemento 'counter' di tipo '" + coverageType + "' non trovato.";
+            return new CoverageResult(errorMessage);
+        }
+        int covered = Integer.parseInt(counter.attr("covered"));
+        int missed = Integer.parseInt(counter.attr("missed"));
+        return new CoverageResult(covered, missed);
     }
 
 }

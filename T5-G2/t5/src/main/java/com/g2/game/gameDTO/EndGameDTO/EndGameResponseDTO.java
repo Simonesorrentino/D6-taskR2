@@ -12,23 +12,18 @@ import java.util.Set;
 @Getter
 public class EndGameResponseDTO {
 
-    @JsonProperty("robotScore")
-    private int robotScore;
-
-    @JsonProperty("userScore")
-    private int userScore;
-
-    @JsonProperty("isWinner")
-    private Boolean isWinner;
-
-    @JsonProperty("expGained")
-    private int expGained;
-
     @JsonProperty("achievementsUnlocked")
     Set<String> achievementsUnlocked;
-
     @JsonProperty("runGameResponse")
     RunGameResponseDTO runGameResponse;
+    @JsonProperty("robotScore")
+    private int robotScore;
+    @JsonProperty("userScore")
+    private int userScore;
+    @JsonProperty("isWinner")
+    private Boolean isWinner;
+    @JsonProperty("expGained")
+    private int expGained;
 
     public EndGameResponseDTO(int robotScore, int userScore, Boolean isWinner, int expGained,
                               RunGameResponseDTO runGameResponse) {

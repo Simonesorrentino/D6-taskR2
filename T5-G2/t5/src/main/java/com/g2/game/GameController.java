@@ -58,8 +58,8 @@ public class GameController {
     @Operation(
             summary = "Start a new game",
             description = """
-                Verify that a game with the same game mode doesn't exist already, them creates and starts a new game
-                for the given player and configuration parameters."""
+                    Verify that a game with the same game mode doesn't exist already, them creates and starts a new game
+                    for the given player and configuration parameters."""
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -97,11 +97,11 @@ public class GameController {
     @Operation(
             summary = "Start, execute and close a turn",
             description = """
-            Main entry point of the game engine.
-            This endpoint executes a single turn within an ongoing game.
-            The player’s test code is compiled and evaluated, the session state is updated, and achievements are checked and unlocked if applicable.
-            The endpoint returns the evaluation results to the player.
-            """
+                    Main entry point of the game engine.
+                    This endpoint executes a single turn within an ongoing game.
+                    The player’s test code is compiled and evaluated, the session state is updated, and achievements are checked and unlocked if applicable.
+                    The endpoint returns the evaluation results to the player.
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -135,15 +135,15 @@ public class GameController {
     @Operation(
             summary = "Leave or pause the current game session",
             description = """
-        Handles the user's decision to leave an ongoing game (e.g., closing the browser or tab).
-        The endpoint saves the currently available common and specific game data.
-
-        Common data for all game modes:
-        - `testingClassCode`: the test code available in that moment in the player editor
-
-        Specific data for single-player games:
-        - `remainingTime`: the time left before the match ends.
-        """
+                    Handles the user's decision to leave an ongoing game (e.g., closing the browser or tab).
+                    The endpoint saves the currently available common and specific game data.
+                    
+                    Common data for all game modes:
+                    - `testingClassCode`: the test code available in that moment in the player editor
+                    
+                    Specific data for single-player games:
+                    - `remainingTime`: the time left before the match ends.
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -173,10 +173,10 @@ public class GameController {
     @Operation(
             summary = "End the game",
             description = """
-        Handles the termination of an ongoing game.
-        The endpoint finalizes the game, evaluates the player's last turn, updates the session state,
-        checks for unlocked achievements, and returns the final results.
-        """
+                    Handles the termination of an ongoing game.
+                    The endpoint finalizes the game, evaluates the player's last turn, updates the session state,
+                    checks for unlocked achievements, and returns the final results.
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -208,9 +208,9 @@ public class GameController {
     @Operation(
             summary = "Surrender an ongoing game",
             description = """
-        Allows the player to surrender the current game session.
-        The game is finalized as surrendered and closed accordingly.
-        """
+                    Allows the player to surrender the current game session.
+                    The game is finalized as surrendered and closed accordingly.
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(

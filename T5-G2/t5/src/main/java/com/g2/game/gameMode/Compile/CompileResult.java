@@ -1,27 +1,25 @@
 package com.g2.game.gameMode.Compile;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.g2.game.gameMode.GameLogic;
+import com.g2.interfaces.ServiceManager;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.g2.interfaces.ServiceManager;
+import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
+import testrobotchallenge.commons.models.dto.score.JacocoCoverageDTO;
 import testrobotchallenge.commons.models.dto.score.basic.CoverageDTO;
 import testrobotchallenge.commons.models.dto.score.basic.EvosuiteScoreDTO;
 import testrobotchallenge.commons.models.dto.score.basic.JacocoScoreDTO;
-import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
-import testrobotchallenge.commons.models.dto.score.JacocoCoverageDTO;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 @Getter
 @Setter
 @ToString
 public class CompileResult {
     /*
-     * Istanza di default 
+     * Istanza di default
      */
     public static final CompileResult DEFAULT = new CompileResult(
             "", // XML_coverage vuoto
@@ -30,7 +28,7 @@ public class CompileResult {
             null // ServiceManager nullo
     );
     /*
-     * Campi 
+     * Campi
      */
     @JsonProperty("compileOutput")
     private String compileOutput;
@@ -82,7 +80,8 @@ public class CompileResult {
     private CoverageService coverageService;
 
     // Costruttore di base
-    public CompileResult() {}
+    public CompileResult() {
+    }
 
     public CompileResult(String xmlCoverage, String compileOutput, CoverageService coverageService, ServiceManager serviceManager) {
         this.xmlCoverage = xmlCoverage;
@@ -109,7 +108,7 @@ public class CompileResult {
         extractEvosuiteScore(evosuiteDTO != null ? evosuiteDTO.getEvosuiteScoreDTO() : null);
     }
 
-    public CompileResult(GameLogic game, ServiceManager manager, String testClass, OpponentType type, OpponentDifficulty difficulty) {
+    public CompileResult(GameLogic game, ServiceManager manager, String testClass, String type, OpponentDifficulty difficulty) {
         this.serviceManager = manager;
         this.coverageService = null;
         this.compileOutput = "Robot no console output";
@@ -153,7 +152,7 @@ public class CompileResult {
      */
     public boolean hasSuccess() {
         //Se true Il test dell'utente è stato compilato => nessun errore di compilazione nel test
-        String xml= getXmlCoverage();
+        String xml = getXmlCoverage();
         return !(xml == null || xml.isEmpty());
     }
 }

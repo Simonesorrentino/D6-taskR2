@@ -6,7 +6,8 @@ import lombok.Getter;
 public enum MessageKey {
     GAMEMODE_ALREADY_EXISTS("game.exception.GameModeAlreadyExists"),
     GAMEMODE_DOESNT_EXIST("game.exception.GameModeDoesntExists"),
-    SESSION_DOESNT_EXIST("game.exception.SessionDoesntExists"),;
+    SESSION_DOESNT_EXIST("game.exception.SessionDoesntExists"),
+    ;
 
     private final String bundleKey;
 

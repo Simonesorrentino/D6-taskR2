@@ -3,20 +3,19 @@ package com.g2.game.gameFactory.params;
 import lombok.Getter;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 @Getter
 public class GameParams {
     private final Long playerId;
     private final String classUTName;
     private final String classUTCode;
-    private final OpponentType opponentType;
+    private final String opponentType;
     private final OpponentDifficulty opponentDifficulty;
     private final GameMode gameMode;
     private final String testClassCode;
 
     // Costruttore che inizializza l'oggetto GameParams per creare una nuova GameLogic
-    public GameParams(Long playerId, String classUTName, OpponentType opponentType, OpponentDifficulty opponentDifficulty, GameMode gameMode) {
+    public GameParams(Long playerId, String classUTName, String opponentType, OpponentDifficulty opponentDifficulty, GameMode gameMode) {
         this.playerId = playerId;
         this.classUTName = classUTName;
         this.opponentType = opponentType;
@@ -37,7 +36,7 @@ public class GameParams {
         this.opponentDifficulty = null;
     }
 
-    public GameParams(Long playerId, String classUTName, String classUTCode, OpponentType opponentType, OpponentDifficulty opponentDifficulty, GameMode gameMode, String testClassCode) {
+    public GameParams(Long playerId, String classUTName, String classUTCode, String opponentType, OpponentDifficulty opponentDifficulty, GameMode gameMode, String testClassCode) {
         this.playerId = playerId;
         this.classUTName = classUTName;
         this.classUTCode = classUTCode;

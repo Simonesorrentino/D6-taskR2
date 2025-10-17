@@ -4,7 +4,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import javax.persistence.*;
 
@@ -46,8 +45,7 @@ public class Opponent {
     /**
      * Tool di generazione dell’avversario (es. Evosuite, Test utente, ecc.).
      */
-    @Enumerated(EnumType.STRING)
-    private OpponentType type;
+    private String type;
 
     /**
      * Livello di difficoltà dell’avversario.
@@ -73,7 +71,7 @@ public class Opponent {
      * @param type       la tipologia di avversario
      * @param difficulty la difficoltà dell’avversario
      */
-    public Opponent(GameMode gameMode, String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    public Opponent(GameMode gameMode, String classUT, String type, OpponentDifficulty difficulty) {
         this.gameMode = gameMode;
         this.classUT = classUT;
         this.type = type;

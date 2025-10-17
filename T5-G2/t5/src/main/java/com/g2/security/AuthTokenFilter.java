@@ -42,11 +42,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     /**
      * Esegue il filtro di autenticazione su ogni richiesta.
      *
-     * @param request       la richiesta HTTP in ingresso
-     * @param response      la risposta HTTP in uscita
-     * @param chain         la catena dei filtri
-     * @throws ServletException     in caso di errore lato servlet
-     * @throws IOException          in caso di errore di I/O
+     * @param request  la richiesta HTTP in ingresso
+     * @param response la risposta HTTP in uscita
+     * @param chain    la catena dei filtri
+     * @throws ServletException in caso di errore lato servlet
+     * @throws IOException      in caso di errore di I/O
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -110,11 +110,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
      * Se la rigenerazione riesce, imposta il nuovo cookie e prosegue la catena di filtri.
      * In caso contrario, reindirizza alla pagina di login.
      *
-     * @param refreshToken      il refresh token presente nei cookie della richiesta HTTP catturata
-     * @param response          la risposta HTTP a cui aggiungere il nuovo cookie
-     * @param chain             la catena dei filtri
-     * @param request           la richiesta corrente
-     * @throws IOException      in caso di errore durante il redirect
+     * @param refreshToken il refresh token presente nei cookie della richiesta HTTP catturata
+     * @param response     la risposta HTTP a cui aggiungere il nuovo cookie
+     * @param chain        la catena dei filtri
+     * @param request      la richiesta corrente
+     * @throws IOException in caso di errore durante il redirect
      */
     private void tryRefreshAndContinue(String refreshToken, HttpServletResponse response, FilterChain chain, HttpServletRequest request)
             throws IOException {
@@ -154,9 +154,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
      * Reindirizza l’utente alla pagina di login con un parametro che descrive il motivo
      * (ad esempio {@code unauthorized} o {@code expired}).
      *
-     * @param response      la risposta HTTP
-     * @param reason        il motivo del redirect
-     * @throws IOException  se il redirect fallisce
+     * @param response la risposta HTTP
+     * @param reason   il motivo del redirect
+     * @throws IOException se il redirect fallisce
      */
     private void redirectToLogin(HttpServletResponse response, String reason) throws IOException {
         response.sendRedirect("/login?" + reason + "=true");
@@ -166,8 +166,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
      * Effettua una chiamata al servizio T23 per ottenere un nuovo JWT a partire
      * dal refresh token.
      *
-     * @param refreshToken      il refresh token ricevuto nella richiesta
-     * @return                  il valore del nuovo cookie JWT oppure {@code null} se il refresh fallisce
+     * @param refreshToken il refresh token ricevuto nella richiesta
+     * @return il valore del nuovo cookie JWT oppure {@code null} se il refresh fallisce
      */
     private String callRefreshJwtToken(String refreshToken) {
         HttpHeaders headers = new HttpHeaders();
@@ -199,8 +199,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     /**
      * Utility per parsare l'header {@code Set-Cookie} e restituire gli attributi sotto forma di mappa.
      *
-     * @param setCookieHeader       l'header {@code Set-Cookie}
-     * @return                      la mappa <nome, valore> dei cookie
+     * @param setCookieHeader l'header {@code Set-Cookie}
+     * @return la mappa <nome, valore> dei cookie
      */
     private Map<String, String> parseCookieAttributes(String setCookieHeader) {
         Map<String, String> attributes = new HashMap<>();

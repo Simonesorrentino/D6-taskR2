@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 @Getter
 @Setter
@@ -37,7 +36,7 @@ public class SessionDTO {
     private String classUTCode;
 
     @JsonProperty("type_robot")
-    private OpponentType typeRobot;
+    private String typeRobot;
 
     @JsonProperty("difficulty")
     private OpponentDifficulty difficulty;

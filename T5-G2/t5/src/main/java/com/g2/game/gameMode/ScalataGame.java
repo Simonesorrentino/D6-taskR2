@@ -17,14 +17,13 @@
 
 package com.g2.game.gameMode;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.g2.game.gameMode.Compile.CompileResult;
 import com.g2.interfaces.ServiceManager;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ScalataGame extends GameLogic {
     private final List<Sfida> games;
@@ -32,14 +31,14 @@ public class ScalataGame extends GameLogic {
     private int currentGameIndex;
 
     public ScalataGame(ServiceManager serviceManager, Long playerID, String classeUT,
-                       List<OpponentType> typesRobot, List<OpponentDifficulty> difficulties, GameMode mode, String testingClassCode) {
+                       List<String> typesRobot, List<OpponentDifficulty> difficulties, GameMode mode, String testingClassCode) {
         super(serviceManager, playerID, classeUT, typesRobot.get(0), difficulties.get(0), mode, testingClassCode);
         this.games = new ArrayList<>();
         this.currentRound = 1; // Inizia dal round 1
         this.currentGameIndex = 0; // Indice del gioco corrente
 
         for (int i = 0; i < typesRobot.size(); i++) {
-            OpponentType typeRobot = typesRobot.get(i);
+            String typeRobot = typesRobot.get(i);
             OpponentDifficulty difficulty = difficulties.get(i);
             games.add(new Sfida(serviceManager, playerID, classeUT, typeRobot, difficulty, mode, testingClassCode));
         }
@@ -78,7 +77,7 @@ public class ScalataGame extends GameLogic {
     }
 
     @Override
-    public boolean isWinner(){
+    public boolean isWinner() {
         return true;
     }
 

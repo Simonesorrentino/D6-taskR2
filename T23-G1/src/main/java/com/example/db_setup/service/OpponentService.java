@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,12 +40,12 @@ public class OpponentService {
      *
      * @param gameMode   modalità di gioco ({@link GameMode})
      * @param classUT    nome della classe sotto test
-     * @param type       tipo di avversario ({@link OpponentType})
+     * @param type       tipo di avversario ({@link String})
      * @param difficulty difficoltà dell’avversario ({@link OpponentDifficulty})
      * @return l'oggetto {@link Opponent} trovato
      * @throws OpponentNotFoundException se non esiste un avversario con le caratteristiche specificate
      */
-    public Opponent getOpponent(GameMode gameMode, String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    public Opponent getOpponent(GameMode gameMode, String classUT, String type, OpponentDifficulty difficulty) {
         Optional<Opponent> opponent = opponentRepository.findOpponentByGameModeAndClassUTAndTypeAndDifficulty(gameMode, classUT, type, difficulty);
         if (opponent.isEmpty())
             throw new OpponentNotFoundException();
@@ -63,11 +62,11 @@ public class OpponentService {
      *
      * @param gameMode   la modalità di gioco ({@link GameMode})
      * @param classUT    il nome della classe sotto test
-     * @param type       il tipo di avversario ({@link OpponentType})
+     * @param type       il tipo di avversario ({@link String})
      * @param difficulty la difficoltà dell’avversario ({@link OpponentDifficulty})
      * @return il DTO dell'{@link Opponent} creato o riattivato
      */
-    public OpponentDTO addNewOpponent(GameMode gameMode, String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    public OpponentDTO addNewOpponent(GameMode gameMode, String classUT, String type, OpponentDifficulty difficulty) {
         Optional<Opponent> existing = opponentRepository.findOpponentByGameModeAndClassUTAndTypeAndDifficulty(
                 gameMode, classUT, type, difficulty
         );

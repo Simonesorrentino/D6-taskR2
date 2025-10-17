@@ -16,12 +16,11 @@
  */
 package com.g2.interfaces;
 
-import java.util.*;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g2.game.gameMode.Compile.CompileResult;
-import com.g2.model.*;
+import com.g2.model.Game;
+import com.g2.model.PlayerResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.core.ParameterizedTypeReference;
@@ -34,7 +33,9 @@ import testrobotchallenge.commons.models.dto.score.basic.EvosuiteScoreDTO;
 import testrobotchallenge.commons.models.dto.score.basic.JacocoScoreDTO;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class T4Service extends BaseService {
@@ -53,12 +54,10 @@ public class T4Service extends BaseService {
         super(restTemplate, BASE_URL + "/" + SERVICE_PREFIX);
 
 
-
         registerAction("getGames", new ServiceActionDefinition(
                 params -> getGames((long) params[0]),
                 Long.class
         ));
-
 
 
         registerAction("CreateGame", new ServiceActionDefinition(
@@ -66,8 +65,8 @@ public class T4Service extends BaseService {
                 GameMode.class, Long.class));
 
         registerAction("CreateRound", new ServiceActionDefinition(
-                params -> CreateRound((long) params[0], (String) params[1], (OpponentType) params[2], (OpponentDifficulty) params[3], (int) params[4]),
-                Long.class, String.class, OpponentType.class, OpponentDifficulty.class, Integer.class));
+                params -> CreateRound((long) params[0], (String) params[1], (String) params[2], (OpponentDifficulty) params[3], (int) params[4]),
+                Long.class, String.class, String.class, OpponentDifficulty.class, Integer.class));
 
         registerAction("CreateTurn", new ServiceActionDefinition(
                 params -> CreateTurn((long) params[0], (long) params[1], (int) params[2]),
@@ -84,8 +83,6 @@ public class T4Service extends BaseService {
         registerAction("EndGame", new ServiceActionDefinition(
                 params -> EndGame((long) params[0], (Map<Long, PlayerResult>) params[1], (boolean) params[2]),
                 Long.class, Map.class, Boolean.class));
-
-
 
 
         registerAction("CreateScalata", new ServiceActionDefinition(
@@ -125,8 +122,7 @@ public class T4Service extends BaseService {
     }
 
 
-
-    private int CreateRound(long gameId, String ClasseUT, OpponentType type, OpponentDifficulty difficulty, int roundNumber) {
+    private int CreateRound(long gameId, String ClasseUT, String type, OpponentDifficulty difficulty, int roundNumber) {
         final String endpoint = "/games/%s/rounds".formatted(gameId);
 
         JSONObject requestBody = new JSONObject();
@@ -217,7 +213,7 @@ public class T4Service extends BaseService {
             throw new RuntimeException(e);
         }
 
-        String response = callRestPut(endpoint, requestBody,null, null, String.class);
+        String response = callRestPut(endpoint, requestBody, null, null, String.class);
         return response;
     }
 

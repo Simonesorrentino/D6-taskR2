@@ -1,6 +1,5 @@
 package com.t4.gamerepo.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -8,7 +7,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -50,8 +48,7 @@ public class Round {
     /**
      * Tipo dell’avversario
      */
-    @Enumerated(EnumType.STRING)
-    private OpponentType type;
+    private String type;
 
     /**
      * Difficoltà dell’avversario
@@ -93,7 +90,7 @@ public class Round {
      * @param type        il tipo dell’avversario
      * @param difficulty  la difficoltà dell’avversario
      */
-    public Round(int roundNumber, String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    public Round(int roundNumber, String classUT, String type, OpponentDifficulty difficulty) {
         this.roundNumber = roundNumber;
         this.classUT = classUT;
         this.type = type;
@@ -109,17 +106,5 @@ public class Round {
         this.turns.add(turn);
     }
 
-    /**
-     * Restituisce l’ultimo turno giocato in questo round.
-     *
-     * @return l'ultimo turno oppure {@code null} se non ci sono turni
-     */
-    @JsonIgnore
-    public Turn getLastTurn() {
-        if (turns == null || turns.isEmpty()) {
-            return null;
-        }
-        return turns.get(turns.size() - 1);
-    }
 }
 

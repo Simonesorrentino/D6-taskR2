@@ -16,23 +16,22 @@
  */
 package com.g2.game.gameMode;
 
-import java.io.Serializable;
-import java.util.*;
-import java.util.function.BiFunction;
-
-import com.g2.game.gameFactory.params.GameParams;
-import com.g2.model.PlayerResult;
-import lombok.Getter;
-import lombok.Setter;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.g2.game.gameFactory.params.GameParams;
 import com.g2.game.gameMode.Compile.CompileResult;
 import com.g2.interfaces.ServiceManager;
+import com.g2.model.PlayerResult;
+import lombok.Getter;
+import lombok.Setter;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Getter
@@ -67,7 +66,7 @@ public abstract class GameLogic implements Serializable {
     private String classUTCode;
 
     @JsonProperty("type_robot")
-    private OpponentType typeRobot;
+    private String typeRobot;
 
     @JsonProperty("difficulty")
     private OpponentDifficulty difficulty;
@@ -85,10 +84,9 @@ public abstract class GameLogic implements Serializable {
     private CompileResult robotCompileResult;
 
 
-
     // Costruttore con ServiceManager (utilizzato in produzione)
     public GameLogic(ServiceManager serviceManager, Long playerID, String classUTName,
-                     OpponentType typeRobot, OpponentDifficulty difficulty, GameMode gameMode, String testingClassCode) {
+                     String typeRobot, OpponentDifficulty difficulty, GameMode gameMode, String testingClassCode) {
         this.serviceManager = serviceManager;
         this.playerID = playerID;
         this.classUTName = classUTName;

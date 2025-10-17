@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 /**
  * DTO usato per la creazione di un nuovo round.
@@ -23,7 +22,7 @@ public class CreateRoundDTO {
     /**
      * Tipo di avversario da affrontare nel round.
      */
-    private OpponentType type;
+    private String type;
 
     /**
      * Difficoltà dell'avversario.

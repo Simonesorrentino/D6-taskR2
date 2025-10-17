@@ -16,11 +16,16 @@
  */
 package com.g2.controllers;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.g2.components.GenericObjectComponent;
+import com.g2.components.PageBuilder;
+import com.g2.components.ServiceObjectComponent;
+import com.g2.components.VariableValidationLogicComponent;
+import com.g2.interfaces.ServiceManager;
 import com.g2.security.JwtRequestContext;
+import com.g2.session.SessionService;
+import com.g2.session.Sessione;
+import com.g2.session.exception.SessionAlredyExist;
+import com.g2.session.exception.SessionDoesntExistException;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,34 +35,26 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import com.g2.components.PageBuilder;
-import com.g2.components.ServiceObjectComponent;
-import com.g2.components.VariableValidationLogicComponent;
-import com.g2.interfaces.ServiceManager;
-import com.g2.session.exception.SessionAlredyExist;
-import com.g2.session.exception.SessionDoesntExistException;
-import com.g2.session.SessionService;
-import com.g2.session.Sessione;
-
 import testrobotchallenge.commons.models.opponent.GameMode;
+
+import java.util.Arrays;
+import java.util.List;
 
 @CrossOrigin
 @Controller
 @AllArgsConstructor
 public class GuiController {
+    private static final Logger logger = LoggerFactory.getLogger(GuiController.class);
     private final ServiceManager serviceManager;
     private final SessionService sessionService;
-    
-    private static final Logger logger = LoggerFactory.getLogger(GuiController.class);
 
     @GetMapping("/main")
     public String showMain(Model model, @CookieValue(name = "jwt", required = false) String jwt) {
         PageBuilder main = new PageBuilder(serviceManager, "main", model, jwt);
-        
-        try{
+
+        try {
             sessionService.createSession(main.getUserId());
-        } catch(SessionAlredyExist e){
+        } catch (SessionAlredyExist e) {
             logger.info("Esiste già una sessione per playerId {}", main.getUserId());
         }
         return main.handlePageRequest();
@@ -91,15 +88,14 @@ public class GuiController {
      */
     @GetMapping("/editor")
     public String editorPage(Model model,
-                            @RequestParam(value = "ClassUT") String ClassUT,
-                            @RequestParam(value = "mode") GameMode mode)
-    {
+                             @RequestParam(value = "ClassUT") String ClassUT,
+                             @RequestParam(value = "mode") GameMode mode) {
 
         PageBuilder editor = new PageBuilder(serviceManager, "editor", model, JwtRequestContext.getJwtToken());
         /*
-        *   Se la sessione contiene almeno una modalità, 
-        *    prosegui normalmente con la costruzione 
-        *    della pagina editor.
+         *   Se la sessione contiene almeno una modalità,
+         *    prosegui normalmente con la costruzione
+         *    della pagina editor.
          */
         try {
             Sessione sessione = sessionService.getSession(editor.getUserId());
@@ -110,7 +106,7 @@ public class GuiController {
         } catch (SessionDoesntExistException e) {
             return "redirect:/main";
         }
-        
+
         ServiceObjectComponent classeUT = new ServiceObjectComponent(serviceManager, "classeUT", "T1", "getClassUnderTest", ClassUT);
         editor.setObjectComponents(classeUT);
         return editor.handlePageRequest();

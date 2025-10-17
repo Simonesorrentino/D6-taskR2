@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.util.HashSet;
 import java.util.List;
@@ -24,10 +23,9 @@ import java.util.Set;
 @Service
 public class PlayerStatService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PlayerStatService.class);
     private final ServiceManager serviceManager;
     private final AchievementService achievementService;
-
-    private static final Logger logger = LoggerFactory.getLogger(PlayerStatService.class);
 
     public PlayerStatService(ServiceManager serviceManager, AchievementService achievementService) {
         this.serviceManager = serviceManager;
@@ -43,16 +41,16 @@ public class PlayerStatService {
      * sono stati sbloccati nel turno. Gli achievement vengono poi salvati
      * tramite chiamata a T23.
      *
-     * @param currentGame       la partita corrente del giocatore.
-     * @param user              il risultato di compilazione e coverage del giocatore.
-     * @param opponent          il risultato di compilazione e coverage dell’avversario.
-     * @return                  un {@link Set} rappresentante gli achievement non precedentemente sbloccati.
+     * @param currentGame la partita corrente del giocatore.
+     * @param user        il risultato di compilazione e coverage del giocatore.
+     * @param opponent    il risultato di compilazione e coverage dell’avversario.
+     * @return un {@link Set} rappresentante gli achievement non precedentemente sbloccati.
      */
     public Set<String> unlockGameModeAchievements(GameLogic currentGame, CompileResult user, CompileResult opponent) {
         long playerId = currentGame.getPlayerID();
         GameMode gameMode = currentGame.getGameMode();
         String classUT = currentGame.getClassUTName();
-        OpponentType robotType = currentGame.getTypeRobot();
+        String robotType = currentGame.getTypeRobot();
         OpponentDifficulty difficulty = currentGame.getDifficulty();
 
         GameProgressDTO currentGameProgress = (GameProgressDTO) serviceManager.handleRequest("T23", "getPlayerProgressAgainstOpponent", playerId, gameMode, classUT, robotType, difficulty);
@@ -78,8 +76,8 @@ public class PlayerStatService {
      * e l’elenco degli avversari, esegue le verifiche tramite {@link AchievementService}
      * e aggiorna gli achievement in T23.
      *
-     * @param playerId      l’identificativo del giocatore.
-     * @return              un {@link Set} contenente i nuovi achievement globali non precedentemente sbloccati.
+     * @param playerId l’identificativo del giocatore.
+     * @return un {@link Set} contenente i nuovi achievement globali non precedentemente sbloccati.
      */
     public Set<String> unlockGlobalAchievements(long playerId) {
         logger.info("[globalAchievementsUnlocked] Avvio fetch PlayerProgress per playerId={}", playerId);
@@ -110,14 +108,14 @@ public class PlayerStatService {
      * il {@link GameProgressDTO} della partita come “vinta”, calcola i punti esperienza (basati sulla
      * difficoltà dell'avversario) e li salva tramite T23.
      *
-     * @param currentGame       la partita corrente del giocatore.
-     * @return                  il numero di punti esperienza guadagnati in questa partita (0 se già vinta in precedenza).
+     * @param currentGame la partita corrente del giocatore.
+     * @return il numero di punti esperienza guadagnati in questa partita (0 se già vinta in precedenza).
      */
     public int assignExperiencePoints(GameLogic currentGame) {
         long playerId = currentGame.getPlayerID();
         GameMode gameMode = currentGame.getGameMode();
         String classUT = currentGame.getClassUTName();
-        OpponentType robotType = currentGame.getTypeRobot();
+        String robotType = currentGame.getTypeRobot();
         OpponentDifficulty difficulty = currentGame.getDifficulty();
 
         GameProgressDTO currentGameProgress = (GameProgressDTO) serviceManager.handleRequest("T23", "getPlayerProgressAgainstOpponent", playerId, gameMode, classUT, robotType, difficulty);

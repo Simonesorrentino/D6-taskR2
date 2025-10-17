@@ -8,11 +8,9 @@ import com.t4.gamerepo.service.exceptions.RoundAlreadyClosedException;
 import com.t4.gamerepo.service.exceptions.TurnNotFoundException;
 import org.springframework.stereotype.Service;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 
 /**
  * Service che espone le funzionalità di CREATE, READ, UPDATE dei round di una partita.
@@ -41,7 +39,7 @@ public class RoundService {
      * @param difficulty  la difficoltà dell’avversario
      * @return il round creato e salvato
      */
-    public Round createRound(int roundNumber, String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    public Round createRound(int roundNumber, String classUT, String type, OpponentDifficulty difficulty) {
         Round round = new Round(roundNumber, classUT, type, difficulty);
         return roundRepository.save(round);
     }

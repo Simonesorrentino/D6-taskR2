@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -122,7 +121,7 @@ public class PlayerProgressService {
      * @return il {@link GameProgress} corrispondente
      * @throws GameProgressNotFoundException se non esiste alcun {@link GameProgress} associato al player e/o all'avversario
      */
-    public GameProgressDTO getPlayerGameProgressAgainstOpponent(long playerId, GameMode gameMode, String classUT, OpponentType type, OpponentDifficulty difficulty) {
+    public GameProgressDTO getPlayerGameProgressAgainstOpponent(long playerId, GameMode gameMode, String classUT, String type, OpponentDifficulty difficulty) {
         Optional<GameProgress> gameProgress = gameProgressRepository.findByPlayerAndOpponentParams(playerId, gameMode, classUT, type, difficulty);
         if (gameProgress.isEmpty())
             throw new GameProgressNotFoundException();
@@ -180,7 +179,7 @@ public class PlayerProgressService {
      */
     public ServiceResponse<GameProgressDTO> createPlayerGameProgressAgainstOpponent(
             long playerId, GameMode gameMode, String classUT,
-            OpponentType type, OpponentDifficulty difficulty) {
+            String type, OpponentDifficulty difficulty) {
         PlayerProgress progress = findPlayerProgress(playerId);
         Opponent opponent = opponentService.getOpponent(gameMode, classUT, type, difficulty);
 
@@ -208,7 +207,7 @@ public class PlayerProgressService {
      * </ul>
      */
     public UpdateGameProgressDTO updatePlayerGameProgressAgainstOpponent(
-            long playerId, GameMode gameMode, String classUT, OpponentType type, OpponentDifficulty difficulty,
+            long playerId, GameMode gameMode, String classUT, String type, OpponentDifficulty difficulty,
             UpdateGameProgressDTO dto) {
 
         boolean isWinner = dto.isWon();

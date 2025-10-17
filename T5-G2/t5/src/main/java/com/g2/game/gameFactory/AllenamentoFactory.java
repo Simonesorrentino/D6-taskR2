@@ -1,11 +1,10 @@
 package com.g2.game.gameFactory;
 
 import com.g2.game.gameFactory.params.GameParams;
-import org.springframework.stereotype.Component;
-
 import com.g2.game.gameMode.Allenamento;
 import com.g2.game.gameMode.GameLogic;
 import com.g2.interfaces.ServiceManager;
+import org.springframework.stereotype.Component;
 
 @Component("Allenamento")
 public class AllenamentoFactory implements GameFactoryFunction {

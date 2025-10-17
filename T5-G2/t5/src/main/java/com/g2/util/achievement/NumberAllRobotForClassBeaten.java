@@ -1,7 +1,7 @@
 package com.g2.util.achievement;
 
-import com.g2.model.dto.GameProgressDTO;
 import com.g2.model.OpponentSummary;
+import com.g2.model.dto.GameProgressDTO;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +28,8 @@ public class NumberAllRobotForClassBeaten {
      * Restituisce una mappa che associa il nome dell'achievement
      * alla funzione di validazione corrispondente.
      *
-     * @return      una mappa {@code Map<String, BiFunction<Map<String, List<GameProgressDTO>>, Map<String, List<OpponentSummary>>, Boolean>>}
-     *              contenente le regole di verifica degli achievement
+     * @return una mappa {@code Map<String, BiFunction<Map<String, List<GameProgressDTO>>, Map<String, List<OpponentSummary>>, Boolean>>}
+     * contenente le regole di verifica degli achievement
      */
     public static Map<String, BiFunction<Map<String, List<GameProgressDTO>>, Map<String, List<OpponentSummary>>, Boolean>> getAchievementFunctions() {
         Map<String, BiFunction<Map<String, List<GameProgressDTO>>, Map<String, List<OpponentSummary>>, Boolean>> verifyBeaten = new HashMap<>();
@@ -48,12 +48,12 @@ public class NumberAllRobotForClassBeaten {
      * (derivato da {@link OpponentSummary}).
      * </p>
      *
-     * @param gameProgressesByClass         mappa che associa ciascuna classe UT alla lista di progressi di gioco del
-     *                                      giocatore (ossia i robot già battuti in quella classe)
-     * @param availableRobotsByClass        mappa che associa ciascuna classe UT alla lista completa di avversari
-     *                                      disponibili per quella classe
-     * @return      {@code true} se esiste almeno una classe UT in cui il numero di robot battuti dal giocatore coincide
-     *              con il numero totale di robot disponibili, {@code false} altrimenti
+     * @param gameProgressesByClass  mappa che associa ciascuna classe UT alla lista di progressi di gioco del
+     *                               giocatore (ossia i robot già battuti in quella classe)
+     * @param availableRobotsByClass mappa che associa ciascuna classe UT alla lista completa di avversari
+     *                               disponibili per quella classe
+     * @return {@code true} se esiste almeno una classe UT in cui il numero di robot battuti dal giocatore coincide
+     * con il numero totale di robot disponibili, {@code false} altrimenti
      */
     private static Boolean beatAllRobotForOneClassUT(
             Map<String, List<GameProgressDTO>> gameProgressesByClass,
@@ -74,12 +74,12 @@ public class NumberAllRobotForClassBeaten {
      * (derivato da {@link OpponentSummary}).
      * </p>
      *
-     * @param gameProgressesByClass         mappa che associa ciascuna classe UT alla lista di progressi di gioco del
-     *                                      giocatore (ossia i robot già battuti in quella classe)
-     * @param availableRobotsByClass        mappa che associa ciascuna classe UT alla lista completa di avversari
-     *                                      disponibili per quella classe
-     * @return      {@code true} se esistono almeno due classe UT in cui il numero di robot battuti dal giocatore coincide
-     *              con il numero totale di robot disponibili, {@code false} altrimenti
+     * @param gameProgressesByClass  mappa che associa ciascuna classe UT alla lista di progressi di gioco del
+     *                               giocatore (ossia i robot già battuti in quella classe)
+     * @param availableRobotsByClass mappa che associa ciascuna classe UT alla lista completa di avversari
+     *                               disponibili per quella classe
+     * @return {@code true} se esistono almeno due classe UT in cui il numero di robot battuti dal giocatore coincide
+     * con il numero totale di robot disponibili, {@code false} altrimenti
      */
     private static Boolean beatAllRobotForTwoClassUT(Map<String, List<GameProgressDTO>> gameProgressesByClass,
                                                      Map<String, List<OpponentSummary>> availableRobotsByClass) {

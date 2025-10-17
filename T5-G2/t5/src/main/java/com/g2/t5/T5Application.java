@@ -16,6 +16,7 @@
  */
 
 package com.g2.t5;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -30,17 +31,17 @@ import org.springframework.web.client.RestTemplate;
  */
 /* Lo scan dovrebbe essere necessario poichè la classe non è posizionata nella radice del modulo */
 @SpringBootApplication(
-    scanBasePackages = {
-        "com.g2.controllers",
-        "com.g2.factory", 
-        "com.g2.interfaces",
-        "com.g2.game",
-        "com.g2.t5", 
-        "com.g2.service",
-        "com.g2.session",
-        "com.g2.security",
-            "com.g2.language"
-    }
+        scanBasePackages = {
+                "com.g2.controllers",
+                "com.g2.factory",
+                "com.g2.interfaces",
+                "com.g2.game",
+                "com.g2.t5",
+                "com.g2.service",
+                "com.g2.session",
+                "com.g2.security",
+                "com.g2.language"
+        }
 )
 public class T5Application {
 

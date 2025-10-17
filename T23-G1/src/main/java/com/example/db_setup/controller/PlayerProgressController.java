@@ -18,7 +18,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.util.Set;
 
@@ -84,7 +83,7 @@ public class PlayerProgressController {
             @Parameter(description = "ID of the player") @PathVariable("playerId") long playerId,
             @Parameter(description = "Game mode of the opponent") @PathVariable("gameMode") GameMode gameMode,
             @Parameter(description = "Class under test") @PathVariable("classUT") String classUT,
-            @Parameter(description = "Opponent type") @PathVariable("opponentType") OpponentType type,
+            @Parameter(description = "Opponent type") @PathVariable("opponentType") String type,
             @Parameter(description = "Opponent difficulty") @PathVariable("opponentDifficulty") OpponentDifficulty difficulty
     ) {
         GameProgressDTO gameProgress = playerProgressService.getPlayerGameProgressAgainstOpponent(playerId, gameMode, classUT, type, difficulty);
@@ -231,7 +230,7 @@ public class PlayerProgressController {
             @Parameter(description = "ID of the player") @PathVariable("playerId") long playerId,
             @Parameter(description = "Game mode of the opponent") @PathVariable("gameMode") GameMode gameMode,
             @Parameter(description = "Class under test") @PathVariable("classUT") String classUT,
-            @Parameter(description = "Opponent type") @PathVariable("opponentType") OpponentType type,
+            @Parameter(description = "Opponent type") @PathVariable("opponentType") String type,
             @Parameter(description = "Opponent difficulty") @PathVariable("opponentDifficulty") OpponentDifficulty difficulty,
             @Parameter(description = "Updated game progress info") @RequestBody @Validated UpdateGameProgressDTO dto) {
 

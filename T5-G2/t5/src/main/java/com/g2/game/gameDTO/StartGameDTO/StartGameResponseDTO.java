@@ -8,11 +8,11 @@ public class StartGameResponseDTO {
     @JsonProperty("status")
     private String status;
 
-    public StartGameResponseDTO(){
+    public StartGameResponseDTO() {
         //costruttore vuoto per jackson
     }
 
-    public StartGameResponseDTO(long gameId, String status){
+    public StartGameResponseDTO(long gameId, String status) {
         this.gameId = gameId;
         this.status = status;
     }

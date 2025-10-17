@@ -23,7 +23,6 @@ import com.g2.game.gameMode.Compile.CompileResult;
 import com.g2.interfaces.ServiceManager;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public class Sfida extends GameLogic {
@@ -35,13 +34,13 @@ public class Sfida extends GameLogic {
     @JsonProperty("robotScore")
     private int robotScore;
 
-    public Sfida(){
+    public Sfida() {
         //Costruttore vuoto
     }
 
     //Questa classe si specializza in una partita semplice basata sui turni, prende il nome di Sfida nella UI
     public Sfida(ServiceManager serviceManager, Long PlayerID, String ClasseUT,
-                 OpponentType type_robot, OpponentDifficulty difficulty, GameMode gamemode, String testingClassCode) {
+                 String type_robot, OpponentDifficulty difficulty, GameMode gamemode, String testingClassCode) {
         super(serviceManager, PlayerID, ClasseUT, type_robot, difficulty, gamemode, testingClassCode);
         currentTurn = 0;
     }
@@ -60,7 +59,7 @@ public class Sfida extends GameLogic {
     }
 
     @Override
-    public boolean isWinner(){
+    public boolean isWinner() {
         return userScore > robotScore;
     }
 

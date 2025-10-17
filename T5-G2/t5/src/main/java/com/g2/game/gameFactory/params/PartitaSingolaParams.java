@@ -2,12 +2,11 @@ package com.g2.game.gameFactory.params;
 
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 public class PartitaSingolaParams extends GameParams {
     int remainingTime;
 
-    public PartitaSingolaParams(Long playerId, String underTestClassName, OpponentType opponentType, OpponentDifficulty difficulty, GameMode mode, int remainingTime) {
+    public PartitaSingolaParams(Long playerId, String underTestClassName, String opponentType, OpponentDifficulty difficulty, GameMode mode, int remainingTime) {
         super(playerId, underTestClassName, opponentType, difficulty, mode);
         this.remainingTime = remainingTime;
     }
@@ -17,7 +16,7 @@ public class PartitaSingolaParams extends GameParams {
         this.remainingTime = remainingTime;
     }
 
-    public PartitaSingolaParams(Long playerId, String underTestClassName, String classUTCode, OpponentType opponentType, OpponentDifficulty difficulty, GameMode mode,
+    public PartitaSingolaParams(Long playerId, String underTestClassName, String classUTCode, String opponentType, OpponentDifficulty difficulty, GameMode mode,
                                 String testingClassCode, int remainingTime) {
         super(playerId, underTestClassName, classUTCode, opponentType, difficulty, mode, testingClassCode);
         this.remainingTime = remainingTime;

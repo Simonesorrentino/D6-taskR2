@@ -25,8 +25,8 @@ import java.util.Map;
 @AllArgsConstructor
 public class GameExceptionHelper {
 
-    private final MessageResolver messageResolver;
     private static final Logger logger = LoggerFactory.getLogger(GameExceptionHelper.class);
+    private final MessageResolver messageResolver;
 
     @ExceptionHandler(GameModeAlreadyExistException.class)
     public ResponseEntity<ApiErrorBackend> handleGameModeAlreadyExistException(GameModeAlreadyExistException e, Locale locale) {

@@ -8,20 +8,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
-public class Allenamento extends GameLogic{
+public class Allenamento extends GameLogic {
     @JsonIgnore
     private static final Logger logger = LoggerFactory.getLogger(Allenamento.class);
 
     @JsonProperty("userScore")
     private int userScore;
-    
+
     public Allenamento() {
     }
 
     public Allenamento(ServiceManager serviceManager, Long PlayerID, String ClasseUT,
-                       OpponentType type_robot, OpponentDifficulty difficulty, GameMode gamemode, String testingClassCode) {
+                       String type_robot, OpponentDifficulty difficulty, GameMode gamemode, String testingClassCode) {
         super(serviceManager, PlayerID, ClasseUT, type_robot, difficulty, gamemode, testingClassCode);
     }
 
@@ -44,10 +43,10 @@ public class Allenamento extends GameLogic{
     }
 
     @Override
-    public void startGame(){
+    public void startGame() {
         // Il metodo è intenzionalmente vuoto: L'allenamento non deve creare 
     }
-    
+
     @Override
     public void endGame(boolean isGameSurrendered) {
         // Il metodo è intenzionalmente vuoto: L'allenamento non deve creare 

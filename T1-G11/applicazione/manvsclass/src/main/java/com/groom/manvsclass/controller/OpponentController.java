@@ -16,7 +16,6 @@ import testrobotchallenge.commons.mappers.JacocoScoreMapper;
 import testrobotchallenge.commons.models.dto.score.basic.EvosuiteScoreDTO;
 import testrobotchallenge.commons.models.dto.score.basic.JacocoScoreDTO;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 import testrobotchallenge.commons.models.score.EvosuiteScore;
 import testrobotchallenge.commons.models.score.JacocoScore;
 
@@ -83,14 +82,14 @@ public class OpponentController {
 
     @GetMapping("/{classUT}/{opponentType}/{opponentDifficulty}/score")
     public ResponseEntity<Opponent> getOpponentData(@PathVariable("classUT") String classUT,
-                                                    @PathVariable("opponentType") OpponentType type,
+                                                    @PathVariable("opponentType") String type,
                                                     @PathVariable("opponentDifficulty") OpponentDifficulty difficulty) {
         return ResponseEntity.ok(opponentService.getOpponentData(classUT, type, difficulty));
     }
 
     @GetMapping("/{classUT}/{opponentType}/{opponentDifficulty}/score/evosuite")
     public ResponseEntity<EvosuiteScoreDTO> getOpponentEvosuiteScore(@PathVariable("classUT") String classUT,
-                                                                     @PathVariable("opponentType") OpponentType type,
+                                                                     @PathVariable("opponentType") String type,
                                                                      @PathVariable("opponentDifficulty") OpponentDifficulty difficulty) {
         EvosuiteScore score = opponentService.getOpponentEvosuiteScore(classUT, type, difficulty);
 
@@ -99,7 +98,7 @@ public class OpponentController {
 
     @GetMapping("/{classUT}/{opponentType}/{opponentDifficulty}/score/jacoco")
     public ResponseEntity<JacocoScoreDTO> getOpponentJacocoScore(@PathVariable("classUT") String classUT,
-                                                                 @PathVariable("opponentType") OpponentType type,
+                                                                 @PathVariable("opponentType") String type,
                                                                  @PathVariable("opponentDifficulty") OpponentDifficulty difficulty) {
         JacocoScore score = opponentService.getOpponentJacocoScore(classUT, type, difficulty);
         return ResponseEntity.ok(JacocoScoreMapper.toJacocoScoreDTO(score));
@@ -107,7 +106,7 @@ public class OpponentController {
 
     @GetMapping("/{classUT}/{opponentType}/{opponentDifficulty}/coverage")
     public ResponseEntity<String> getOpponentCoverage(@PathVariable("classUT") String classUT,
-                                                      @PathVariable("opponentType") OpponentType type,
+                                                      @PathVariable("opponentType") String type,
                                                       @PathVariable("opponentDifficulty") OpponentDifficulty difficulty) {
         return ResponseEntity.ok(opponentService.getOpponentCoverage(classUT, type, difficulty));
     }

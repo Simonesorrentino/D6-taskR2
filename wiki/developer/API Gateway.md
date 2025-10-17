@@ -1,9 +1,12 @@
 # API Gateway
 
-The **API Gateway** module implements an API Gateway based on **Spring Cloud Gateway**, serving as the **central entry point** for all microservices in the architecture.
-It handles **routing**, **resilience**, **rate limiting**, **caching**, **aggregation**, and **monitoring**, improving both the **security** and **performance** of the distributed system.
+The **API Gateway** module implements an API Gateway based on **Spring Cloud Gateway**, serving as the **central entry
+point** for all microservices in the architecture.
+It handles **routing**, **resilience**, **rate limiting**, **caching**, **aggregation**, and **monitoring**, improving
+both the **security** and **performance** of the distributed system.
 
 ## Key Features
+
 * Routes incoming requests to backend microservices.
 * Manages **fallbacks** and **circuit breakers** for fault tolerance.
 * Implements **distributed rate limiting** using Redis.
@@ -13,7 +16,8 @@ It handles **routing**, **resilience**, **rate limiting**, **caching**, **aggreg
 
 ## Adding a New Route
 
-Each route in the gateway defines a set of rules that determine **when** a request should be routed and **how** it should be processed.
+Each route in the gateway defines a set of rules that determine **when** a request should be routed and **how** it
+should be processed.
 Routes are configured under the `spring.cloud.gateway.routes` section of the `application.yml` file.
 
 A route consists of:
@@ -35,7 +39,8 @@ Filters can be either **standard** (provided by Spring Cloud Gateway) or **custo
 ### CircuitBreaker
 
 The **CircuitBreaker** filter protects backend services from repeated failures and instability.
-When a service consistently returns errors over a certain period, the circuit “opens,” preventing further requests from reaching the backend.
+When a service consistently returns errors over a certain period, the circuit “opens,” preventing further requests from
+reaching the backend.
 The gateway can then return an **alternative response** or redirect requests to a **fallback** endpoint.
 
 ```yaml
@@ -49,7 +54,8 @@ filters:
 **Main Parameters:**
 
 * `name` – Logical name of the circuit (identifies the resilience configuration).
-* `fallbackUri` – Local path to redirect the request in case of fallback (typically handled by a `/fallback` controller).
+* `fallbackUri` – Local path to redirect the request in case of fallback (typically handled by a `/fallback`
+  controller).
 
 **Example Behavior:**
 
@@ -58,7 +64,8 @@ filters:
 
 ### RequestRateLimiter
 
-The **RequestRateLimiter** filter enforces a **limit on the number of requests** per client, based on a dynamically resolved key (e.g., the client’s IP address).
+The **RequestRateLimiter** filter enforces a **limit on the number of requests** per client, based on a dynamically
+resolved key (e.g., the client’s IP address).
 In this setup, Redis is used as a distributed store and implements a **token bucket** algorithm.
 
 **Main Parameters:**
@@ -66,7 +73,8 @@ In this setup, Redis is used as a distributed store and implements a **token buc
 * `replenishRate` – Number of tokens added to the bucket per second.
 * `burstCapacity` – Maximum number of tokens the bucket can hold (e.g., `5` allows an initial burst of 5 requests).
 * `requestedTokens` – Number of tokens consumed per request.
-* `key-resolver` – Defines how to compute the unique key for each user or IP (in this case, based on the client’s IP address).
+* `key-resolver` – Defines how to compute the unique key for each user or IP (in this case, based on the client’s IP
+  address).
 
 **Example Behavior:**
 
@@ -81,7 +89,8 @@ filters:
 ```
 
 * Each IP receives 1 token per second, and each request costs 1 → one request per second.
-* If a client sends more than one request within the same second, the gateway responds with **HTTP 429 Too Many Requests**.
+* If a client sends more than one request within the same second, the gateway responds with **HTTP 429 Too Many Requests
+  **.
 
 ### RewritePath
 

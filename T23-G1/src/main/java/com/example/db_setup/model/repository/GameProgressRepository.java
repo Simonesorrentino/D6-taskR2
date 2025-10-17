@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.util.Optional;
 
@@ -27,7 +26,7 @@ public interface GameProgressRepository extends JpaRepository<GameProgress, Long
             @Param("playerId") Long playerId,
             @Param("gameMode") GameMode gameMode,
             @Param("classUT") String classUT,
-            @Param("type") OpponentType type,
+            @Param("type") String type,
             @Param("difficulty") OpponentDifficulty difficulty
     );
 

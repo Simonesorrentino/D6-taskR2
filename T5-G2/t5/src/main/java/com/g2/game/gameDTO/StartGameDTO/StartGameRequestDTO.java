@@ -2,7 +2,6 @@ package com.g2.game.gameDTO.StartGameDTO;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.validation.constraints.NotBlank;
@@ -13,7 +12,6 @@ import lombok.Setter;
 import lombok.ToString;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "mode", include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = true)
@@ -33,10 +31,9 @@ public class StartGameRequestDTO {
     @JsonProperty("playerId")
     private Long playerId;
 
-    @NotNull
     @JsonProperty("typeRobot")
     @JsonAlias({"type_robot", "typeRobot"})
-    private OpponentType typeRobot;
+    private String typeRobot;
 
     @NotNull
     @JsonProperty("difficulty")

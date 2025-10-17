@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -85,8 +84,8 @@ public class GameService {
     /**
      * Crea una nuova partita con i giocatori indicati per la modalità {@link GameMode} specificata.
      *
-     * @param dto       il dto contenente la richiesta di creazione della partita
-     * @return          il DTO della partita inizializzata
+     * @param dto il dto contenente la richiesta di creazione della partita
+     * @return il DTO della partita inizializzata
      * @throws DuplicatedPlayersInGameException se ci sono giocatori duplicati nella lista
      */
     @Transactional
@@ -109,8 +108,8 @@ public class GameService {
      * Apre un nuovo round in una partita esistente. Il numero del round è automaticamente impostato al successivo del
      * precedente.
      *
-     * @param gameId     l'ID della partita
-     * @param dto        il dto contente la richiesta di creazione del nuovo turno
+     * @param gameId l'ID della partita
+     * @param dto    il dto contente la richiesta di creazione del nuovo turno
      * @return il DTO del round avviato
      * @throws GameAlreadyClosedException   se la partita è già conclusa
      * @throws FoundRoundNotClosedException se l'ultimo round registrato (precedente a questo) non è ancora stato chiuso
@@ -118,7 +117,7 @@ public class GameService {
     @Transactional
     public RoundDTO startRound(long gameId, CreateRoundDTO dto) {
         String classUT = dto.getClassUT();
-        OpponentType type = dto.getType();
+        String type = dto.getType();
         OpponentDifficulty difficulty = dto.getDifficulty();
         int roundNumber = dto.getRoundNumber();
 
@@ -144,8 +143,8 @@ public class GameService {
      * Avvia (crea) un turno per un giocatore in una partita esistente. Il turno sarà automaticamente associato
      * all'ultimo round aperto registrato per il game.
      *
-     * @param gameId   l'ID della partita
-     * @param dto      il dto contenente la richiesta di creazione del turno
+     * @param gameId l'ID della partita
+     * @param dto    il dto contenente la richiesta di creazione del turno
      * @return il DTO del turno creato
      * @throws GameAlreadyClosedException se la partita è già conclusa
      * @throws PlayerNotInGameException   se il giocatore non è registrato nella partita

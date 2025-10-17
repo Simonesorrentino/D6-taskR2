@@ -16,13 +16,14 @@ import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
 import testrobotchallenge.commons.models.dto.score.JacocoCoverageDTO;
 import testrobotchallenge.commons.models.opponent.GameMode;
 import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.opponent.OpponentType;
 import testrobotchallenge.commons.models.score.Coverage;
 import testrobotchallenge.commons.models.score.EvosuiteScore;
 import testrobotchallenge.commons.models.score.JacocoScore;
 import testrobotchallenge.commons.util.ExtractScore;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,12 +50,12 @@ public class UploadOpponentService {
     //--------------------------------------------------
 
     private final ApiGatewayClient apiGatewayClient;
-	private final OpponentRepository opponentRepository;
+    private final OpponentRepository opponentRepository;
 
-	public UploadOpponentService(ApiGatewayClient apiGatewayClient, OpponentRepository opponentRepository) {
+    public UploadOpponentService(ApiGatewayClient apiGatewayClient, OpponentRepository opponentRepository) {
         this.apiGatewayClient = apiGatewayClient;
-		this.opponentRepository = opponentRepository;
-	}
+        this.opponentRepository = opponentRepository;
+    }
 
     /*
      *
@@ -384,10 +385,10 @@ public class UploadOpponentService {
 
             OpponentDifficulty difficulty = OpponentDifficulty.values()[levelInt - 1];
 
-			JacocoScore jacocoScore = new JacocoScore();
-			jacocoScore.setLineCoverage(new Coverage(jacocoStatistics[0][0], jacocoStatistics[0][1]));
-			jacocoScore.setBranchCoverage(new Coverage(jacocoStatistics[1][0], jacocoStatistics[1][1]));
-			jacocoScore.setInstructionCoverage(new Coverage(jacocoStatistics[2][0], jacocoStatistics[2][1]));
+            JacocoScore jacocoScore = new JacocoScore();
+            jacocoScore.setLineCoverage(new Coverage(jacocoStatistics[0][0], jacocoStatistics[0][1]));
+            jacocoScore.setBranchCoverage(new Coverage(jacocoStatistics[1][0], jacocoStatistics[1][1]));
+            jacocoScore.setInstructionCoverage(new Coverage(jacocoStatistics[2][0], jacocoStatistics[2][1]));
 
             EvosuiteScore evosuiteScore = new EvosuiteScore();
             evosuiteScore.setLineCoverage(new Coverage(evoSuiteStatistics[0][0], evoSuiteStatistics[0][1]));
@@ -401,17 +402,17 @@ public class UploadOpponentService {
 
             Opponent opponent = new Opponent();
             opponent.setClassUT(classUTName);
-            opponent.setOpponentType(OpponentType.fromStringIgnoreCase(robotType));
+            opponent.setOpponentType(robotType);
             opponent.setOpponentDifficulty(difficulty);
-			opponent.setCoverage(coverage);
-			opponent.setEvosuiteScore(evosuiteScore);
-			opponent.setJacocoScore(jacocoScore);
+            opponent.setCoverage(coverage);
+            opponent.setEvosuiteScore(evosuiteScore);
+            opponent.setJacocoScore(jacocoScore);
 
             opponentRepository.saveOpponent(opponent);
 
-			for (GameMode mode : GameMode.values()) {
-				apiGatewayClient.callAddNewOpponent(classUTName, mode, OpponentType.fromStringIgnoreCase(robotType), difficulty);
-			}
+            for (GameMode mode : GameMode.values()) {
+                apiGatewayClient.callAddNewOpponent(classUTName, mode, robotType, difficulty);
+            }
 
         }
 

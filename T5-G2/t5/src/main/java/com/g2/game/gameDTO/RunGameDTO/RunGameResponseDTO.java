@@ -1,13 +1,13 @@
 package com.g2.game.gameDTO.RunGameDTO;
 
-import java.util.Objects;
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.g2.game.gameMode.Compile.CompileResult;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.util.Objects;
+import java.util.Set;
 
 @Getter
 @Setter

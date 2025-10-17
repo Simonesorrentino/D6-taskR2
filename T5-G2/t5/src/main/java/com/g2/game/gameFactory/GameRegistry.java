@@ -1,11 +1,11 @@
 package com.g2.game.gameFactory;
-import java.util.Map;
 
 import com.g2.game.gameFactory.params.GameParams;
-import org.springframework.stereotype.Component;
-
 import com.g2.game.gameMode.GameLogic;
 import com.g2.interfaces.ServiceManager;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /*
  *  Quando chiamiamo createGame("Sfida", ...), Spring trova automaticamente la factory corretta. grazie ai Bean
@@ -15,7 +15,7 @@ import com.g2.interfaces.ServiceManager;
 @Component
 public class GameRegistry {
     /*
-     * Quando si dichiara una mappa con il tipo Map<String, GameFactoryFunction>, 
+     * Quando si dichiara una mappa con il tipo Map<String, GameFactoryFunction>,
      * Spring popola automaticamente la mappa con tutte le istanze di GameFactoryFunction disponibili nel contesto,
      *  usando il nome del bean come chiave.
      */

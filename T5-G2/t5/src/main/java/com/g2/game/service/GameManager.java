@@ -21,10 +21,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.g2.game.gameDTO.EndGameDTO.EndGameResponseDTO;
 import com.g2.game.gameDTO.RunGameDTO.RunGameRequestDTO;
+import com.g2.game.gameDTO.RunGameDTO.RunGameResponseDTO;
 import com.g2.game.gameDTO.StartGameDTO.StartGameRequestDTO;
 import com.g2.game.gameDTO.StartGameDTO.StartGameResponseDTO;
 import com.g2.game.gameFactory.params.GameParams;
 import com.g2.game.gameFactory.params.GameParamsFactory;
+import com.g2.game.gameMode.Compile.CompileResult;
+import com.g2.game.gameMode.GameLogic;
 import com.g2.model.configuration.GameExecutionConfig;
 import com.g2.model.dto.GameProgressDTO;
 import com.g2.session.SessionService;
@@ -34,10 +37,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
-
-import com.g2.game.gameDTO.RunGameDTO.RunGameResponseDTO;
-import com.g2.game.gameMode.Compile.CompileResult;
-import com.g2.game.gameMode.GameLogic;
 import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
 import testrobotchallenge.commons.models.dto.score.JacocoCoverageDTO;
 import testrobotchallenge.commons.models.opponent.GameMode;
@@ -57,14 +56,12 @@ import java.util.Set;
 @Service
 public class GameManager {
 
+    private static final String TEST_CLASS_NAME_PREFIX = "Test";
+    private static final Logger logger = LoggerFactory.getLogger(GameManager.class);
     private final GameService gameService;
     private final SessionService sessionService;
     private final PlayerStatService playerStatService;
     private final LogWriterService logWriterService;
-
-    private static final String TEST_CLASS_NAME_PREFIX = "Test";
-    private static final Logger logger = LoggerFactory.getLogger(GameManager.class);
-
     @Value("${config.turn.file}")
     private String turnExecutionConfigFile;
     private GameExecutionConfig config;
@@ -102,9 +99,9 @@ public class GameManager {
      *          per tracciare vittorie e obiettivi sbloccati dell'utente.</li>
      * </ul>
      *
-     * @param requestDTO        DTO contenente i dati necessari per creare la nuova partita
-     * @return                  {@link StartGameResponseDTO} contenente l'ID della partita appena creata
-     *                          e lo stato della creazione ("created")
+     * @param requestDTO DTO contenente i dati necessari per creare la nuova partita
+     * @return {@link StartGameResponseDTO} contenente l'ID della partita appena creata
+     * e lo stato della creazione ("created")
      */
     public StartGameResponseDTO handleStartNewGame(StartGameRequestDTO requestDTO) {
         // Converto il dto
@@ -158,11 +155,11 @@ public class GameManager {
      *     <li>Se la compilazione fallisce, restituisce un {@link RunGameResponseDTO} parziale senza punteggi né achievement.</li>
      * </ul>
      *
-     * @param dto           DTO contenente le informazioni del turno corrente, tra cui playerId, codice della classe da
-     *                      testare, codice della classe di test e stato della partita.
-     * @param isGameEnd     booleano che indica se il turno è anche un submit finale della partita.
+     * @param dto       DTO contenente le informazioni del turno corrente, tra cui playerId, codice della classe da
+     *                  testare, codice della classe di test e stato della partita.
+     * @param isGameEnd booleano che indica se il turno è anche un submit finale della partita.
      * @return {@link RunGameResponseDTO}       contenente i risultati della compilazione del giocatore e dell'avversario,
-     *                                          lo stato di vittoria, i punteggi e gli achievement eventualmente sbloccati.
+     * lo stato di vittoria, i punteggi e gli achievement eventualmente sbloccati.
      */
     public RunGameResponseDTO handlePlayTurn(RunGameRequestDTO dto, boolean isGameEnd) {
         // Converto la richiesta nel modello di parametri previsti per la modalità di gioco
@@ -184,8 +181,8 @@ public class GameManager {
 
         String testClassCode =
                 updateParams.getTestClassCode().isEmpty() ?
-                currentGame.getTestingClassCode() :
-                updateParams.getTestClassCode();
+                        currentGame.getTestingClassCode() :
+                        updateParams.getTestClassCode();
 
         String classUTName = currentGame.getClassUTName();
         String testClassName = TEST_CLASS_NAME_PREFIX + classUTName;
@@ -196,7 +193,7 @@ public class GameManager {
         // Richiedo la compilazione e la valutazione del test del giocatore
         Pair<JacocoCoverageDTO, EvosuiteCoverageDTO> coverage = handleCompileAndCoverage(
                 classUTName, classUTFileName, classUTCode,
-                testClassName,  testClassFileName, testClassCode, isGameEnd);
+                testClassName, testClassFileName, testClassCode, isGameEnd);
 
         JacocoCoverageDTO responseT7 = coverage.getFirst();
         EvosuiteCoverageDTO responseT8 = coverage.getSecond();
@@ -224,8 +221,7 @@ public class GameManager {
 
         // Loggo sul VolumeT0 la compilazione
         logWriterService.writeTurn(classUTCode, classUTFileName, testClassCode, testClassFileName,
-                responseT8.getResultFileContent() != null ? responseT8.getResultFileContent() : "",
-                responseT7.getCoverage() != null ? responseT7.getCoverage() : "",
+                responseT8.getResultFileContent(), responseT7.getCoverage(),
                 userSrcDir, userTestDir, userCoverageDir);
 
         // Se la compilazione ha avuto successo, calcolo i punteggi e verifico gli achievement
@@ -280,8 +276,8 @@ public class GameManager {
      *     prevede attualmente notifica al frontend.
      * </p>
      *
-     * @param rawRequest    stringa JSON contenente la richiesta grezza di aggiornamento della sessione,
-     *                      serializzata da {@link RunGameRequestDTO}.
+     * @param rawRequest stringa JSON contenente la richiesta grezza di aggiornamento della sessione,
+     *                   serializzata da {@link RunGameRequestDTO}.
      */
     public void handlePauseGame(String rawRequest) {
         // Provo a parsare la richiesta raw
@@ -333,9 +329,9 @@ public class GameManager {
      *     </li>
      * </ul>
      *
-     * @param requestDTO    DTO contenente le informazioni necessarie per terminare la partita.
+     * @param requestDTO DTO contenente le informazioni necessarie per terminare la partita.
      * @return {@link EndGameResponseDTO}       contenente i punteggi finali della partita, lo stato di vittoria,
-     *                                          eventuali punti esperienza guadagnati e gli achievement sbloccati.
+     * eventuali punti esperienza guadagnati e gli achievement sbloccati.
      */
     public EndGameResponseDTO handleEndGame(RunGameRequestDTO requestDTO) {
         GameParams updateParams = GameParamsFactory.generateUpdateParams(requestDTO);
@@ -386,8 +382,8 @@ public class GameManager {
      * Il metodo recupera la sessione di gioco corrente per il giocatore e la modalità specificata
      * e chiude la partita segnandola come resa tramite {@link #handleCloseGame(GameLogic, boolean)}.
      *
-     * @param playerId      ID del giocatore che si arrende.
-     * @param gameMode          Modalità di gioco della partita da terminare.
+     * @param playerId ID del giocatore che si arrende.
+     * @param gameMode Modalità di gioco della partita da terminare.
      */
     public void handleSurrendGame(long playerId, GameMode gameMode) {
         // Recupero la sessione aggiornata
@@ -429,10 +425,10 @@ public class GameManager {
      * @param isGameEnd         il booleano che indica se il turno rappresenta la fine della partita (compilazione finale).
      *                          In tal caso viene sempre eseguita anche la copertura EvoSuite.
      * @return {@link Pair} contenente:
-     *         <ul>
-     *             <li>Il {@link JacocoCoverageDTO} con il risultato della compilazione e della copertura JaCoCo.</li>
-     *             <li>Il {@link EvosuiteCoverageDTO} con il risultato della copertura EvoSuite (eventualmente vuoto).</li>
-     *         </ul>
+     * <ul>
+     *     <li>Il {@link JacocoCoverageDTO} con il risultato della compilazione e della copertura JaCoCo.</li>
+     *     <li>Il {@link EvosuiteCoverageDTO} con il risultato della copertura EvoSuite (eventualmente vuoto).</li>
+     * </ul>
      */
     private Pair<JacocoCoverageDTO, EvosuiteCoverageDTO> handleCompileAndCoverage(
             String classUTName, String classUTFileName, String classUTCode,
@@ -477,7 +473,7 @@ public class GameManager {
      * La partita viene chiusa nel servizio T4 e la sessione su Redis viene rimossa. Se {@code isGameSurrendered} è
      * {@code true}, la partita viene segnata come resa dal giocatore.
      *
-     * @param currentGame           l'istanza di {@link GameLogic} della partita corrente.
+     * @param currentGame       l'istanza di {@link GameLogic} della partita corrente.
      * @param isGameSurrendered {@code true} se la partita è stata chiusa per resa del giocatore,
      *                          {@code false} altrimenti.
      */

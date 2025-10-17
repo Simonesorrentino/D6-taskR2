@@ -15,6 +15,8 @@ public enum OpponentType {
     EVOSUITE,
     RANDOOP,
     STUDENT,
+    GEMINI,
+    GEMINI_COVERAGE,
     LLM;
 
     /**
