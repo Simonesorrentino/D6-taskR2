@@ -47,8 +47,6 @@ public class UploadOpponentService {
 
     private final Logger logger = LoggerFactory.getLogger(UploadOpponentService.class);
 
-    //--------------------------------------------------
-
     private final ApiGatewayClient apiGatewayClient;
     private final OpponentRepository opponentRepository;
 
@@ -82,7 +80,7 @@ public class UploadOpponentService {
                 logger.info("Ignoring directory {} because it does not follow the naming convention", robotFolder);
                 continue;
             }
-            robotType = robotType.substring(0, robotType.length() - 4).toLowerCase();
+            robotType = robotType.substring(0, robotType.length() - 4);
             robotType = Character.toUpperCase(robotType.charAt(0)) + robotType.substring(1);
 
             logger.info("Robot folder {}", robotFolder);
@@ -282,12 +280,11 @@ public class UploadOpponentService {
 
             Path fromTestPath;
             Path fromCoveragePath;
-            switch (robotType) {
-                case "Evosuite":
+            switch (robotType.toLowerCase()) {
+                case "evosuite":
                     fromTestPath = Paths.get(String.format("%s/TestSourceCode/evosuite-tests", levelFolder));
                     fromCoveragePath = Paths.get(String.format("%s/%s", levelFolder.getPath(), "TestReport"));
                     break;
-                case "Randoop":
                 default:
                     fromTestPath = Paths.get(String.format("%s", levelFolder));
                     fromCoveragePath = Paths.get(String.format("%s", levelFolder.getPath()));
@@ -362,7 +359,7 @@ public class UploadOpponentService {
                 File zip = new File(String.format("%s/src.zip", tmpFolder_ToZip));
 
                 if (!zip.exists()) {
-                    System.err.println("Errore: Il file ZIP non è stato creato correttamente.");
+                    logger.error("Errore: Il file ZIP non è stato creato correttamente.");
                     FileOperationUtil.deleteDirectoryRecursively(tmpFolder_ToZip);
                 } else {
                     JacocoCoverageDTO coverageDTO = apiGatewayClient.callGenerateMissingJacocoCoverage(zip);
