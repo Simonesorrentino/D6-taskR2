@@ -1,11 +1,8 @@
 package com.groom.manvsclass.service;
 
+import com.groom.manvsclass.api.ApiGatewayClient;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.springframework.http.HttpStatus;
@@ -19,7 +16,11 @@ import java.util.List;
 @Service
 public class StudentService {
 
-    private final HttpClient httpClient = HttpClientBuilder.create().build();
+    private final ApiGatewayClient apiGatewayClient;
+
+    public StudentService(ApiGatewayClient apiGatewayClient) {
+        this.apiGatewayClient = apiGatewayClient;
+    }
 
     public ResponseEntity<?> ottieniStudentiDettagli(List<String> studentiIds, String jwt) {
         System.out.println("Inizio metodo ottieniStudentiDettagli");
@@ -36,26 +37,11 @@ public class StudentService {
         }
 
         try {
-            // 2. Prepara il corpo JSON
-            System.out.println("Preparazione del corpo JSON...");
-            JSONArray studentiArray = new JSONArray(studentiIds); // Crea un array JSON direttamente
-            StringEntity entity = new StringEntity(studentiArray.toString(), StandardCharsets.UTF_8); // Corpo JSON come array
-            System.out.println("Corpo JSON preparato: " + studentiArray.toString());
-
-            // 3. Configura la richiesta HTTP POST
-            System.out.println("Configurazione della richiesta HTTP POST...");
-            HttpPost httpPost = new HttpPost("http://t23-g1-app-1:8080/studentsByIds");
-            httpPost.setHeader("Authorization", "Bearer " + jwt);
-            httpPost.setHeader("Content-Type", "application/json");
-            httpPost.setEntity(entity);
-
-            // 4. Esegui la richiesta
-            System.out.println("Esecuzione della richiesta...");
-            HttpResponse httpResponse = httpClient.execute(httpPost);
+            HttpResponse httpResponse = apiGatewayClient.callOttieniStudentiDettagli(studentiIds, jwt);
             int statusCode = httpResponse.getStatusLine().getStatusCode();
             System.out.println("Risposta HTTP ricevuta. Status code: " + statusCode);
 
-           // 5. Gestisci la risposta
+            // 5. Gestisci la risposta
             if (statusCode >= 200 && statusCode < 300) { // Successo
                 HttpEntity responseEntity = httpResponse.getEntity();
                 String responseBody = EntityUtils.toString(responseEntity, StandardCharsets.UTF_8);

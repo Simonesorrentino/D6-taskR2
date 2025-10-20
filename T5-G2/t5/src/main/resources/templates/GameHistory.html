@@ -14,11 +14,13 @@
 			<!-- Active Match -->
 			<div class="row"></div>
 			<!-- Search bar-->
+			<div style="margin-bottom: 20px"></div> <!-- Da rimuovere dopo aver aggiunto la logica e ripristinato la searching bar -->
+			<!--
 			<div
 				class="d-flex align-items-center justify-content-between p-3 my-3 rounded shadow-sm bg-dark-subtle"
 			>
 				<div class="d-flex">
-					<!-- filtro tipo -->
+					<!- filtro tipo ->
 					<div id="checkbox-menu" class="mt-2">
 						<div class="form-check form-check-inline">
 							<input
@@ -57,7 +59,7 @@
 							</label>
 						</div>
 					</div>
-					<!-- filtro lette-->
+					<!- filtro lette ->
 					<div class="dropdown">
 						<button
 							class="btn btn-secondary dropdown-toggle"
@@ -83,12 +85,12 @@
 							</li>
 						</ul>
 					</div>
-					<!-- Ordine -->
+					<!- Ordine ->
 					<button id="toggleOrderBtn" class="btn">
 						<i class="bi bi-sort-down"></i>
 					</button>
 				</div>
-				<!-- Bottoni -->
+				<!- Bottoni ->
 				<nav>
 					<ul class="pagination m-0">
 						<li class="page-item">
@@ -107,6 +109,7 @@
 					</ul>
 				</nav>
 			</div>
+			-->
 			<!-- match history -->
 			<div class="list-group" id="match_history">
 				<a
@@ -114,28 +117,34 @@
 					class="list-group-item list-group-item-action"
 					aria-current="true"
 				>
-					<div class="d-flex justify-content-between">
-						<div>
-							<h4 class="mb-1">Sfida</h4>
-							<p class="mb-0">Calcolatrice - Randoop - Level 1</p>
-							<small>12/05/2025</small>
-						</div>
-
-						<div class="text-center p-3">
-							<div class="text-center">
-								<h4 class="mb-0 fw-semibold lh-1">
-									<span class="badge text-bg-success"> WIN </span>
-								</h4>
-								<small> 14pt. </small>
-							</div>
-						</div>
-					</div>
 				</a>
 			</div>
 		</div>
 
 		<!-- FOOTER -->
 		<div th:replace="fragments/footer :: footer"></div>
+
+		<script th:inline="javascript">
+			const difficulty = {
+				"EASY": /*[[#{d_facile}]]*/ "Facile",
+				"MEDIUM": /*[[#{d_medio}]]*/ "Medio",
+				"HARD": /*[[#{d_difficile}]]*/ "Difficile",
+			};
+
+			const gameMode = {
+				PartitaSingola: /*[[#{singola}]]*/ "Partita Singola",
+				Allenamento: /*[[#{allenamento}]]*/ "Allenamento",
+				Multiplayer: /*[[#{multiplayer}]]*/ "Multi-giocatore",
+				Scalata: /*[[#{scalata}]]*/ "Scalata",
+			}
+
+			const coverage_capitalized= /*[[#{coverage_capitalized}]]*/ "Copertura";
+			const victory = {
+				win_label: /*[[#{win_label}]]*/ "VITTORIA",
+				loss_label: /*[[#{loss_label}]]*/ "SCONFITTA",
+			}
+		</script>
+
 		<script>
 			/**
  * Effettua una chiamata AJAX per ottenere la cronologia delle partite di un giocatore.
@@ -144,11 +153,12 @@
  */
 function fetchGameHistory(playerId, callback) {
     $.ajax({
-        url: `/games/player/${playerId}`, // URL dinamico
+        url: `/api/gamerepo/games/player/${playerId}`, // URL dinamico
         type: "GET",
         dataType: "json",
         success: function (response) {
             if (Array.isArray(response)) {
+				console.log("Games history: ", response);
                 callback(response);
             } else {
                 console.error("La risposta non è un array di partite.");
@@ -184,26 +194,31 @@ function renderGameHistory(games) {
     const $container = $("#match_history");
     $container.empty(); // Pulisce il contenitore
 
+		if (games.length === 0)
+			return;
+
     // Ordina le partite dalla più recente (closedAt più alta) alla più vecchia
     games.sort((a, b) => new Date(b.closedAt) - new Date(a.closedAt));
 
     games.forEach((game) => {
         const formattedDate = formatDate(game.closedAt);
-        const badge = game.isWinner
-            ? '<span class="badge text-bg-success"> WIN </span>'
-            : '<span class="badge text-bg-danger"> LOSS </span>';
+				const result = game.playerResults[userId];
+        const badge = result.winner
+            ? `<span class="badge text-bg-success"> ${victory.win_label} </span>`
+            : `<span class="badge text-bg-danger"> ${victory.loss_label} </span>`;
+
 
         const gameItem = `
             <a href="#" class="list-group-item list-group-item-action" aria-current="true">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="mb-1">${game.description}</h4>
-                        <p class="mb-0">${game.name} - ${game.difficulty}</p>
+                        <h4 class="mb-1">${game.rounds[0].classUT}</h4>
+                        <p class="mb-0">${gameMode[game.gameMode]} - ${game.rounds[0].type} - ${difficulty[game.rounds[0].difficulty]}</p>
                         <small>${formattedDate}</small>
                     </div>
                     <div class="text-center p-3">
                         <h4 class="mb-0 fw-semibold lh-1">${badge}</h4>
-                        <small>${game.score}pt.</small>
+                        <small>${coverage_capitalized} ${result.score}%</small>
                     </div>
                 </div>
             </a>
