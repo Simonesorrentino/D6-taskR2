@@ -1,16 +1,28 @@
 server:
   error:
     include-message: always
+
 spring:
   data:
     mongodb:
-	auto-index-creation: true
-	authentication-database: admin
-	username: root
-	password: osimhen
-	database : manvsclass
-	port:27017
-	host:localhost
+      auto-index-creation: true
+      authentication-database: admin
+      username: root
+      password: osimhen
+      database: manvsclass
+      port: 27017
+      host: localhost
+
+  datasource:
+    url: jdbc:postgresql://t1-postgres-db:5432/${POSTGRES_DATABASE}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
 logging:
   level:
     org:
