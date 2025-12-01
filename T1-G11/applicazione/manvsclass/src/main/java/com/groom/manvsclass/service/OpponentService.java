@@ -2,7 +2,7 @@ package com.groom.manvsclass.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groom.manvsclass.api.ApiGatewayClient;
-import com.groom.manvsclass.model.Admin;
+import com.groom.manvsclass.model.AdminMongoDB;
 import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.Operation;
 import com.groom.manvsclass.model.Opponent;
@@ -54,7 +54,7 @@ public class OpponentService {
     private final UploadOpponentService uploadOpponentService;
     @Autowired
     private final OpponentRepository opponentRepository;
-    private final Admin userAdmin = new Admin("default", "default", "default", "default", "default");
+    private final AdminMongoDB userAdminMongoDB = new AdminMongoDB("default", "default", "default", "default", "default");
     private final ApiGatewayClient apiGatewayClient;
 
     public OpponentService(OperationRepository operationRepository,
@@ -181,7 +181,7 @@ public class OpponentService {
             LocalDate currentDate = LocalDate.now();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String data = currentDate.format(formatter);
-            Operation operation1 = new Operation((int) operationRepository.count(), userAdmin.getUsername(), newContent.getName(), 1, data);
+            Operation operation1 = new Operation((int) operationRepository.count(), userAdminMongoDB.getUsername(), newContent.getName(), 1, data);
             operationRepository.save(operation1);
             return new ResponseEntity<>("Aggiornamento eseguito correttamente.", HttpStatus.OK);
         } else {

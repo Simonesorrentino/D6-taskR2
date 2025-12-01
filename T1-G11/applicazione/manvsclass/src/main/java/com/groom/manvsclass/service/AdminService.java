@@ -3,7 +3,7 @@
  */
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.Admin;
+import com.groom.manvsclass.model.AdminMongoDB;
 import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.repository.AdminRepository;
 import com.groom.manvsclass.model.repository.ClassRepository;
@@ -27,7 +27,7 @@ public class AdminService {
 
     @Autowired
     private final SearchRepositoryImpl srepo;
-    private final Admin userAdmin = new Admin("default", "default", "default", "default", "default");
+    private final AdminMongoDB userAdminMongoDB = new AdminMongoDB("default", "default", "default", "default", "default");
     private final LocalDate today = LocalDate.now();
     @Autowired
     private JwtService jwtService;
@@ -47,7 +47,7 @@ public class AdminService {
     private PasswordEncoder myPasswordEncoder;
 
     public AdminService(SearchRepositoryImpl srepo) {
-        this.userAdmin.setUsername("default");
+        this.userAdminMongoDB.setUsername("default");
         this.srepo = srepo;
     }
 
@@ -70,92 +70,92 @@ public class AdminService {
         }
     }
 
-    public ResponseEntity<?> inviteAdmins(Admin admin1, String jwt) {
+    public ResponseEntity<?> inviteAdmins(AdminMongoDB adminMongoDB1, String jwt) {
         if (!jwtService.isJwtValid(jwt)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Attenzione, non sei loggato");
         }
 
         //Controlliamo che non esista nel repository un admin con la mail specificata nell'invito
-        Admin admin = arepo.findById(admin1.getEmail()).orElse(null);
-        if (admin != null) {
+        AdminMongoDB adminMongoDB = arepo.findById(adminMongoDB1.getEmail()).orElse(null);
+        if (adminMongoDB != null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email trovata, la persona che stai tentando di invitare è già un amministratore!");
         }
 
-        Admin new_admin = new Admin("default", "default", "default", "default", "default");
-        new_admin.setEmail(admin1.getEmail());
+        AdminMongoDB new_adminMongoDB = new AdminMongoDB("default", "default", "default", "default", "default");
+        new_adminMongoDB.setEmail(adminMongoDB1.getEmail());
 
-        String invitationToken = jwtService.generateToken(new_admin);
-        new_admin.setInvitationToken(invitationToken);
+        String invitationToken = jwtService.generateToken(new_adminMongoDB);
+        new_adminMongoDB.setInvitationToken(invitationToken);
 
-        Admin savedAdmin = arepo.save(new_admin);
+        AdminMongoDB savedAdminMongoDB = arepo.save(new_adminMongoDB);
         try {
-            emailService.sendInvitationToken(savedAdmin.getEmail(), savedAdmin.getInvitationToken());
-            return ResponseEntity.ok().body("Invitation token inviato correttamente all'indirizzo:" + savedAdmin.getEmail());
+            emailService.sendInvitationToken(savedAdminMongoDB.getEmail(), savedAdminMongoDB.getInvitationToken());
+            return ResponseEntity.ok().body("Invitation token inviato correttamente all'indirizzo:" + savedAdminMongoDB.getEmail());
         } catch (MessagingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore nell'invio del messaggio di posta");
         }
     }
 
-    public ResponseEntity<?> loginWithInvitation(Admin admin1, String jwt) {
+    public ResponseEntity<?> loginWithInvitation(AdminMongoDB adminMongoDB1, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Attenzione, hai già un token valido!");
         }
 
-        Admin admin = arepo.findById(admin1.getEmail()).orElse(null);
-        if (admin == null) {
+        AdminMongoDB adminMongoDB = arepo.findById(adminMongoDB1.getEmail()).orElse(null);
+        if (adminMongoDB == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email non trovata");
         }
 
-        Admin admin_invited = srepo.findAdminByInvitationToken(admin1.getInvitationToken());
-        if (!admin_invited.getInvitationToken().equals(admin1.getInvitationToken())) {
+        AdminMongoDB admin_MongoDB_invited = srepo.findAdminByInvitationToken(adminMongoDB1.getInvitationToken());
+        if (!admin_MongoDB_invited.getInvitationToken().equals(adminMongoDB1.getInvitationToken())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token di invito invalido!");
         }
 
-        admin.setEmail(admin1.getEmail());
+        adminMongoDB.setEmail(adminMongoDB1.getEmail());
 
-        if (admin1.getNome().length() >= 2 && admin1.getNome().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s[a-zA-Z]+)*", admin1.getNome())) {
-            admin.setNome(admin1.getNome());
+        if (adminMongoDB1.getNome().length() >= 2 && adminMongoDB1.getNome().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s[a-zA-Z]+)*", adminMongoDB1.getNome())) {
+            adminMongoDB.setNome(adminMongoDB1.getNome());
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nome non valido");
         }
 
-        if (admin1.getCognome().length() >= 2 && admin1.getCognome().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s?[a-zA-Z]+\\'?)*", admin1.getCognome())) {
-            admin.setCognome(admin1.getCognome());
+        if (adminMongoDB1.getCognome().length() >= 2 && adminMongoDB1.getCognome().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s?[a-zA-Z]+\\'?)*", adminMongoDB1.getCognome())) {
+            adminMongoDB.setCognome(adminMongoDB1.getCognome());
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cognome non valido");
         }
 
-        if (admin1.getUsername().length() >= 2 && admin1.getUsername().length() <= 30 && Pattern.matches(".*_invited$", admin1.getUsername())) {
-            admin.setUsername(admin1.getUsername());
+        if (adminMongoDB1.getUsername().length() >= 2 && adminMongoDB1.getUsername().length() <= 30 && Pattern.matches(".*_invited$", adminMongoDB1.getUsername())) {
+            adminMongoDB.setUsername(adminMongoDB1.getUsername());
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Username non valido, deve rispettare il seguente formato: [username di lunghezza compresa tra 2 e 30 caratteri]_invited");
         }
 
-        Matcher m = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,16}$").matcher(admin1.getPassword());
-        if (admin1.getPassword().length() > 16 || admin1.getPassword().length() < 8 || !m.matches()) {
+        Matcher m = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,16}$").matcher(adminMongoDB1.getPassword());
+        if (adminMongoDB1.getPassword().length() > 16 || adminMongoDB1.getPassword().length() < 8 || !m.matches()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password non valida! La password deve contenere almeno una lettera maiuscola, una minuscola, un numero ed un carattere speciale e deve essere lunga tra gli 8 e i 16 caratteri");
         }
 
-        String crypted = myPasswordEncoder.encode(admin1.getPassword());
-        admin1.setPassword(crypted);
-        admin.setPassword(admin1.getPassword());
+        String crypted = myPasswordEncoder.encode(adminMongoDB1.getPassword());
+        adminMongoDB1.setPassword(crypted);
+        adminMongoDB.setPassword(adminMongoDB1.getPassword());
 
-        admin1.setInvitationToken(null);
-        admin.setInvitationToken(admin1.getInvitationToken());
+        adminMongoDB1.setInvitationToken(null);
+        adminMongoDB.setInvitationToken(adminMongoDB1.getInvitationToken());
 
-        Admin savedAdmin = arepo.save(admin);
-        return ResponseEntity.ok().body(savedAdmin);
+        AdminMongoDB savedAdminMongoDB = arepo.save(adminMongoDB);
+        return ResponseEntity.ok().body(savedAdminMongoDB);
     }
 
-    public ResponseEntity<Admin> getAdminByUsername(String username, String jwt) {
+    public ResponseEntity<AdminMongoDB> getAdminByUsername(String username, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
 
             System.out.println("Token valido, può ricercare admin per username (/admins/{username})");
-            Admin admin = srepo.findAdminByUsername(username);
-            if (admin != null) {
+            AdminMongoDB adminMongoDB = srepo.findAdminByUsername(username);
+            if (adminMongoDB != null) {
 
                 System.out.println("Operazione avvenuta con successo (/admins/{username})");
-                return ResponseEntity.ok().body(admin);
+                return ResponseEntity.ok().body(adminMongoDB);
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Ritorna 404 Not Found
             }

@@ -4,7 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "Admin")
-public class Admin {
+public class AdminMongoDB {
     private String nome;
     private String cognome;
     private String username;
@@ -23,7 +23,7 @@ public class Admin {
     private String password;
 
 
-    public Admin(String nome, String cognome, String username, String email, String password) {
+    public AdminMongoDB(String nome, String cognome, String username, String email, String password) {
         this.nome = nome;
         this.cognome = cognome;
         this.username = username;

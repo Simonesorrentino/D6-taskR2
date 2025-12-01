@@ -1,6 +1,6 @@
 package com.groom.manvsclass.model.repository;
 
-import com.groom.manvsclass.model.Admin;
+import com.groom.manvsclass.model.AdminMongoDB;
 import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.interaction;
 import com.mongodb.client.AggregateIterable;
@@ -73,7 +73,7 @@ public class SearchRepositoryImpl {
     }
 
 
-    public Admin findAdminByUsername(String username) {
+    public AdminMongoDB findAdminByUsername(String username) {
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("Admin");
         Bson filter = Filters.eq("username", username);
@@ -82,14 +82,14 @@ public class SearchRepositoryImpl {
             return null;
         }
         //Admin admin = new Admin("gg","ff","gg","hh");
-        Admin admin = new Admin("gg", "ff", "gg", "hh", "jj");
-        admin.setUsername(result.getString("username"));
-        admin.setPassword(result.getString("password"));
-        return admin;
+        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
+        adminMongoDB.setUsername(result.getString("username"));
+        adminMongoDB.setPassword(result.getString("password"));
+        return adminMongoDB;
     }
 
     //MODIFICA (15/02/2024) : Aggiunta ricerca per email
-    public Admin findAdminByEmail(String email) {
+    public AdminMongoDB findAdminByEmail(String email) {
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("Admin");
         Bson filter = Filters.eq("email", email);
@@ -98,16 +98,16 @@ public class SearchRepositoryImpl {
             return null;
         }
         //Admin admin = new Admin("gg","ff","gg","hh");
-        Admin admin = new Admin("gg", "ff", "gg", "hh", "jj");
-        admin.setEmail(result.getString("email"));
-        admin.setNome(result.getString("nome"));
-        admin.setCognome(result.getString("cognome"));
-        admin.setUsername(result.getString("username"));
+        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
+        adminMongoDB.setEmail(result.getString("email"));
+        adminMongoDB.setNome(result.getString("nome"));
+        adminMongoDB.setCognome(result.getString("cognome"));
+        adminMongoDB.setUsername(result.getString("username"));
         // admin.setResetToken(result.getString("resetToken"));
-        return admin;
+        return adminMongoDB;
     }
 
-    public Admin findAdminByResetToken(String resetToken) {
+    public AdminMongoDB findAdminByResetToken(String resetToken) {
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("Admin");
         Bson filter = Filters.eq("resetToken", resetToken);
@@ -116,12 +116,12 @@ public class SearchRepositoryImpl {
             return null;
         }
         //Admin admin = new Admin("gg","ff","gg","hh");
-        Admin admin = new Admin("gg", "ff", "gg", "hh", "jj");
-        admin.setResetToken(result.getString("resetToken"));
-        return admin;
+        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
+        adminMongoDB.setResetToken(result.getString("resetToken"));
+        return adminMongoDB;
     }
 
-    public Admin findAdminByInvitationToken(String invitationToken) {
+    public AdminMongoDB findAdminByInvitationToken(String invitationToken) {
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("Admin");
         Bson filter = Filters.eq("invitationToken", invitationToken);
@@ -130,9 +130,9 @@ public class SearchRepositoryImpl {
             return null;
         }
         //Admin admin = new Admin("gg","ff","gg","hh");
-        Admin admin = new Admin("gg", "ff", "gg", "hh", "jj");
-        admin.setInvitationToken(result.getString("invitationToken"));
-        return admin;
+        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
+        adminMongoDB.setInvitationToken(result.getString("invitationToken"));
+        return adminMongoDB;
     }
 
     //FINE MODIFICA (15/02/2024)
