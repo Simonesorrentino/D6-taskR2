@@ -15,9 +15,9 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
 
       # Variabili d'ambiente per PostgreSQL
-      SPRING_DATASOURCE_URL: jdbc:postgresql://t1-postgres-db:5432/manvsclass
-      SPRING_DATASOURCE_USERNAME: t1-g11
-      SPRING_DATASOURCE_PASSWORD: 947!"p1Yv;qf
+      SPRING_DATASOURCE_URL: jdbc:postgresql://t1-postgres-db:5433/${POSTGRES_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       - postgres-db
       - mongo_db
