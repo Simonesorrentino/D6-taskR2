@@ -44,16 +44,27 @@ public class JwtService {
                 .compact(); //.compact() serve a compattare il token JWT in una stringa valida che può essere facilmente trasferita tramite HTTP o memorizzata in altri luoghi di archiviazione come cookie
     }
 
+//    public boolean isJwtValid(String jwt) {
+//        return true;
+//    }
+
     public boolean isJwtValid(String jwt) {
-        return false;
-        //return true;
+        try {
+            Jwts.parser()
+                    .setSigningKey("mySecretKey")
+                    .parseClaimsJws(jwt);
+            return true;
+        } catch (Exception e) {
+            System.err.println("Token non valido: " + e.getMessage());
+            return false;
+        }
     }
 
     // Estrae l'username dell'admin dal JWT
     public String getAdminFromJwt(String jwt) {
         try {
             Claims claims = Jwts.parser()
-                    .setSigningKey("mySecretKeyAdmin")
+                    .setSigningKey("mySecretKey")
                     .parseClaimsJws(jwt)
                     .getBody();
 
