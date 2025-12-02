@@ -54,11 +54,9 @@ public class Hint {
 
     @JsonProperty("classUTName")
     public void setClassUTName(String className) {
-        // Quando Jackson chiama setClassUTName, crea un'entità parziale ClassUTEntity
         if (this.classUt == null) {
             this.classUt = new ClassUTEntity();
         }
-        // E setta il nome su quell'entità
         this.classUt.setName(className);
     }
 

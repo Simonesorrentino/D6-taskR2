@@ -1,11 +1,12 @@
 package com.groom.manvsclass.model.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum HintTypeEnum {
 
     GENERIC("generic"),
-    CLASS_UT("class");
+    CLASS("class");
 
     private final String value;
 
@@ -18,12 +19,13 @@ public enum HintTypeEnum {
         return value;
     }
 
+    @JsonCreator
     public static HintTypeEnum fromValue(String text) {
         for (HintTypeEnum b : HintTypeEnum.values()) {
-            if (String.valueOf(b.value).equalsIgnoreCase(text)) {
+            if (b.value.equalsIgnoreCase(text)) {
                 return b;
             }
         }
-        return null;
+        throw new IllegalArgumentException("Tipo di Hint non valido: '" + text + "'. Valori accettati: generic, class.");
     }
 }

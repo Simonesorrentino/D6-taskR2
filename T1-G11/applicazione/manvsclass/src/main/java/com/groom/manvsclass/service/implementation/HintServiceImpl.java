@@ -81,7 +81,7 @@ public class HintServiceImpl implements HintService {
         }
 
         List<String> classNames = hintsToSave.stream()
-                .filter(h -> h.getType().equals(HintTypeEnum.CLASS_UT))
+                .filter(h -> h.getType().equals(HintTypeEnum.CLASS))
                 .map(h -> h.getClassUt() != null ? h.getClassUt().getName() : null)
                 .filter(name -> name != null && !name.trim().isEmpty())
                 .distinct()
@@ -105,7 +105,7 @@ public class HintServiceImpl implements HintService {
                 return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Campi mancanti: 'content' è obbligatorio (422 Unprocessable Entity).");
             }
 
-            if (hint.getType() == HintTypeEnum.CLASS_UT) {
+            if (hint.getType() == HintTypeEnum.CLASS) {
 
                 String className = hint.getClassUt() != null ? hint.getClassUt().getName() : null;
 
