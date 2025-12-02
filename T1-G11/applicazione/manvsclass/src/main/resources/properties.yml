@@ -14,9 +14,10 @@ spring:
       host: localhost
 
   datasource:
-    url: jdbc:postgresql://t1-postgres-db:5432/${POSTGRES_DATABASE}
-    username: ${POSTGRES_USERNAME}
-    password: ${POSTGRES_PASSWORD}
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5433/manvsclass}
+    username: ${POSTGRES_USERNAME:t1-g11}
+    password: ${POSTGRES_PASSWORD:947!"p1Yv;qf}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:

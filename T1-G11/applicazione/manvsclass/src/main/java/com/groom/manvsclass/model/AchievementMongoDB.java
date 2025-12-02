@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import javax.persistence.GeneratedValue;
 
 @Document(collection = "achievements")
-public class Achievement {
+public class AchievementMongoDB {
     @Id
     @GeneratedValue // Auto-Increment
     private String ID;
@@ -16,11 +16,11 @@ public class Achievement {
     private String statistic;
     private float progressRequired;
 
-    public Achievement() {
+    public AchievementMongoDB() {
 
     }
 
-    public Achievement(String ID, String name, String description, String statistic, float progressRequired) {
+    public AchievementMongoDB(String ID, String name, String description, String statistic, float progressRequired) {
         this.ID = ID;
         this.name = name;
         this.description = description;

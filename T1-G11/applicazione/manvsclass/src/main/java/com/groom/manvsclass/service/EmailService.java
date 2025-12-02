@@ -17,7 +17,7 @@
 
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.Assignment;
+import com.groom.manvsclass.model.AssignmentMongoDB;
 import com.groom.manvsclass.model.Team;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -91,7 +91,7 @@ public class EmailService {
     }
 
     @Async
-    public ResponseEntity<String> sendTeamNewAssignment(List<String> idsStudents, Team team, Assignment assignment, String jwt) {
+    public ResponseEntity<String> sendTeamNewAssignment(List<String> idsStudents, Team team, AssignmentMongoDB assignmentMongoDB, String jwt) {
 
         ResponseEntity<?> dettagliStudentiResponse = studentService.ottieniStudentiDettagli(idsStudents, jwt);
         if (!HttpStatus.OK.equals(dettagliStudentiResponse.getStatusCode())) {
@@ -108,7 +108,7 @@ public class EmailService {
         // 12. Invia email di notifica agli studenti aggiunti
 
         try {
-            sendTeamNewAssignment(emails, team.getName(), assignment.getDataScadenza(), assignment.getTitolo(), assignment.getDescrizione());
+            sendTeamNewAssignment(emails, team.getName(), assignmentMongoDB.getDataScadenza(), assignmentMongoDB.getTitolo(), assignmentMongoDB.getDescrizione());
         } catch (MessagingException e) {
             System.out.println("Errore durante l'invio della email.");
         }

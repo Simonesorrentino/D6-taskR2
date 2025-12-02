@@ -1,6 +1,6 @@
 package com.groom.manvsclass.controller;
 
-import com.groom.manvsclass.model.Assignment;
+import com.groom.manvsclass.model.AssignmentMongoDB;
 import com.groom.manvsclass.model.Team;
 import com.groom.manvsclass.model.repository.AssignmentRepository;
 import com.groom.manvsclass.service.TeamService;
@@ -42,15 +42,15 @@ public class StudentController {
             }
 
             // 2. Recupera gli Assignment associati al Team
-            List<Assignment> assignments = assignmentRepository.findByTeamId(existingTeam.getIdTeam());
-            if (assignments == null || assignments.isEmpty()) {
-                assignments = new ArrayList<>();
+            List<AssignmentMongoDB> assignmentMongoDBS = assignmentRepository.findByTeamId(existingTeam.getIdTeam());
+            if (assignmentMongoDBS == null || assignmentMongoDBS.isEmpty()) {
+                assignmentMongoDBS = new ArrayList<>();
             }
 
             // 3. Crea la struttura di risposta
             Map<String, Object> response = new HashMap<>();
             response.put("team", existingTeam);
-            response.put("assignments", assignments);
+            response.put("assignments", assignmentMongoDBS);
 
             // 4. Restituisci la risposta
             return ResponseEntity.ok(response);

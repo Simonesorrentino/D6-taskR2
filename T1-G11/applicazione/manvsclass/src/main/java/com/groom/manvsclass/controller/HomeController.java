@@ -23,7 +23,7 @@ package com.groom.manvsclass.controller;
 
 import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.interaction;
-import com.groom.manvsclass.service.AdminService;
+import com.groom.manvsclass.service.AdminServiceMongoDB;
 import com.groom.manvsclass.util.Util;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -35,11 +35,11 @@ import java.util.List;
 @Controller
 public class HomeController {
 
-    private final AdminService adminService;
+    private final AdminServiceMongoDB adminServiceMongoDB;
     private final Util utilsService;
 
-    public HomeController(AdminService adminService, Util utilsService) {
-        this.adminService = adminService;
+    public HomeController(AdminServiceMongoDB adminServiceMongoDB, Util utilsService) {
+        this.adminServiceMongoDB = adminServiceMongoDB;
         this.utilsService = utilsService;
     }
 
@@ -59,12 +59,12 @@ public class HomeController {
 
     @GetMapping("/Cfilterby/{category}")
     public ResponseEntity<List<ClassUT>> filtraClassi(@PathVariable String category, @CookieValue(name = "jwt", required = false) String jwt) {
-        return adminService.filtraClassi(category, jwt);
+        return adminServiceMongoDB.filtraClassi(category, jwt);
     }
 
     @GetMapping("/Cfilterby/{text}/{category}")
     public ResponseEntity<List<ClassUT>> filtraClassi(@PathVariable String text, @PathVariable String category, @CookieValue(name = "jwt", required = false) String jwt) {
-        return adminService.filtraClassi(text, category, jwt);
+        return adminServiceMongoDB.filtraClassi(text, category, jwt);
     }
 
     @GetMapping("/interaction")

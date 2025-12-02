@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Date;
 
 @Document(collection = "Assignment")
-public class Assignment {
+public class AssignmentMongoDB {
     @Id
     private String idAssignment;
 
@@ -21,7 +21,7 @@ public class Assignment {
 
 
     // Costruttore
-    public Assignment(String titolo, String descrizione, Date dataScadenza) {
+    public AssignmentMongoDB(String titolo, String descrizione, Date dataScadenza) {
         this.idAssignment = null;
         this.teamId = null;
         this.nomeTeam = null;

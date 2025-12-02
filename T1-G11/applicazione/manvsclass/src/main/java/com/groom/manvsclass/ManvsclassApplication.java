@@ -3,6 +3,7 @@ package com.groom.manvsclass;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.web.client.RestTemplate;
 
 //MODIFICA (13/02/2024) : Autenticazione token provenienti players
@@ -11,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 //FINE MODIFICA
 
 @SpringBootApplication
+@EnableJpaRepositories(basePackages = "com.groom.manvsclass.model.repository")
 public class ManvsclassApplication {
 
     public static void main(String[] args) {

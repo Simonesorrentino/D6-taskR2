@@ -1,7 +1,7 @@
 //Modifica 08/12/2024: Creazione Service per Assignment
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.Assignment;
+import com.groom.manvsclass.model.AssignmentMongoDB;
 import com.groom.manvsclass.model.Team;
 import com.groom.manvsclass.model.TeamAdmin;
 import com.groom.manvsclass.model.repository.AssignmentRepository;
@@ -38,7 +38,7 @@ public class AssignmentService {
 
     //Modifica 07/12/2024 : creazione funzione per la creazione di un assignment
     @Transactional
-    public ResponseEntity<?> creaAssignment(Assignment assignment,
+    public ResponseEntity<?> creaAssignment(AssignmentMongoDB assignmentMongoDB,
                                             String idTeam,
                                             @CookieValue(name = "jwt", required = false) String jwt) {
         System.out.println("Creazione dell'Assignment in corso...");
@@ -55,10 +55,10 @@ public class AssignmentService {
         }
 
         // 3. Verifica i dati dell'Assignment
-        if (assignment.getTitolo() == null || assignment.getTitolo().isEmpty()) {
+        if (assignmentMongoDB.getTitolo() == null || assignmentMongoDB.getTitolo().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Il titolo dell'Assignment è obbligatorio.");
         }
-        if (assignment.getDataScadenza() == null || assignment.getDataScadenza().before(new Date())) {
+        if (assignmentMongoDB.getDataScadenza() == null || assignmentMongoDB.getDataScadenza().before(new Date())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("La data di scadenza deve essere una data futura.");
         }
 
@@ -76,16 +76,16 @@ public class AssignmentService {
         }
 
         // 6. Aggiorna i dettagli dell'Assignment con i dati del Team
-        assignment.setIdTeam(idTeam); // Imposta l'ID del team
-        assignment.setNomeTeam(existingTeam.getName()); // Imposta il nome del team (assumendo che sia presente nella classe Team)
+        assignmentMongoDB.setIdTeam(idTeam); // Imposta l'ID del team
+        assignmentMongoDB.setNomeTeam(existingTeam.getName()); // Imposta il nome del team (assumendo che sia presente nella classe Team)
 
         // 7. Aggiungi un ID univoco al team (se non specificato)
-        if (assignment.getIdAssignment() == null || assignment.getIdAssignment().isEmpty()) {
-            assignment.setIdAssignment(Util.generateUniqueId());
+        if (assignmentMongoDB.getIdAssignment() == null || assignmentMongoDB.getIdAssignment().isEmpty()) {
+            assignmentMongoDB.setIdAssignment(Util.generateUniqueId());
         }
 
         // 8. Salva l'Assignment
-        assignmentRepository.save(assignment);
+        assignmentRepository.save(assignmentMongoDB);
 
         // 9. Invia notifica agli utenti del team
         List<String> idsStudentiTeam = existingTeam.getStudenti();
@@ -94,7 +94,7 @@ public class AssignmentService {
                 .collect(Collectors.toList());
 
         String Title = "Assignment";
-        String Message = "Nuovo Assignment: " + assignment.getTitolo();
+        String Message = "Nuovo Assignment: " + assignmentMongoDB.getTitolo();
         notificationService.sendNotificationsToUsers(integerList, Title, Message, "Team");
 
         //10. Invio email agli utenti del team
@@ -135,13 +135,13 @@ public class AssignmentService {
             }
 
             // 5. Recupera i dettagli degli Assignment associati al Team
-            List<Assignment> assignments = assignmentRepository.findByTeamId(idTeam);
-            if (assignments == null || assignments.isEmpty()) {
+            List<AssignmentMongoDB> assignmentMongoDBS = assignmentRepository.findByTeamId(idTeam);
+            if (assignmentMongoDBS == null || assignmentMongoDBS.isEmpty()) {
                 return ResponseEntity.ok("Nessun assignment trovato per il Team con ID " + idTeam);
             }
 
             // 6. Restituisci gli Assignment trovati
-            return ResponseEntity.ok(assignments);
+            return ResponseEntity.ok(assignmentMongoDBS);
 
         } catch (Exception e) {
             // Gestione di eventuali errori inaspettati
@@ -178,13 +178,13 @@ public class AssignmentService {
                     .collect(Collectors.toList());
 
             // 5. Recupera tutti gli assignment associati ai team
-            List<Assignment> assignments = assignmentRepository.findAllByTeamIdIn(teamIds);
-            if (assignments == null || assignments.isEmpty()) {
+            List<AssignmentMongoDB> assignmentMongoDBS = assignmentRepository.findAllByTeamIdIn(teamIds);
+            if (assignmentMongoDBS == null || assignmentMongoDBS.isEmpty()) {
                 return ResponseEntity.ok("Non sono stati trovati assignment per i tuoi team.");
             }
 
             // 6. Restituisce gli assignment trovati
-            return ResponseEntity.ok(assignments);
+            return ResponseEntity.ok(assignmentMongoDBS);
 
         } catch (Exception e) {
             // Gestione di eventuali errori inaspettati
@@ -209,13 +209,13 @@ public class AssignmentService {
         }
 
         // 3. Recupera l'Assignment dal database
-        Assignment existingAssignment = assignmentRepository.findById(idAssignment).orElse(null);
-        if (existingAssignment == null) {
+        AssignmentMongoDB existingAssignmentMongoDB = assignmentRepository.findById(idAssignment).orElse(null);
+        if (existingAssignmentMongoDB == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Assignment con ID " + idAssignment + " non trovato.");
         }
 
         // 4. Recupera l'ID del team dall'Assignment
-        String idTeam = existingAssignment.getTeamId();
+        String idTeam = existingAssignmentMongoDB.getTeamId();
         if (idTeam == null || idTeam.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("L'Assignment non ha un Team associato.");
         }

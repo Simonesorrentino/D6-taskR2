@@ -4,7 +4,7 @@
 
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.Assignment;
+import com.groom.manvsclass.model.AssignmentMongoDB;
 import com.groom.manvsclass.model.Team;
 import com.groom.manvsclass.model.TeamAdmin;
 import com.groom.manvsclass.model.repository.AssignmentRepository;
@@ -126,7 +126,7 @@ public class TeamService {
         teamAdminRepository.delete(teamAdmin);
 
         // 7. Elimina gli Assignment associati al team
-        List<Assignment> assignmentsToDelete = assignmentRepository.findByTeamId(idTeam);
+        List<AssignmentMongoDB> assignmentsToDelete = assignmentRepository.findByTeamId(idTeam);
         if (assignmentsToDelete != null && !assignmentsToDelete.isEmpty()) {
             assignmentRepository.deleteAll(assignmentsToDelete);
             System.out.println("Eliminati " + assignmentsToDelete.size() + " assignment associati al team.");
