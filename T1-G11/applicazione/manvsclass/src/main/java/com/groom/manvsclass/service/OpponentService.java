@@ -6,7 +6,7 @@ import com.groom.manvsclass.model.AdminMongoDB;
 import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.Operation;
 import com.groom.manvsclass.model.Opponent;
-import com.groom.manvsclass.model.repository.ClassRepository;
+import com.groom.manvsclass.model.repository.ClassRepositoryMongoDB;
 import com.groom.manvsclass.model.repository.OperationRepository;
 import com.groom.manvsclass.model.repository.OpponentRepository;
 import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
@@ -48,7 +48,7 @@ public class OpponentService {
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(String.valueOf(OpponentService.class));
     private final OperationRepository operationRepository;
     @Autowired
-    private final ClassRepository classRepository;
+    private final ClassRepositoryMongoDB classRepositoryMongoDB;
     private final MongoTemplate mongoTemplate;
     private final SearchRepositoryImpl searchRepository;
     private final UploadOpponentService uploadOpponentService;
@@ -58,12 +58,12 @@ public class OpponentService {
     private final ApiGatewayClient apiGatewayClient;
 
     public OpponentService(OperationRepository operationRepository,
-                           ClassRepository classRepository,
+                           ClassRepositoryMongoDB classRepositoryMongoDB,
                            MongoTemplate mongoTemplate,
                            SearchRepositoryImpl searchRepository,
                            UploadOpponentService uploadOpponentService, OpponentRepository opponentRepository, ApiGatewayClient apiGatewayClient) {
         this.operationRepository = operationRepository;
-        this.classRepository = classRepository;
+        this.classRepositoryMongoDB = classRepositoryMongoDB;
         this.mongoTemplate = mongoTemplate;
         this.searchRepository = searchRepository;
         this.uploadOpponentService = uploadOpponentService;
@@ -76,7 +76,7 @@ public class OpponentService {
      */
     public ResponseEntity<?> getNomiClassiUT(String jwt) {
         // 2. Recupera tutte le ClassUT dal repository e restituisce solo i nomi
-        List<String> classNames = classRepository.findAll()
+        List<String> classNames = classRepositoryMongoDB.findAll()
                 .stream()
                 .map(ClassUT::getName) // Estrae solo i nomi
                 .collect(Collectors.toList());
@@ -126,7 +126,7 @@ public class OpponentService {
 
         classe.setDate(LocalDate.now().toString());
 
-        classRepository.save(classe);
+        classRepositoryMongoDB.save(classe);
 
         System.out.println("Operazione completata con successo (uploadTest)");
 
@@ -151,7 +151,7 @@ public class OpponentService {
     }
 
     public List<ClassUT> getAllClassUTs() {
-        return classRepository.findAll();
+        return classRepositoryMongoDB.findAll();
     }
 
     public List<ClassUT> filterByDifficulty(String difficulty) {

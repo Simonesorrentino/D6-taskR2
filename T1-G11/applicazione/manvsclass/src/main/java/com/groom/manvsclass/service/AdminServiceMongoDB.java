@@ -6,7 +6,7 @@ package com.groom.manvsclass.service;
 import com.groom.manvsclass.model.AdminMongoDB;
 import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.repository.AdminRepositoryMongoDB;
-import com.groom.manvsclass.model.repository.ClassRepository;
+import com.groom.manvsclass.model.repository.ClassRepositoryMongoDB;
 import com.groom.manvsclass.model.repository.OperationRepository;
 import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ public class AdminServiceMongoDB {
     @Autowired
     private JwtService jwtService;
     @Autowired
-    private ClassRepository repo;
+    private ClassRepositoryMongoDB repo;
     @Autowired
     private OperationRepository orepo;
     @Autowired

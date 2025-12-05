@@ -1,7 +1,6 @@
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.Hint;
-import org.springframework.http.ResponseEntity;
+import com.groom.manvsclass.model.HintEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -9,12 +8,12 @@ import java.util.Map;
 
 public interface HintService {
 
-    ResponseEntity<List<Hint>> getHints(Map<String, String> queryParams, String jwtToken);
+    List<HintEntity> getHints(Map<String, String> queryParams, String jwtToken);
 
-    ResponseEntity<String> createHintsFromFile(MultipartFile file, String jwtToken);
+    String createHintsFromFile(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken);
 
-    ResponseEntity<String> deleteHintByClassUT(String classUT, String jwtToken);
+    String deleteHintByClassUT(String classUT, String jwtToken);
 
-    ResponseEntity<String> deleteHintByClassUTAndOrder(String classUT, Integer order, String jwtToken);
+    String deleteHintByClassUTAndOrder(String classUT, Integer order, String jwtToken);
 
 }

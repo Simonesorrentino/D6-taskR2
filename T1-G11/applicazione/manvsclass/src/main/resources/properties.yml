@@ -24,6 +24,9 @@ spring:
       ddl-auto: update
     show-sql: true
 
+t1:
+  upload-dir: ${UPLOAD_DIR:C:\Users\rosa9\D6-taskR2\T1-G11\applicazione\manvsclass\FilesUpload}
+
 logging:
   level:
     org:
