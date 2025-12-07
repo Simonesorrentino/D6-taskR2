@@ -154,6 +154,14 @@ async function callDownloadClassUT(className) {
     }, async response => await response.blob());
 }
 
+async function callDownloadHint(id) {
+    return await returnDataOnSuccessTemplate({
+        url: `${APIS.DOWNLOAD_HINT}/${id}`,
+        method: "GET",
+        headers: { 'Content-Type': 'application/json' }
+    }, async response => await response.blob());
+}
+
 async function callDeleteClassUT(className) {
     await redirectOnSuccessTemplate({
         url: `${APIS.DELETE_OPPONENT}/${className}`,
@@ -165,9 +173,28 @@ async function callDeleteClassUT(className) {
     });
 }
 
+async function callDeleteHint(className) {
+    await redirectOnSuccessTemplate({
+        url: `${APIS.DELETE_HINT}/${className}`,
+        method: "DELETE",
+        headers: { 'Content-Type': 'application/json' },
+    },
+    {
+        reload: true
+    });
+}
+
 async function callUploadOpponent(body) {
     return await returnDataOnSuccessTemplate({
         url: APIS.UPLOAD_OPPONENT,
+        method: "POST",
+        body: body
+    }, async response => await response.json());
+}
+
+async function callUploadHint(body) {
+    return await returnDataOnSuccessTemplate({
+        url: APIS.UPLOAD_HINT,
         method: "POST",
         body: body
     }, async response => await response.json());

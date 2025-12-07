@@ -239,3 +239,8 @@ div.button-class * {
 }
 
 
+div.button-hints
+div.button-hints * {
+  cursor: pointer;
+}
+

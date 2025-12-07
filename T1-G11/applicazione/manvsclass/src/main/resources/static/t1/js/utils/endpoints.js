@@ -35,6 +35,10 @@ const VIEWS = {
     OPPONENTS_UPLOAD: "/opponents/upload",
     OPPONENTS_EDIT: "/opponents/edit",
 
+    HINTS_MAIN: "/hints/main",
+    HINTS_UPLOAD: "/hints/upload",
+    HINTS_EDIT: "/hints/edit",
+
     TEAMS_MAIN: "/team/main",
     TEAMS_DETAILS: "/team/details",
 

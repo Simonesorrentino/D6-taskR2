@@ -45,6 +45,11 @@ document.querySelector(".button-class").addEventListener("click", function () {
   window.location.href = VIEWS.OPPONENTS_MAIN;
 });
 
+// Imposto l'url del redirect alla pagina di upload dei suggerimenti alle classi di test
+document.querySelector(".button-hints").addEventListener("click", function () {
+  window.location.href = VIEWS.HINTS_MAIN;
+});
+
 // Inizializzo al caricamento della pagina la mail dell'amministratore loggato
 document.addEventListener("DOMContentLoaded", () => {
   const jwtData = parseJwt(getCookie("jwt"));
