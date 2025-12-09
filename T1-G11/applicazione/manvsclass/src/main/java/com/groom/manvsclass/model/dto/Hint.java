@@ -22,7 +22,7 @@ public class Hint {
     @NotNull
     private HintTypeEnum type;
 
-    @NotNull
+//    @NotNull
     private Integer order;
 
 }
