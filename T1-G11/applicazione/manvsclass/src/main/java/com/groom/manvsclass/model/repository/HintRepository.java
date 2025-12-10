@@ -3,6 +3,7 @@ package com.groom.manvsclass.model.repository;
 import com.groom.manvsclass.model.HintEntity;
 import com.groom.manvsclass.model.enums.HintTypeEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface HintRepository extends JpaRepository<HintEntity, Long> {
+public interface HintRepository extends JpaRepository<HintEntity, Long>, JpaSpecificationExecutor<HintEntity> {
 
     @Query("SELECT h FROM HintEntity h WHERE h.content = :content AND h.type = :type AND " +
             "((h.type = 'CLASS' AND h.classUt.name = :classUtName) OR (h.type = 'GENERIC' AND h.classUt IS NULL))")

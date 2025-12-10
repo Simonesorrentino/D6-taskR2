@@ -7,17 +7,21 @@ import com.groom.manvsclass.model.AdminEntity;
 import com.groom.manvsclass.model.ClassUTEntity;
 import com.groom.manvsclass.model.HintEntity;
 import com.groom.manvsclass.model.dto.Hint;
+import com.groom.manvsclass.model.dto.HintResponse;
 import com.groom.manvsclass.model.enums.HintTypeEnum;
 import com.groom.manvsclass.model.repository.AdminRepository;
 import com.groom.manvsclass.model.repository.HintRepository;
 import com.groom.manvsclass.model.repository.ClassUTRepository;
 import com.groom.manvsclass.service.HintService;
 import com.groom.manvsclass.service.JwtService;
+import com.groom.manvsclass.util.HintSpecifications;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,9 +29,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,17 +60,25 @@ public class HintServiceImpl implements HintService {
     private String uploadDir;
 
     @Override
-    public List<HintEntity> getHints(Map<String, String> queryParams, String jwtToken) {
-        return null;
-    }
+    public List<HintResponse> getHints(Map<String, String> queryParams, String jwtToken) {
 
+        jwtVerify(jwtToken);
+
+        Specification<HintEntity> spec = HintSpecifications.withDynamicQuery(queryParams);
+        List<HintEntity> results = hintRepository.findAll(spec);
+
+        if (results.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return hintMapper.toResponseList(results);
+    }
 
     @Override
     public String createHintsFromFile(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken) {
 
-        if (jwtToken == null || jwtToken.isEmpty() || !jwtService.isJwtValid(jwtToken)) {
-            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Invalid JWT token");
-        }
+        jwtVerify(jwtToken);
+
         String adminEmail = jwtService.getAdminFromJwt(jwtToken);
         if (adminEmail == null) {
             throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Utente non autorizzato o token JWT malformato.");
@@ -188,5 +200,29 @@ public class HintServiceImpl implements HintService {
     @Override
     public String deleteHintByClassUTAndOrder(String classUT, Integer order, String jwtToken) {
         return null;
+    }
+
+    private void validateQueryParams(Map<String, String> queryParams) {
+        if (!CollectionUtils.isEmpty(queryParams)) {
+
+            for(String key : queryParams.keySet()) {
+
+                if (!key.equals("type") && !key.equals("classUTName") && !key.equals("order")) {
+                    throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Parametro di ricerca " + key + " non valido");
+                }
+
+            }
+
+            if (queryParams.containsKey("order") && !queryParams.containsKey("type")) {
+                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Tipo di ricerca non valido");
+            }
+
+        }
+    }
+
+    void jwtVerify(String jwtToken) {
+        if (jwtToken == null || jwtToken.isEmpty() || !jwtService.isJwtValid(jwtToken)) {
+            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Invalid JWT token");
+        }
     }
 }
