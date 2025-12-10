@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title th:text="#{class_title}">Classi</title>
+  <title th:text="#{hints_title}">Classi</title>
 
   <!-- Bootstrap & Font Awesome -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -23,7 +23,7 @@
           </svg>
         </a>
 
-        <a id="navOpponentsMain" class="navbar-brand" href="/#" th:text="#{class_title}">Classi</a>
+        <a id="navOpponentsMain" class="navbar-brand" href="/#" th:text="#{hints_title}"></a>
 
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,28 +36,27 @@
               <a id="navDashboardAdmin2" class="nav-link" href="/#">Home</a>
             </li>
             <li class="nav-item">
-              <a id="navOpponentsUpload" class="nav-link" href="/#" th:text="#{class_navbar_add}">Aggiungi Classe e Robot</a>
+              <a id="navOpponentsUpload" class="nav-link" href="/#" th:text="#{hints_navbar_add}"></a>
             </li>
 
             <!-- Ordina per -->
             <ul class="navbar-nav">
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="sortByDropdown" role="button" data-toggle="dropdown"
-                   aria-haspopup="true" aria-expanded="false">Ordina per</a>
+                   aria-haspopup="true" aria-expanded="false" th:text="#{hints_navbar_sort}"></a>
                 <div class="dropdown-menu" aria-labelledby="sortByDropdown">
-                  <a id="linkSortByDate" class="dropdown-item" href="#" th:text="#{class_navbar_sort_date}">Data</a>
-                  <a id="linkSortByName" class="dropdown-item" href="#" th:text="#{class_navbar_sort_name}">Nome</a>
+                  <a id="linkSortByDate" class="dropdown-item" href="#" th:text="#{hints_navbar_sort_date}">Data</a>
+                  <a id="linkSortByName" class="dropdown-item" href="#" th:text="#{hints_navbar_sort_name}">Nome</a>
                 </div>
               </li>
 
               <!-- Filtra per -->
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="filterDropdown" role="button" data-toggle="dropdown"
-                   aria-haspopup="true" aria-expanded="false">Filtra per difficoltà</a>
+                   aria-haspopup="true" aria-expanded="false" th:text="#{hints_navbar_filter}"></a>
                 <div class="dropdown-menu" aria-labelledby="filterDropdown">
-                  <a id="linkFilterDifficultyEasy" class="dropdown-item" href="#" th:text="#{difficulty_beginner}">Facile</a>
-                  <a id="linkFilterDifficultyMedium" class="dropdown-item" href="#" th:text="#{difficulty_intermediate}">Medio</a>
-                  <a id="linkFilterDifficultyHard" class="dropdown-item" href="#" th:text="#{difficulty_advanced}">Difficile</a>
+                  <a id="linkFilterDifficultyEasy" class="dropdown-item" href="#" th:text="#{hints_category1}"></a>
+                  <a id="linkFilterDifficultyMedium" class="dropdown-item" href="#" th:text="#{hints_category2}"></a>
                 </div>
               </li>
             </ul>
