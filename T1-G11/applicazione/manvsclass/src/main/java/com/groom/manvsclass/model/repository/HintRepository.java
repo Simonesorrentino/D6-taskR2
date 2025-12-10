@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -30,4 +31,14 @@ public interface HintRepository extends JpaRepository<HintEntity, Long>, JpaSpec
     );
 
     HintEntity findByContentAndTypeAndClassUtName(String content,  HintTypeEnum type, String classUtName);
+
+    List<HintEntity> findByClassUtName(String classUtName);
+
+    HintEntity findByClassUtNameAndOrder(String classUtName, Integer order);
+
+    List<HintEntity> findByType(HintTypeEnum type);
+
+    HintEntity findByTypeAndOrder(HintTypeEnum type, Integer order);
+
+
 }

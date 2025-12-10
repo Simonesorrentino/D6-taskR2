@@ -12,6 +12,8 @@ public interface HintService {
 
     String createHintsFromFile(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken);
 
+    String updateHint(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken);
+
     String deleteHintByClassUT(String classUT, String jwtToken);
 
     String deleteHintByClassUTAndOrder(String classUT, Integer order, String jwtToken);

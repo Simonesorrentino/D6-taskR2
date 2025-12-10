@@ -25,13 +25,12 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,6 +57,9 @@ public class HintServiceImpl implements HintService {
 
     @Value("${t1.upload-dir}")
     private String uploadDir;
+
+    @Autowired
+    private Validator validator;
 
     @Override
     public List<HintResponse> getHints(Map<String, String> queryParams, String jwtToken) {
@@ -87,6 +89,21 @@ public class HintServiceImpl implements HintService {
         List<Hint> hintList;
         try {
             hintList = objectMapper.readValue(file.getInputStream(), new TypeReference<List<Hint>>() {});
+
+            //Validazione contenuto JSON
+            for (Hint hint : hintList) {
+                Set<ConstraintViolation<Hint>> violations = validator.validate(hint);
+
+                if (!violations.isEmpty()) {
+                    // Se ci sono violazioni, costruisci un messaggio di errore e lancia un'eccezione.
+                    String violationMessage = violations.stream()
+                            .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                            .collect(Collectors.joining(", "));
+
+                    throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Il contenuto del file non è valido");
+                }
+            }
+
         } catch (IOException e) {
             throw new HttpClientErrorException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Formato file non valido. Assicurati che sia un JSON valido.");
         }
@@ -176,7 +193,8 @@ public class HintServiceImpl implements HintService {
                                 "Errore I/O durante il salvataggio dell'immagine: " + identifier);
                     }
                 } else {
-                    log.warn("URI dell'immagine '{}' trovato nel JSON, ma file non allegato.", identifier);
+                    throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                            "URI dell'immagine trovato nel JSON, ma file non allegato.");
                 }
             }
 
@@ -193,13 +211,46 @@ public class HintServiceImpl implements HintService {
     }
 
     @Override
+    public String updateHint(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken) {
+        return "";
+    }
+
+    @Override
     public String deleteHintByClassUT(String classUT, String jwtToken) {
-        return null;
+
+        List<HintEntity> hintEntityList;
+
+        if (classUT.equals("null")) {
+            hintEntityList = hintRepository.findByType(HintTypeEnum.GENERIC);
+        } else {
+            hintEntityList = hintRepository.findByClassUtName(classUT);
+        }
+
+        if (CollectionUtils.isEmpty(hintEntityList)) {
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare.");
+        }
+
+        hintRepository.deleteAll(hintEntityList);
+        return "Suggerimenti eliminati con successo.";
     }
 
     @Override
     public String deleteHintByClassUTAndOrder(String classUT, Integer order, String jwtToken) {
-        return null;
+
+        HintEntity hintEntity;
+
+        if (classUT.equals("null")) {
+            hintEntity = hintRepository.findByTypeAndOrder(HintTypeEnum.GENERIC, order);
+        } else {
+            hintEntity = hintRepository.findByClassUtNameAndOrder(classUT, order);
+        }
+
+        if (hintEntity == null) {
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare.");
+        }
+
+        hintRepository.delete(hintEntity);
+        return "Suggerimento eliminato con successo.";
     }
 
     private void validateQueryParams(Map<String, String> queryParams) {
