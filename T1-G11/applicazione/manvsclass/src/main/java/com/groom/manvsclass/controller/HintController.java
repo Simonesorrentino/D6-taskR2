@@ -28,7 +28,7 @@ public class HintController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PostMapping()
+    @PostMapping("/upload")
     public ResponseEntity<String> createHints(
             @CookieValue(name = "jwt") String jwtToken,
             @RequestParam("file") MultipartFile file,

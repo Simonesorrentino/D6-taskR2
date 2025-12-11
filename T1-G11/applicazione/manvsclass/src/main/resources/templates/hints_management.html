@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script
+            src="https://kit.fontawesome.com/d963f915e6.js"
+            crossorigin="anonymous"
+    ></script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title th:text="#{hints_management_title}">Gestione Suggerimenti</title>
+
+    <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css"
+    />
+    <link rel="stylesheet" th:href="@{/t1/css/dashboard.css}" />
+    <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
+            rel="stylesheet"
+    />
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-2.0.8/r-3.0.2/datatables.min.css"/>
+</head>
+<body>
+<button class="sidebar-toggle">☰</button>
+<div class="sidebar">
+    <p id="email-display"></p>
+
+    <a href="/dashboard">Dashboard</a>
+    <a id="dashboard_admins_redirect_btn" href="#">Admin</a>
+    <a id="dashboard_users_redirect_btn" href="#" th:text="#{homeAdmin_side_menu_players}"></a>
+
+    <button id="logout_admin_btn" class="logout" >Logout</button>
+</div>
+
+<div class="main-content">
+    <header>
+        <h1 th:text="#{hints_management_title}">Gestione Suggerimenti</h1>
+    </header>
+
+    <section class="card-section upload-section">
+        <h2 th:text="#{hints_upload_title}">Carica Nuovi Suggerimenti</h2>
+        <p th:text="#{hints_upload_descr}">Carica un file JSON contenente i suggerimenti e allega le relative immagini.</p>
+
+        <form id="uploadHintsForm" enctype="multipart/form-data">
+
+            <div class="form-group">
+                <label for="file_json" th:text="#{hints_file_json}">File JSON Suggerimenti:</label>
+                <input type="file" id="file_json" name="file" accept=".json" required>
+            </div>
+
+            <div class="form-group">
+                <label for="file_images" th:text="#{hints_file_images}">File Immagine (Zip o Multiplo):</label>
+                <input type="file" id="file_images" name="images" accept="image/*" multiple>
+            </div>
+
+            <button type="submit" class="btn btn-primary" th:text="#{hints_btn_upload}">Carica Suggerimenti</button>
+        </form>
+    </section>
+
+    <section class="card-section table-section">
+        <h2 th:text="#{hints_table_title}">Suggerimenti Esistenti</h2>
+
+        <table id="hintsTable" class="display responsive nowrap" style="width:100%">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th th:text="#{hints_col_type}">Tipo</th>
+                <th th:text="#{hints_col_class}">Classe UT</th>
+                <th th:text="#{hints_col_content}">Contenuto</th>
+                <th th:text="#{hints_col_order}">Ordine</th>
+                <th th:text="#{hints_col_image}">Immagine</th>
+                <th th:text="#{hints_col_actions}">Azioni</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="card-section delete-mass-section">
+        <h2 th:text="#{hints_delete_mass_title}">Eliminazione Massiva</h2>
+        <p th:text="#{hints_delete_mass_descr}">Elimina tutti i suggerimenti associati a una specifica Classe UT o tutti i suggerimenti generici.</p>
+
+        <form id="massDeleteHintsForm">
+            <div class="form-group">
+                <label for="classUtMassDelete" th:text="#{hints_delete_select_label}">Seleziona Categoria:</label>
+                <select id="classUtMassDelete" required>
+                    <option value="null" th:text="#{hints_delete_option_generic}">Suggerimenti Generici</option>
+                </select>
+                <input type="text" id="classUtNameInput" placeholder="Inserisci nome Classe UT" style="margin-top: 10px;">
+                <p class="warning-text" th:text="#{hints_delete_warning}">ATTENZIONE: Questa operazione è irreversibile.</p>
+            </div>
+            <button type="submit" class="btn btn-danger" th:text="#{hints_btn_delete_mass}">Elimina in Blocco</button>
+        </form>
+    </section>
+
+</div>
+
+<script th:inline="javascript">
+    // Le tue variabili esistenti per il menu (homeAdmin_title, homeAdmin_side_menu_players, ecc.)
+
+    // Variabili specifiche per questa pagina
+    const hints_management_title = /*[[#{hints_management_title}]]*/ "Gestione Suggerimenti";
+    const hints_col_type = /*[[#{hints_col_type}]]*/ "Tipo";
+    // ... (aggiungi qui tutte le chiavi di traduzione usate sopra) ...
+    const errors = {
+        notHandled: /*[[#{error.nothandled}]]*/ "Si è verificato un errore, riprova più tardi"
+    };
+</script>
+
+<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-2.0.8/r-3.0.2/datatables.min.js"></script>
+
+<script th:src="@{/t1/js/utils/endpoints.js}"></script>
+<script th:src="@{/t1/js/utils/api.js}"></script>
+<script th:src="@{/t1/js/utils/cookie_util.js}"></script>
+<script th:src="@{/t1/js/utils/renderErrors.js}"></script>
+
+<script th:src="@{/t1/js/hints_management.js}"></script>
+</body>
+</html>

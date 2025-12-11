@@ -123,4 +123,7 @@ function Invita() {
     });
 }
 
-
+// Imposto l'url del redirect alla pagina di gestione dei suggerimenti
+document.querySelector(".button-hints").addEventListener("click", function () {
+  window.location.href = VIEWS.HINTS_MAIN;
+});

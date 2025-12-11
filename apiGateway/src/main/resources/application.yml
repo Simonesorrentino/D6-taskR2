@@ -81,7 +81,8 @@ spring:
                 redis-rate-limiter.burstCapacity: 15
                 redis-rate-limiter.requestedTokens: 1
         - id: T1-route
-          uri: http://t1-controller:8081
+          #uri: http://t1-controller:8081
+          uri: http://host.docker.internal:8081
           predicates:
             - Path=/adminService/**
           filters:

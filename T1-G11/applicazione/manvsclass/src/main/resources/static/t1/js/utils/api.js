@@ -173,6 +173,79 @@ async function callUploadOpponent(body) {
     }, async response => await response.json());
 }
 
+//Gestione Suggerimenti
+/**
+ * Recupera la lista dei suggerimenti, opzionalmente filtrati tramite queryParams.
+ * @param {string} jwtToken - Il token JWT.
+ * @param {Object} queryParams - Mappa di parametri per la query string (es. { type: 'class', classUTName: 'MyClass' }).
+ * @returns {Array<Object> | null} Lista dei suggerimenti o null in caso di errore.
+ */
+async function callGetHints(jwtToken, queryParams = {}) {
+    // Costruisce la query string
+    const queryString = new URLSearchParams(queryParams).toString();
+    const url = `${APIS.HINTS_SERVICE.BASE}?${queryString}`;
+
+    // Nota: Il token JWT viene gestito dalle credenziali e non deve essere passato esplicitamente nell'header in questa configurazione.
+    return await returnDataOnSuccessTemplate({
+        url: url,
+        method: "GET",
+        headers: { 'Content-Type': 'application/json' }
+    }, async response => await response.json());
+}
+
+/**
+ * Carica nuovi suggerimenti e i relativi file immagine.
+ * Usa FormData, quindi non specifica Content-Type.
+ * @param {FormData} body - Il FormData contenente il file JSON e i file immagine.
+ * @param {string} jwtToken - Il token JWT.
+ * @returns {Object | null} Messaggio di successo o null in caso di errore.
+ */
+async function callUploadHints(body, jwtToken) {
+    // Si noti che l'header Content-Type NON è specificato qui,
+    // poiché il browser lo imposta automaticamente (multipart/form-data) quando si usa FormData.
+    return await returnDataOnSuccessTemplate({
+        url: APIS.HINTS_SERVICE.UPLOAD,
+        method: "POST",
+        // Body è FormData
+        body: body
+    }, async response => await response.json());
+}
+
+
+/**
+ * Elimina tutti i suggerimenti per una specifica classe UT o tutti i suggerimenti generici.
+ * @param {string} classUT - Il nome della classe UT o 'null' per i generici.
+ * @param {string} jwtToken - Il token JWT.
+ */
+async function callDeleteHintByClass(classUT, jwtToken) {
+    // Utilizziamo redirectOnSuccessTemplate per ricaricare la pagina in caso di successo
+    // Se non vuoi ricaricare la pagina, dovrai usare returnDataOnSuccessTemplate
+    await redirectOnSuccessTemplate({
+        url: `${APIS.HINTS_SERVICE.BASE}/${classUT}`,
+        method: "DELETE",
+        headers: { 'Content-Type': 'application/json' },
+    },
+    {
+        reload: true // Ricarica la pagina dopo l'eliminazione massiva
+    });
+}
+
+/**
+ * Elimina un singolo suggerimento per classe/tipo e ordine.
+ * @param {string} classUT - Il nome della classe UT o 'null' per i generici.
+ * @param {number} order - L'ordine del suggerimento.
+ * @param {string} jwtToken - Il token JWT.
+ * @returns {Object | null} Messaggio di successo o null in caso di errore.
+ */
+async function callDeleteHintByOrder(classUT, order, jwtToken) {
+    // Utilizziamo returnDataOnSuccessTemplate per poter gestire il riordino in hints_management.js
+    return await returnDataOnSuccessTemplate({
+        url: `${APIS.HINTS_SERVICE.BASE}/${classUT}/${order}`,
+        method: "DELETE",
+        headers: { 'Content-Type': 'application/json' },
+    }, async response => await response.json());
+}
+
 
 
 

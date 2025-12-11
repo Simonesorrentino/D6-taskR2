@@ -24,6 +24,11 @@ public class AdminViewController {
         return new ModelAndView("players_info");
     }
 
+    @GetMapping("/dashboard/hints")
+    public ModelAndView showHintsManagement() {
+        return new ModelAndView("hints_management");
+    }
+
     /*
     @GetMapping("/invite_admins")
     @ResponseBody

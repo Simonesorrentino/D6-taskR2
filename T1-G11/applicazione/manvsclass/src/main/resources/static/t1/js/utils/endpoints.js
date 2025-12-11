@@ -18,6 +18,8 @@ const API_USER_SERVICE_PREFIX = "/api/userService";
 const API_GAMEREPO_SERVICE_PREFIX = "/api/gamerepo";
 const API_ADMIN_SERVICE_PREFIX = "/api/adminService";
 
+const API_HINTS_SERVICE_PREFIX = "/hints";
+
 const VIEWS = {
     LOGIN_USER: "/login",
     DASHBOARD_ADMIN: "/dashboard",
@@ -39,6 +41,7 @@ const VIEWS = {
     TEAMS_DETAILS: "/team/details",
 
     SCALATA_MAIN: "/scalata/main",
+    HINTS_MAIN: "/dashboard/hints",
 };
 
 const APIS = {
@@ -53,5 +56,9 @@ const APIS = {
     DOWNLOAD_CLASSUT: `${API_ADMIN_SERVICE_PREFIX}/opponents/download`,
     DELETE_OPPONENT: `${API_ADMIN_SERVICE_PREFIX}/opponents`,
     UPLOAD_OPPONENT: `${API_ADMIN_SERVICE_PREFIX}/opponents`,
+    HINTS_SERVICE: {
+            BASE: API_HINTS_SERVICE_PREFIX,
+            UPLOAD: API_HINTS_SERVICE_PREFIX,
+        },
 };
 

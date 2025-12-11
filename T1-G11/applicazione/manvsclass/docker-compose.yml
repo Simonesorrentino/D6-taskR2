@@ -2,7 +2,8 @@ name: t1
 
 services:
   controller:
-    image: mick0974/a13:t1-g11
+    #image: mick0974/a13:t1-g11
+    image: t1-service:v2.0
     container_name: t1-controller
     restart: always
     expose:
