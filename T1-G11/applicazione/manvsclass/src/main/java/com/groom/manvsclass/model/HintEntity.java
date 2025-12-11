@@ -22,7 +22,7 @@ public class HintEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_email", referencedColumnName = "email", nullable = false)
+    @JoinColumn(name = "admin_email", referencedColumnName = "email")
     private AdminEntity admin;
 
     @ManyToOne(fetch = FetchType.LAZY)

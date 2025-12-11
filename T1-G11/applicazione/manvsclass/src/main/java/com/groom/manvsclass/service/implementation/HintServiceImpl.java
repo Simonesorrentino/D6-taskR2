@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -217,57 +218,74 @@ public class HintServiceImpl implements HintService {
 
     @Override
     public String deleteHintByClassUT(String classUT, String jwtToken) {
+        jwtVerify(jwtToken);
 
         List<HintEntity> hintEntityList;
+        HintTypeEnum type = classUT.equals("null") ? HintTypeEnum.GENERIC : HintTypeEnum.CLASS;
 
-        if (classUT.equals("null")) {
-            hintEntityList = hintRepository.findByType(HintTypeEnum.GENERIC);
+        if (type == HintTypeEnum.GENERIC) {
+            hintEntityList = hintRepository.findByType(type);
         } else {
             hintEntityList = hintRepository.findByClassUtName(classUT);
         }
 
         if (CollectionUtils.isEmpty(hintEntityList)) {
-            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare.");
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare per " + classUT + ".");
         }
 
         hintRepository.deleteAll(hintEntityList);
+
+        for (HintEntity hint : hintEntityList) {
+            deleteImageFile(hint.getImageUri());
+        }
+
         return "Suggerimenti eliminati con successo.";
     }
 
     @Override
     public String deleteHintByClassUTAndOrder(String classUT, Integer order, String jwtToken) {
+        jwtVerify(jwtToken);
 
         HintEntity hintEntity;
+        HintTypeEnum type = classUT.equals("null") ? HintTypeEnum.GENERIC : HintTypeEnum.CLASS;
 
-        if (classUT.equals("null")) {
-            hintEntity = hintRepository.findByTypeAndOrder(HintTypeEnum.GENERIC, order);
+        if (type == HintTypeEnum.GENERIC) {
+            hintEntity = hintRepository.findByTypeAndOrder(type, order);
         } else {
             hintEntity = hintRepository.findByClassUtNameAndOrder(classUT, order);
         }
 
         if (hintEntity == null) {
-            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare.");
+            String target = type == HintTypeEnum.GENERIC ? "generico con ordine " + order : "per " + classUT + " con ordine " + order;
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare: " + target);
         }
 
         hintRepository.delete(hintEntity);
+        deleteImageFile(hintEntity.getImageUri());
+
         return "Suggerimento eliminato con successo.";
     }
 
-    private void validateQueryParams(Map<String, String> queryParams) {
-        if (!CollectionUtils.isEmpty(queryParams)) {
+    private void deleteImageFile(String imageUri) {
+        if (imageUri != null && !imageUri.trim().isEmpty()) {
+            try {
+                Path filePath = Paths.get(imageUri);
 
-            for(String key : queryParams.keySet()) {
+                if (imageUri.startsWith(uploadDir) && Files.exists(filePath)) {
+                    Files.delete(filePath);
+                    log.info("File immagine eliminato con successo: {}", imageUri);
 
-                if (!key.equals("type") && !key.equals("classUTName") && !key.equals("order")) {
-                    throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Parametro di ricerca " + key + " non valido");
+                } else if (Files.exists(filePath)) {
+
+                    log.warn("File immagine trovato ma non nella directory di upload definita. Percorso: {}", imageUri);
                 }
+            } catch (IOException e) {
 
+                log.error("Errore durante l'eliminazione del file immagine {}: {}", imageUri, e.getMessage());
+            } catch (Exception e) {
+
+                log.error("Errore generico durante l'eliminazione del file immagine {}: {}", imageUri, e.getMessage());
             }
-
-            if (queryParams.containsKey("order") && !queryParams.containsKey("type")) {
-                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Tipo di ricerca non valido");
-            }
-
         }
     }
 
