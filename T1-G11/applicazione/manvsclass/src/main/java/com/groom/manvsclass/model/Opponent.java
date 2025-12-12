@@ -1,44 +1,46 @@
 package com.groom.manvsclass.model;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
-import testrobotchallenge.commons.models.score.EvosuiteScore;
-import testrobotchallenge.commons.models.score.JacocoScore;
+import testrobotchallenge.commons.models.opponent.OpponentDifficulty; // Assicurati di avere questo import o usa String
 
-import javax.persistence.Id;
-import java.time.Instant;
+import javax.persistence.*;
+import java.time.LocalDateTime;
 
-@Document(collection = "opponents")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
-@ToString
+@AllArgsConstructor
+@Entity
+@Table(name = "opponents")
 public class Opponent {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @CreatedDate
-    private Instant createdAt;
-
-    @Indexed
-    private String classUT;
-
-    @Indexed
+    @Column(name = "difficulty")
+    @Enumerated(EnumType.STRING) // Se OpponentDifficulty è un Enum
     private OpponentDifficulty opponentDifficulty;
 
-    @Indexed
+    @Column(name = "opponent_type")
     private String opponentType;
 
+    @Column(name = "coverage")
     private String coverage;
 
-    private JacocoScore jacocoScore;
-    private EvosuiteScore evosuiteScore;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
+    @Column(name = "jacoco_score", columnDefinition = "TEXT")
+    private String jacocoScore;
+
+    @Column(name = "evosuite_score", columnDefinition = "TEXT")
+    private String evosuiteScore;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "class_name", referencedColumnName = "name", nullable = false)
+    @ToString.Exclude
+    private ClassUT classUT;
 }

@@ -3,8 +3,7 @@
  */
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.AdminMongoDB;
-import com.groom.manvsclass.model.ClassUT;
+import com.groom.manvsclass.model.Admin;
 import com.groom.manvsclass.model.repository.AdminRepositoryMongoDB;
 import com.groom.manvsclass.model.repository.ClassRepositoryMongoDB;
 import com.groom.manvsclass.model.repository.OperationRepository;
@@ -27,7 +26,7 @@ public class AdminServiceMongoDB {
 
     @Autowired
     private final SearchRepositoryImpl srepo;
-    private final AdminMongoDB userAdminMongoDB = new AdminMongoDB("default", "default", "default", "default", "default");
+    private final Admin userAdmin = new Admin("default", "default", "default", "default", "default");
     private final LocalDate today = LocalDate.now();
     @Autowired
     private JwtService jwtService;
@@ -47,7 +46,7 @@ public class AdminServiceMongoDB {
     private PasswordEncoder myPasswordEncoder;
 
     public AdminServiceMongoDB(SearchRepositoryImpl srepo) {
-        this.userAdminMongoDB.setUsername("default");
+        this.userAdmin.setUsername("default");
         this.srepo = srepo;
     }
 

@@ -3,8 +3,7 @@
  */
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.AdminEntity;
-import com.groom.manvsclass.model.AdminMongoDB;
+import com.groom.manvsclass.model.Admin;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -31,15 +30,15 @@ public class JwtService {
 //                .compact(); //.compact() serve a compattare il token JWT in una stringa valida che può essere facilmente trasferita tramite HTTP o memorizzata in altri luoghi di archiviazione come cookie
 //    }
 
-    public static String generateToken(AdminEntity adminEntity) {
+    public static String generateToken(Admin admin) {
         Instant now = Instant.now();
         Instant expiration = now.plus(1, ChronoUnit.HOURS);
 
         return Jwts.builder()
-                .setSubject(adminEntity.getUsername()) // .setSubject() imposta il soggetto del token JWT; il soggetto di solito rappresenta l'identità a cui si applica il token
+                .setSubject(admin.getUsername()) // .setSubject() imposta il soggetto del token JWT; il soggetto di solito rappresenta l'identità a cui si applica il token
                 .setIssuedAt(Date.from(now)) // .setIssuedAt() imposta il timestamp di emissione del token
                 .setExpiration(Date.from(expiration)) //.setExpiration() imposta il timestamp di scadenza del token
-                .claim("admin_email", adminEntity.getEmail()) //.claim() aggiunge una serie di informazioni aggiuntive
+                .claim("admin_email", admin.getEmail()) //.claim() aggiunge una serie di informazioni aggiuntive
                 .signWith(SignatureAlgorithm.HS256, "mySecretKeyAdmin") //.signWith() serve per firmare il token JWT utilizzando l'algoritmo di firma HMAC-SHA256 e una chiave segreta specificata
                 .compact(); //.compact() serve a compattare il token JWT in una stringa valida che può essere facilmente trasferita tramite HTTP o memorizzata in altri luoghi di archiviazione come cookie
     }

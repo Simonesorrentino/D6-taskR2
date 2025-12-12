@@ -1,8 +1,7 @@
 package com.groom.manvsclass.model.repository;
 
-import com.groom.manvsclass.model.AdminMongoDB;
-import com.groom.manvsclass.model.ClassUT;
-import com.groom.manvsclass.model.interaction;
+import com.groom.manvsclass.model.Admin;
+import com.groom.manvsclass.model.Interaction;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -40,9 +39,9 @@ public class SearchRepositoryImpl {
         return count;
     }
 
-    public List<interaction> findReport() {
+    public List<Interaction> findReport() {
 
-        final List<interaction> posts = new ArrayList<>();
+        final List<Interaction> posts = new ArrayList<>();
 
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("interaction");
@@ -55,7 +54,7 @@ public class SearchRepositoryImpl {
                 )
         );
 
-        result.forEach(doc -> posts.add(converter.read(interaction.class, doc)));
+        result.forEach(doc -> posts.add(converter.read(Interaction.class, doc)));
 
         return posts;
     }
@@ -73,7 +72,7 @@ public class SearchRepositoryImpl {
     }
 
 
-    public AdminMongoDB findAdminByUsername(String username) {
+    public Admin findAdminByUsername(String username) {
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("Admin");
         Bson filter = Filters.eq("username", username);
@@ -82,14 +81,14 @@ public class SearchRepositoryImpl {
             return null;
         }
         //Admin admin = new Admin("gg","ff","gg","hh");
-        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
-        adminMongoDB.setUsername(result.getString("username"));
-        adminMongoDB.setPassword(result.getString("password"));
-        return adminMongoDB;
+        Admin admin = new Admin("gg", "ff", "gg", "hh", "jj");
+        admin.setUsername(result.getString("username"));
+        admin.setPassword(result.getString("password"));
+        return admin;
     }
 
     //MODIFICA (15/02/2024) : Aggiunta ricerca per email
-    public AdminMongoDB findAdminByEmail(String email) {
+    public Admin findAdminByEmail(String email) {
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("Admin");
         Bson filter = Filters.eq("email", email);
@@ -98,16 +97,16 @@ public class SearchRepositoryImpl {
             return null;
         }
         //Admin admin = new Admin("gg","ff","gg","hh");
-        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
-        adminMongoDB.setEmail(result.getString("email"));
-        adminMongoDB.setNome(result.getString("nome"));
-        adminMongoDB.setCognome(result.getString("cognome"));
-        adminMongoDB.setUsername(result.getString("username"));
+        Admin admin = new Admin("gg", "ff", "gg", "hh", "jj");
+        admin.setEmail(result.getString("email"));
+        admin.setName(result.getString("nome"));
+        admin.setSurname(result.getString("cognome"));
+        admin.setUsername(result.getString("username"));
         // admin.setResetToken(result.getString("resetToken"));
-        return adminMongoDB;
+        return admin;
     }
 
-    public AdminMongoDB findAdminByResetToken(String resetToken) {
+    public Admin findAdminByResetToken(String resetToken) {
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("Admin");
         Bson filter = Filters.eq("resetToken", resetToken);
@@ -116,12 +115,12 @@ public class SearchRepositoryImpl {
             return null;
         }
         //Admin admin = new Admin("gg","ff","gg","hh");
-        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
-        adminMongoDB.setResetToken(result.getString("resetToken"));
-        return adminMongoDB;
+        Admin admin = new Admin("gg", "ff", "gg", "hh", "jj");
+        admin.setResetToken(result.getString("resetToken"));
+        return admin;
     }
 
-    public AdminMongoDB findAdminByInvitationToken(String invitationToken) {
+    public Admin findAdminByInvitationToken(String invitationToken) {
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("Admin");
         Bson filter = Filters.eq("invitationToken", invitationToken);

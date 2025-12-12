@@ -1,6 +1,6 @@
 package com.groom.manvsclass.util;
 
-import com.groom.manvsclass.model.HintEntity;
+import com.groom.manvsclass.model.Hint;
 import com.groom.manvsclass.model.enums.HintTypeEnum;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class HintSpecifications {
 
-    public static Specification<HintEntity> withDynamicQuery(Map<String, String> queryParams) {
+    public static Specification<Hint> withDynamicQuery(Map<String, String> queryParams) {
 
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();

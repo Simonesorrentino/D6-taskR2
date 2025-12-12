@@ -21,8 +21,7 @@
 
 package com.groom.manvsclass.controller;
 
-import com.groom.manvsclass.model.ClassUT;
-import com.groom.manvsclass.model.interaction;
+import com.groom.manvsclass.model.Interaction;
 import com.groom.manvsclass.service.AdminServiceMongoDB;
 import com.groom.manvsclass.util.Util;
 import org.springframework.http.ResponseEntity;
@@ -52,8 +51,8 @@ public class HomeController {
     }
 
     @PostMapping("/newinteraction")
-    public ResponseEntity<interaction> uploadInteraction(@RequestBody interaction interazione) {
-        interaction savedInteraction = utilsService.uploadInteraction(interazione);
+    public ResponseEntity<Interaction> uploadInteraction(@RequestBody Interaction interazione) {
+        Interaction savedInteraction = utilsService.uploadInteraction(interazione);
         return ResponseEntity.ok(savedInteraction);
     }
 
@@ -68,12 +67,12 @@ public class HomeController {
     }
 
     @GetMapping("/interaction")
-    public List<interaction> elencaInt() {
+    public List<Interaction> elencaInt() {
         return utilsService.elencaInt();
     }
 
     @GetMapping("/findReport")
-    public List<interaction> elencaReport() {
+    public List<Interaction> elencaReport() {
         return utilsService.elencaReport();
     }
 
@@ -88,7 +87,7 @@ public class HomeController {
     }
 
     @PostMapping("/deleteint/{id}")
-    public interaction eliminaInteraction(@PathVariable int id) {
+    public Interaction eliminaInteraction(@PathVariable int id) {
         return utilsService.eliminaInteraction(id);
     }
 }

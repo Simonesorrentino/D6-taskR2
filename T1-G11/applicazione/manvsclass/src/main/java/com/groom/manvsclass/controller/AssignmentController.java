@@ -1,6 +1,6 @@
 package com.groom.manvsclass.controller;
 
-import com.groom.manvsclass.model.AssignmentMongoDB;
+import com.groom.manvsclass.model.Assignment;
 import com.groom.manvsclass.service.AssignmentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +16,8 @@ public class AssignmentController {
     }
 
     @PostMapping("/creaAssignment/{idTeam}")
-    public ResponseEntity<?> creaAssignment(@PathVariable("idTeam") String idTeam, @RequestBody AssignmentMongoDB assignmentMongoDB, @CookieValue(name = "jwt", required = false) String jwt) {
-        return assignmentService.creaAssignment(assignmentMongoDB, idTeam, jwt);
+    public ResponseEntity<?> creaAssignment(@PathVariable("idTeam") String idTeam, @RequestBody Assignment assignment, @CookieValue(name = "jwt", required = false) String jwt) {
+        return assignmentService.creaAssignment(assignment, idTeam, jwt);
     }
 
     @GetMapping("/visualizzaTeamAssignments/{idTeam}")

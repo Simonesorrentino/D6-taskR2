@@ -3,7 +3,7 @@
  */
 package com.groom.manvsclass.util;
 
-import com.groom.manvsclass.model.interaction;
+import com.groom.manvsclass.model.Interaction;
 import com.groom.manvsclass.model.repository.InteractionRepository;
 import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,11 +36,11 @@ public class Util {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 8);
     }
 
-    public List<interaction> elencaInt() {
+    public List<Interaction> elencaInt() {
         return repo_int.findAll();
     }
 
-    public List<interaction> elencaReport() {
+    public List<Interaction> elencaReport() {
         return srepo.findReport();
     }
 
@@ -48,7 +48,7 @@ public class Util {
         return srepo.getLikes(name);
     }
 
-    public interaction uploadInteraction(interaction interazione) {
+    public Interaction uploadInteraction(Interaction interazione) {
         return repo_int.save(interazione);
     }
 
@@ -62,7 +62,7 @@ public class Util {
     }
 
     public String newLike(String name) {
-        interaction newInteraction = new interaction();
+        Interaction newInteraction = new Interaction();
         int id_u = API_id();
         String email_u = API_email(id_u);
         LocalDate currentDate = LocalDate.now();
@@ -81,7 +81,7 @@ public class Util {
     }
 
     public String newReport(String name, String commento) {
-        interaction newInteraction = new interaction();
+        Interaction newInteraction = new Interaction();
         int id_u = API_id();
         String email_u = API_email(id_u);
         LocalDate currentDate = LocalDate.now();
@@ -100,9 +100,9 @@ public class Util {
         return "Nuova interazione di tipo 'report' inserita per la classe: " + name;
     }
 
-    public interaction eliminaInteraction(int id_i) {
+    public Interaction eliminaInteraction(int id_i) {
         Query query = new Query();
         query.addCriteria(Criteria.where("id_i").is(id_i));
-        return mongoTemplate.findAndRemove(query, interaction.class);
+        return mongoTemplate.findAndRemove(query, Interaction.class);
     }
 }

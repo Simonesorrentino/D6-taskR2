@@ -1,8 +1,7 @@
 package com.groom.manvsclass.mapper;
 
-import com.groom.manvsclass.model.ClassUTEntity;
-import com.groom.manvsclass.model.HintEntity;
-import com.groom.manvsclass.model.dto.Hint;
+import com.groom.manvsclass.model.ClassUT;
+import com.groom.manvsclass.model.Hint;
 import com.groom.manvsclass.model.dto.HintResponse;
 import com.groom.manvsclass.model.repository.AdminRepository;
 import com.groom.manvsclass.model.repository.ClassUTRepository;
@@ -34,25 +33,25 @@ public abstract class HintMapper {
             @Mapping(source = "classUTName", target = "classUt", qualifiedByName = "mapClassUTFromName"),
             @Mapping(source = "imageUri", target = "imageUri")
     })
-    public abstract HintEntity dtoToEntity(Hint hint);
+    public abstract Hint dtoToEntity(com.groom.manvsclass.model.dto.Hint hint);
 
     @Mappings({
             @Mapping(source = "classUt.name", target = "classUTName")
     })
-    public abstract Hint entityToDto(HintEntity hintEntity);
+    public abstract com.groom.manvsclass.model.dto.Hint entityToDto(Hint hint);
 
     @Mappings({
             @Mapping(source = "admin.email", target = "adminEmail"),
             @Mapping(source = "classUt.name", target = "classUTName")
     })
-    public abstract HintResponse toResponse(HintEntity hintEntity);
+    public abstract HintResponse toResponse(Hint hint);
 
-    public abstract List<Hint> mapList(List<HintEntity> hintEntityList);
+    public abstract List<com.groom.manvsclass.model.dto.Hint> mapList(List<Hint> hintList);
 
-    public abstract List<HintResponse> toResponseList(List<HintEntity> hintEntityList);
+    public abstract List<HintResponse> toResponseList(List<Hint> hintList);
 
     @Named("mapClassUTFromName")
-    public ClassUTEntity mapClassUTFromName(String classUTName) {
+    public ClassUT mapClassUTFromName(String classUTName) {
         if (classUTName == null) {
             return null;
         }

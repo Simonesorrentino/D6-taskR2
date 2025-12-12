@@ -1,86 +1,43 @@
 package com.groom.manvsclass.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-@Document(collection = "TeamManagement")
+import javax.persistence.*;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "team_admins")
+@IdClass(TeamAdminId.class) // Collega la classe ID creata sopra
 public class TeamAdmin {
     @Id
-    private String id; // Identificativo univoco della relazione
+    @Column(name = "admin_email")
+    private String adminEmail;
 
-    private String adminId; // Riferimento all'Admin (ID)
-    private String teamId;  // Riferimento al Team (ID)
-    private String teamName; //Nome della classe
+    @Id
+    @Column(name = "team_id")
+    private Long teamId;
+
+    @Id
+    @Column(name = "role")
     private String role; // Ruolo dell'Admin nel Team
-    private boolean isActive; // Stato attuale della relazione
 
-    // Costruttore
-    public TeamAdmin(String adminId, String teamId, String teamName, String role, boolean isActive) {
-        this.adminId = adminId;
-        this.teamId = teamId;
-        this.teamName = teamName;
-        this.role = role;
-        this.isActive = isActive;
-    }
+    private String teamName; //Nome della classe
 
-    // Getter e Setter
-    public String getId() {
-        return id;
-    }
+    @Column(name = "is_active")
+    private Boolean isActive = true;
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_email", referencedColumnName = "email", insertable = false, updatable = false)
+    @ToString.Exclude
+    private Admin admin;
 
-    public String getAdminId() {
-        return adminId;
-    }
-
-    public void setAdminId(String adminId) {
-        this.adminId = adminId;
-    }
-
-    public String getTeamId() {
-        return teamId;
-    }
-
-    public void setTeamId(String teamId) {
-        this.teamId = teamId;
-    }
-
-    public String getTeamName() {
-        return this.teamName;
-    }
-
-    public void setTeamName(String teamName) {
-        this.teamName = teamName;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-
-    public boolean isActive() {
-        return isActive;
-    }
-
-    public void setActive(boolean active) {
-        isActive = active;
-    }
-
-    @Override
-    public String toString() {
-        return "TeamManagement{" +
-                "id='" + id + '\'' +
-                ", adminId='" + adminId + '\'' +
-                ", teamId='" + teamId + '\'' +
-                ", role='" + role + '\'' +
-                ", isActive=" + isActive +
-                '}';
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", referencedColumnName = "id", insertable = false, updatable = false)
+    @ToString.Exclude
+    private Team team;
 }

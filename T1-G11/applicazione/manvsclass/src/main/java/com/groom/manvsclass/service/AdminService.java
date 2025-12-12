@@ -1,18 +1,17 @@
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.AdminEntity;
-import com.groom.manvsclass.model.ClassUT;
+import com.groom.manvsclass.model.Admin;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
 public interface AdminService {
 
-    ResponseEntity<AdminEntity> getAdminByUsername(String username, String jwt);
+    ResponseEntity<Admin> getAdminByUsername(String username, String jwt);
 
-    ResponseEntity<?> loginWithInvitation(AdminEntity adminEntity, String jwt);
+    ResponseEntity<?> loginWithInvitation(Admin admin, String jwt);
 
-    ResponseEntity<?> inviteAdmins(AdminEntity adminEntity, String jwt);
+    ResponseEntity<?> inviteAdmins(Admin admin, String jwt);
 
     ResponseEntity<List<ClassUT>> filtraClassi(String text, String category, String jwt);
 

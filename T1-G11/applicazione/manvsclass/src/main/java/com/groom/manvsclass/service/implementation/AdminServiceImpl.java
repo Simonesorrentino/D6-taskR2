@@ -1,8 +1,7 @@
 package com.groom.manvsclass.service.implementation;
 
 
-import com.groom.manvsclass.model.AdminEntity;
-import com.groom.manvsclass.model.ClassUT;
+import com.groom.manvsclass.model.Admin;
 import com.groom.manvsclass.model.repository.AdminRepository;
 import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
 import com.groom.manvsclass.service.AdminService;
@@ -47,12 +46,12 @@ public class AdminServiceImpl implements AdminService {
 
 
     @Override
-    public ResponseEntity<AdminEntity> getAdminByUsername(String username, String jwt) {
+    public ResponseEntity<Admin> getAdminByUsername(String username, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
 
             log.debug("Token valido, può ricercare admin per username (/admins/{username})");
 
-            Optional<AdminEntity> adminEntity = adminRepository.findById(username);
+            Optional<Admin> adminEntity = adminRepository.findById(username);
 
             if (adminEntity.isPresent()) {
 
@@ -67,83 +66,83 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public ResponseEntity<?> loginWithInvitation(AdminEntity adminEntity, String jwt) {
+    public ResponseEntity<?> loginWithInvitation(Admin admin, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Attenzione, hai già un token valido!");
         }
 
-        AdminEntity adminEntityRetrieved = adminRepository.findById(adminEntity.getEmail()).orElse(null);
-        if (adminEntityRetrieved == null) {
+        Admin adminRetrieved = adminRepository.findById(admin.getEmail()).orElse(null);
+        if (adminRetrieved == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email non trovata");
         }
 
-        AdminEntity adminEntityInvited = adminRepository.findByInvitationToken(adminEntity.getInvitationToken());
-        if (!adminEntityInvited.getInvitationToken().equals(adminEntity.getInvitationToken())) {
+        Admin adminInvited = adminRepository.findByInvitationToken(admin.getInvitationToken());
+        if (!adminInvited.getInvitationToken().equals(admin.getInvitationToken())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token di invito invalido!");
         }
 
-        adminEntityRetrieved.setEmail(adminEntity.getEmail());
+        adminRetrieved.setEmail(admin.getEmail());
 
-        if (adminEntity.getName().length() >= 2 && adminEntity.getName().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s[a-zA-Z]+)*", adminEntity.getName())) {
-            adminEntityRetrieved.setName(adminEntity.getName());
+        if (admin.getName().length() >= 2 && admin.getName().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s[a-zA-Z]+)*", admin.getName())) {
+            adminRetrieved.setName(admin.getName());
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nome non valido");
         }
 
-        if (adminEntity.getSurname().length() >= 2 && adminEntity.getSurname().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s?[a-zA-Z]+\\'?)*", adminEntity.getSurname())) {
-            adminEntityRetrieved.setSurname(adminEntity.getSurname());
+        if (admin.getSurname().length() >= 2 && admin.getSurname().length() <= 30 && Pattern.matches("[a-zA-Z]+(\\s?[a-zA-Z]+\\'?)*", admin.getSurname())) {
+            adminRetrieved.setSurname(admin.getSurname());
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cognome non valido");
         }
 
-        if (adminEntity.getUsername().length() >= 2 && adminEntity.getUsername().length() <= 30 && Pattern.matches(".*_invited$", adminEntity.getUsername())) {
-            adminEntityRetrieved.setUsername(adminEntity.getUsername());
+        if (admin.getUsername().length() >= 2 && admin.getUsername().length() <= 30 && Pattern.matches(".*_invited$", admin.getUsername())) {
+            adminRetrieved.setUsername(admin.getUsername());
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Username non valido, deve rispettare il seguente formato: [username di lunghezza compresa tra 2 e 30 caratteri]_invited");
         }
 
-        Matcher m = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,16}$").matcher(adminEntity.getPassword());
-        if (adminEntity.getPassword().length() > 16 || adminEntity.getPassword().length() < 8 || !m.matches()) {
+        Matcher m = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,16}$").matcher(admin.getPassword());
+        if (admin.getPassword().length() > 16 || admin.getPassword().length() < 8 || !m.matches()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password non valida! La password deve contenere almeno una lettera maiuscola, una minuscola, un numero ed un carattere speciale e deve essere lunga tra gli 8 e i 16 caratteri");
         }
 
-        String crypted = myPasswordEncoder.encode(adminEntity.getPassword());
-        adminEntity.setPassword(crypted);
-        adminEntityRetrieved.setPassword(adminEntity.getPassword());
+        String crypted = myPasswordEncoder.encode(admin.getPassword());
+        admin.setPassword(crypted);
+        adminRetrieved.setPassword(admin.getPassword());
 
-        adminEntity.setInvitationToken(null);
-        adminEntityRetrieved.setInvitationToken(adminEntity.getInvitationToken());
+        admin.setInvitationToken(null);
+        adminRetrieved.setInvitationToken(admin.getInvitationToken());
 
-        AdminEntity savedAdminEntity = adminRepository.save(adminEntityRetrieved);
-        return ResponseEntity.ok().body(savedAdminEntity);
+        Admin savedAdmin = adminRepository.save(adminRetrieved);
+        return ResponseEntity.ok().body(savedAdmin);
     }
 
     @Override
-    public ResponseEntity<?> inviteAdmins(AdminEntity adminEntity, String jwt) {
+    public ResponseEntity<?> inviteAdmins(Admin admin, String jwt) {
         if (!jwtService.isJwtValid(jwt)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Attenzione, non sei loggato");
         }
 
         //Controlliamo che non esista nel repository un admin con la mail specificata nell'invito
-        AdminEntity adminEntityRetrieved = adminRepository.findById(adminEntity.getEmail()).orElse(null);
-        if (adminEntityRetrieved != null) {
+        Admin adminRetrieved = adminRepository.findById(admin.getEmail()).orElse(null);
+        if (adminRetrieved != null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email trovata, la persona che stai tentando di invitare è già un amministratore!");
         }
 
-        AdminEntity newAdminEntity = new AdminEntity();
-        newAdminEntity.setName("default");
-        newAdminEntity.setSurname("default");
-        newAdminEntity.setUsername("default");
-        newAdminEntity.setEmail(adminEntity.getEmail());
-        newAdminEntity.setPassword("default");
+        Admin newAdmin = new Admin();
+        newAdmin.setName("default");
+        newAdmin.setSurname("default");
+        newAdmin.setUsername("default");
+        newAdmin.setEmail(admin.getEmail());
+        newAdmin.setPassword("default");
 
-        String invitationToken = JwtService.generateToken(newAdminEntity);
-        newAdminEntity.setInvitationToken(invitationToken);
+        String invitationToken = JwtService.generateToken(newAdmin);
+        newAdmin.setInvitationToken(invitationToken);
 
-        AdminEntity savedAdminEntity = adminRepository.save(newAdminEntity);
+        Admin savedAdmin = adminRepository.save(newAdmin);
         try {
-            emailService.sendInvitationToken(savedAdminEntity.getEmail(), savedAdminEntity.getInvitationToken());
-            return ResponseEntity.ok().body("Invitation token inviato correttamente all'indirizzo:" + savedAdminEntity.getEmail());
+            emailService.sendInvitationToken(savedAdmin.getEmail(), savedAdmin.getInvitationToken());
+            return ResponseEntity.ok().body("Invitation token inviato correttamente all'indirizzo:" + savedAdmin.getEmail());
         } catch (MessagingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore nell'invio del messaggio di posta");
         }

@@ -1,11 +1,11 @@
 package com.groom.manvsclass.model.repository;
 
-import com.groom.manvsclass.model.AdminEntity;
+import com.groom.manvsclass.model.Admin;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AdminRepository extends JpaRepository<AdminEntity, String> {
+public interface AdminRepository extends JpaRepository<Admin, String> {
 
-    AdminEntity findByInvitationToken(String invitationToken);
+    Admin findByInvitationToken(String invitationToken);
 }

@@ -1,39 +1,47 @@
 package com.groom.manvsclass.model;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.persistence.Id;
-import java.util.List;
+import javax.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-@Document(collection = "ClassUT")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity(name = "class_ut")
 public class ClassUT {
+
     @Id
-    @Indexed
+    @Column(name = "name", nullable = false)
     private String name;
-    private String date;
+
+    @Column(name = "date")
+    private LocalDate date;
+
+    @Column(name = "difficulty")
     private String difficulty;
+
+    @Column(name = "uri")
     private String uri;
+
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
-    private List<String> category;
 
-    @Override
-    public String toString() {
-        return "ClassUT{" +
-                "name='" + name + '\'' +
-                ", date='" + date + '\'' +
-                ", difficulty='" + difficulty + '\'' +
-                ", code_url='" + uri + '\'' +
-                ", category=" + category +
-                '}';
-    }
+    @Column(name = "category", columnDefinition = "JSONB")
+    private String category; // Mappato come String per un semplice JSONB
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @OneToMany(mappedBy = "classUT", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<Interaction> interactions;
 }

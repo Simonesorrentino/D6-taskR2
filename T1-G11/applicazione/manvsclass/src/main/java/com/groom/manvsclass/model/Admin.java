@@ -1,19 +1,20 @@
 package com.groom.manvsclass.model;
 
+import com.groom.manvsclass.model.dto.Hint;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import java.time.LocalDateTime;
+import javax.persistence.*;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity(name = "admins")
-public class AdminEntity {
+@Entity
+@Table(name = "admins")
+public class Admin {
 
     @Id
     @Column(name = "email", nullable = false)
@@ -37,13 +38,15 @@ public class AdminEntity {
     @Column(name = "invitation_token")
     private String invitationToken;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @OneToMany(mappedBy = "creator") // "creator" è il nome del campo in Scalata.java
+    @ToString.Exclude // FONDAMENTALE per evitare crash (StackOverflowError)
+    private List<Scalata> scalate;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @OneToMany(mappedBy = "admin") // "admin" è il nome del campo in Hint.java
+    @ToString.Exclude
+    private List<Hint> hints;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
+    @OneToMany(mappedBy = "user") // "user" è il nome del campo in Interaction.java
+    @ToString.Exclude
+    private List<Interaction> interactions;
 }

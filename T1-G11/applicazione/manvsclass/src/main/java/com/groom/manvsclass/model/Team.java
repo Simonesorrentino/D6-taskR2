@@ -1,78 +1,42 @@
 package com.groom.manvsclass.model;
 
+import lombok.*;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
+import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-@Document(collection = "Team")
+
+@Entity
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "teams")
 public class Team {
     @Id
-    private String idTeam;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id; // SERIAL in SQL = Long in Java
+
+    @Column(nullable = false, unique = true)
     private String name;
-    private Date creationDate; //Data di creazione del team
-    private int numeroStudenti;
-    private List<String> idStudenti; // Lista di ID o nomi degli studenti
 
-    // Costruttore
-    public Team(String idTeam, String name) {
-        this.idTeam = idTeam;
-        this.name = name;
-        this.numeroStudenti = 0; //Default
-        this.creationDate = new Date(); //Data attuale
-        this.idStudenti = new ArrayList<>();
-    }
+    @ElementCollection
+    @CollectionTable(name = "team_students", joinColumns = @JoinColumn(name = "team_id"))
+    @Column(name = "student_id")
+    private List<String> studenti = new ArrayList<>();
 
-    // Getter e Setter
-    public String getIdTeam() {
-        return idTeam;
-    }
+    @Column(name = "numero_studenti")
+    private Integer numStudenti;
 
-    public void setIdTeam(String idTeam) {
-        this.idTeam = idTeam;
-    }
+    @Column(name = "creation_date")
+    private LocalDateTime creationDate;
 
-    public String getName() {
-        return name;
-    }
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Assignment> assignments = new ArrayList<>();
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setCreazioneDate(Date creationDate) {
-        this.creationDate = creationDate;
-    }
-
-    public Date getCreationDate() {
-        return this.creationDate;
-    }
-
-    public int getNumStudenti() {
-        return this.numeroStudenti;
-    }
-
-    public void setNumStudenti(int numeroStudenti) {
-        this.numeroStudenti = numeroStudenti;
-    }
-
-    public List<String> getStudenti() {
-        return this.idStudenti;
-    }
-
-    public void setStudenti(List<String> studenti) {
-        this.idStudenti = studenti;
-    }
-
-    @Override
-    public String toString() {
-        return "Team{" +
-                "idTeam='" + idTeam + '\'' +
-                ", name='" + name + '\'' +
-                ", dataCreazione='" + creationDate + '\'' +
-                ", studenti=" + idStudenti
-                + "}";
-    }
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
+    private List<TeamAdmin> teamAdmins = new ArrayList<>();
 }

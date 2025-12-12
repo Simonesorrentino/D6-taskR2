@@ -3,10 +3,9 @@ package com.groom.manvsclass.service.implementation;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groom.manvsclass.mapper.HintMapper;
-import com.groom.manvsclass.model.AdminEntity;
-import com.groom.manvsclass.model.ClassUTEntity;
-import com.groom.manvsclass.model.HintEntity;
-import com.groom.manvsclass.model.dto.Hint;
+import com.groom.manvsclass.model.Admin;
+import com.groom.manvsclass.model.ClassUT;
+import com.groom.manvsclass.model.Hint;
 import com.groom.manvsclass.model.dto.HintResponse;
 import com.groom.manvsclass.model.enums.HintTypeEnum;
 import com.groom.manvsclass.model.repository.AdminRepository;
@@ -67,8 +66,8 @@ public class HintServiceImpl implements HintService {
 
         jwtVerify(jwtToken);
 
-        Specification<HintEntity> spec = HintSpecifications.withDynamicQuery(queryParams);
-        List<HintEntity> results = hintRepository.findAll(spec);
+        Specification<Hint> spec = HintSpecifications.withDynamicQuery(queryParams);
+        List<Hint> results = hintRepository.findAll(spec);
 
         if (results.isEmpty()) {
             return Collections.emptyList();
@@ -87,13 +86,13 @@ public class HintServiceImpl implements HintService {
             throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Utente non autorizzato o token JWT malformato.");
         }
 
-        List<Hint> hintList;
+        List<com.groom.manvsclass.model.dto.Hint> hintList;
         try {
-            hintList = objectMapper.readValue(file.getInputStream(), new TypeReference<List<Hint>>() {});
+            hintList = objectMapper.readValue(file.getInputStream(), new TypeReference<List<com.groom.manvsclass.model.dto.Hint>>() {});
 
             //Validazione contenuto JSON
-            for (Hint hint : hintList) {
-                Set<ConstraintViolation<Hint>> violations = validator.validate(hint);
+            for (com.groom.manvsclass.model.dto.Hint hint : hintList) {
+                Set<ConstraintViolation<com.groom.manvsclass.model.dto.Hint>> violations = validator.validate(hint);
 
                 if (!violations.isEmpty()) {
                     // Se ci sono violazioni, costruisci un messaggio di errore e lancia un'eccezione.
@@ -113,8 +112,8 @@ public class HintServiceImpl implements HintService {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Il file non contiene suggerimenti validi da caricare.");
         }
 
-        AdminEntity adminEntity = adminRepository.findById(adminEmail).orElse(null);
-        if (adminEntity == null) {
+        Admin admin = adminRepository.findById(adminEmail).orElse(null);
+        if (admin == null) {
             throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Amministratore non trovato nel database.");
         }
 
@@ -132,30 +131,30 @@ public class HintServiceImpl implements HintService {
             }
         }
 
-        List<ClassUTEntity> requiredClassUTs = classUTRepository.findAllById(classNames);
-        Map<String, ClassUTEntity> classUtMap = requiredClassUTs.stream()
-                .collect(Collectors.toMap(ClassUTEntity::getName, c -> c));
+        List<ClassUT> requiredClassUTs = classUTRepository.findAllById(classNames);
+        Map<String, ClassUT> classUtMap = requiredClassUTs.stream()
+                .collect(Collectors.toMap(ClassUT::getName, c -> c));
 
         Map<String, MultipartFile> imageMap = imageFiles.stream()
                 .filter(img -> img.getOriginalFilename() != null && !img.getOriginalFilename().isEmpty())
                 .collect(Collectors.toMap(MultipartFile::getOriginalFilename, img -> img));
 
-        List<HintEntity> hintEntityList = new ArrayList<>();
+        List<Hint> hintEntityList = new ArrayList<>();
 
-        for (Hint hint : hintList) {
+        for (com.groom.manvsclass.model.dto.Hint hint : hintList) {
 
-            HintEntity existingHint = hintRepository.findByContentAndTypeAndClassUtName(hint.getContent(), hint.getType(), hint.getClassUTName());
+            Hint existingHint = hintRepository.findByContentAndTypeAndClassUtName(hint.getContent(), hint.getType(), hint.getClassUTName());
             if(existingHint != null) {
                 throw new HttpClientErrorException(HttpStatus.CONFLICT, "Suggerimento già esistente.");
             }
 
-            HintEntity hintEntity = hintMapper.dtoToEntity(hint);
+            Hint hintEntity = hintMapper.dtoToEntity(hint);
 
             if (hintEntity.getContent() == null || hintEntity.getContent().trim().isEmpty()) {
                 throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY, "Campi mancanti: 'content' è obbligatorio.");
             }
 
-            HintEntity hintWithTopOrder;
+            Hint hintWithTopOrder;
 
             if (hintEntity.getType() == HintTypeEnum.CLASS) {
                 if (hintEntity.getClassUt() == null) {
@@ -199,7 +198,7 @@ public class HintServiceImpl implements HintService {
                 }
             }
 
-            hintEntity.setAdmin(adminEntity);
+            hintEntity.setAdmin(admin);
 
             try {
                 hintRepository.save(hintEntity);
@@ -220,22 +219,22 @@ public class HintServiceImpl implements HintService {
     public String deleteHintByClassUT(String classUT, String jwtToken) {
         jwtVerify(jwtToken);
 
-        List<HintEntity> hintEntityList;
+        List<Hint> hintList;
         HintTypeEnum type = classUT.equals("null") ? HintTypeEnum.GENERIC : HintTypeEnum.CLASS;
 
         if (type == HintTypeEnum.GENERIC) {
-            hintEntityList = hintRepository.findByType(type);
+            hintList = hintRepository.findByType(type);
         } else {
-            hintEntityList = hintRepository.findByClassUtName(classUT);
+            hintList = hintRepository.findByClassUtName(classUT);
         }
 
-        if (CollectionUtils.isEmpty(hintEntityList)) {
+        if (CollectionUtils.isEmpty(hintList)) {
             throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare per " + classUT + ".");
         }
 
-        hintRepository.deleteAll(hintEntityList);
+        hintRepository.deleteAll(hintList);
 
-        for (HintEntity hint : hintEntityList) {
+        for (Hint hint : hintList) {
             deleteImageFile(hint.getImageUri());
         }
 
@@ -246,22 +245,22 @@ public class HintServiceImpl implements HintService {
     public String deleteHintByClassUTAndOrder(String classUT, Integer order, String jwtToken) {
         jwtVerify(jwtToken);
 
-        HintEntity hintEntity;
+        Hint hint;
         HintTypeEnum type = classUT.equals("null") ? HintTypeEnum.GENERIC : HintTypeEnum.CLASS;
 
         if (type == HintTypeEnum.GENERIC) {
-            hintEntity = hintRepository.findByTypeAndOrder(type, order);
+            hint = hintRepository.findByTypeAndOrder(type, order);
         } else {
-            hintEntity = hintRepository.findByClassUtNameAndOrder(classUT, order);
+            hint = hintRepository.findByClassUtNameAndOrder(classUT, order);
         }
 
-        if (hintEntity == null) {
+        if (hint == null) {
             String target = type == HintTypeEnum.GENERIC ? "generico con ordine " + order : "per " + classUT + " con ordine " + order;
             throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare: " + target);
         }
 
-        hintRepository.delete(hintEntity);
-        deleteImageFile(hintEntity.getImageUri());
+        hintRepository.delete(hint);
+        deleteImageFile(hint.getImageUri());
 
         return "Suggerimento eliminato con successo.";
     }

@@ -1,11 +1,9 @@
 package com.groom.manvsclass.model;
 
 import com.groom.manvsclass.model.enums.HintTypeEnum;
-import jdk.jfr.Timespan;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.annotation.CreatedBy;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -15,7 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Entity()
 @Table(name = "hints")
-public class HintEntity {
+public class Hint {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,11 +21,11 @@ public class HintEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_email", referencedColumnName = "email")
-    private AdminEntity admin;
+    private Admin admin;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_ut_name", referencedColumnName = "name")
-    private ClassUTEntity classUt;
+    private ClassUT classUt;
 
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;

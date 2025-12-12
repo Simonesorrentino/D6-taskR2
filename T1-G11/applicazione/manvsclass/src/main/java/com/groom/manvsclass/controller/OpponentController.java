@@ -1,6 +1,5 @@
 package com.groom.manvsclass.controller;
 
-import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.Opponent;
 import com.groom.manvsclass.model.dto.OpponentSummaryDTO;
 import com.groom.manvsclass.service.OpponentService;
