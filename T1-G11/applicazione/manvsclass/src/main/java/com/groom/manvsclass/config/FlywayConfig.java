@@ -20,7 +20,8 @@ public class FlywayConfig {
         return Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migrations")
-                .baselineOnMigrate(false) // <--- IMPOSTA SU FALSE O RIMUOVI QUESTA LINEA
+                .schemas("public")
+                .baselineOnMigrate(false)
                 .load();
     }
 }
