@@ -11,8 +11,8 @@ if (-not (Test-Path $DumpPath)) {
 }
 
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$SourceFile = Join-Path $DumpPath "as_is$Timestamp.sql"
-$TargetFile = Join-Path $DumpPath "to_be_$Timestamp.sql"
+$SourceFile = Join-Path $DumpPath "as_is.sql"
+$TargetFile = Join-Path $DumpPath "to_be.sql"
 
 Write-Host "Inizio estrazione schema DDL da Docker..."
 
