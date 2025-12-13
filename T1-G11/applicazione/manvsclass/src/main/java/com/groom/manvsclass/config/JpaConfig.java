@@ -49,7 +49,7 @@ public class JpaConfig {
         // Impostazioni aggiuntive per Hibernate (es. ddl-auto)
         java.util.Properties jpaProperties = new java.util.Properties();
         // Nota: se definisci ddl-auto qui, puoi omettere spring.jpa.hibernate.ddl-auto nell'application.properties
-        jpaProperties.put("hibernate.hbm2ddl.auto", "update");
+        jpaProperties.put("hibernate.hbm2ddl.auto", "create");
         jpaProperties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL10Dialect");
 
         factory.setJpaProperties(jpaProperties);

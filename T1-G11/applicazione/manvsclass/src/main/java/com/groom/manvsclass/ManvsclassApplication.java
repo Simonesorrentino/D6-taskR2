@@ -21,7 +21,9 @@ import org.springframework.web.client.RestTemplate;
                 // 2. Esclude l'auto-configurazione di Hibernate/JPA
                 HibernateJpaAutoConfiguration.class,
                 // 3. Esclude l'auto-configurazione di Spring Data MongoDB
-                MongoDataAutoConfiguration.class
+                MongoDataAutoConfiguration.class,
+                // Escludiamo l'auto-configurazione Flyway di Spring Boot, in modo da forzarla manualmente nel JpaConfig.
+                org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class
         }
 )
 public class ManvsclassApplication {
