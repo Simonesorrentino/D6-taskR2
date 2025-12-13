@@ -1,16 +1,18 @@
 package com.groom.manvsclass.model.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import lombok.*;
+import org.hibernate.proxy.HibernateProxy;
+
+import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
-@Data
-@NoArgsConstructor
+@Getter
+@Setter
+@ToString
+@RequiredArgsConstructor
 @AllArgsConstructor
 @Entity(name = "class_ut")
 public class ClassUTEntity {
@@ -42,4 +44,8 @@ public class ClassUTEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @ManyToMany(mappedBy = "selectedClasses", fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private List<ScalataEntity> scalate;
 }
