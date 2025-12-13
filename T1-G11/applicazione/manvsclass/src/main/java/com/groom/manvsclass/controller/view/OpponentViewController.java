@@ -1,6 +1,6 @@
 package com.groom.manvsclass.controller.view;
 
-import com.groom.manvsclass.model.repository.ClassRepositoryMongoDB;
+import com.groom.manvsclass.model.repository.ClassUTRepository;
 import com.groom.manvsclass.service.OpponentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +17,12 @@ import java.util.List;
 @Controller
 @RequestMapping("/opponents")
 public class OpponentViewController {
-    private final ClassRepositoryMongoDB classRepositoryMongoDB;
+    private final ClassUTRepository classUTRepository;
     private final OpponentService opponentService;
     private final Logger logger = LoggerFactory.getLogger(OpponentViewController.class);
 
 
-    public OpponentViewController(ClassRepositoryMongoDB classRepositoryMongoDB, OpponentService opponentService) {
+    public OpponentViewController(ClassUTRepository classUTRepository, OpponentService opponentService) {
         this.classRepositoryMongoDB = classRepositoryMongoDB;
         this.opponentService = opponentService;
     }

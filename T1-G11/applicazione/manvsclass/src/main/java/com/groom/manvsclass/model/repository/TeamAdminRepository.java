@@ -1,20 +1,23 @@
 package com.groom.manvsclass.model.repository;
 
 import com.groom.manvsclass.model.TeamAdmin;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import com.groom.manvsclass.model.TeamAdminId; // Assicurati di aver creato questa classe
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface TeamAdminRepository extends MongoRepository<TeamAdmin, String> {
+public interface TeamAdminRepository extends JpaRepository<TeamAdmin, TeamAdminId> {
 
-    // Trova tutte le associazioni per un determinato Admin
-    TeamAdmin findByAdminId(String adminId);
+    // Nota: I nomi dei metodi devono seguire i nomi dei campi nella classe Java TeamAdmin.
+    // Se il campo si chiama 'adminEmail', il metodo è 'findByAdminEmail'.
 
-    // Trova tutte l'associazione relativa ad un determinato Team
-    TeamAdmin findByTeamId(String teamId);
+    // Trova per email dell'admin (parte della chiave composta)
+    List<TeamAdmin> findByAdminEmail(String adminEmail);
 
-    // Trova tutte le associazioni per un determinato Admin (questa è una versione più generica)
-    List<TeamAdmin> findAllByAdminId(String adminId);  // metodo che restituisce tutte le associazioni per un admin
+    // Trova per ID del team
+    List<TeamAdmin> findByTeamId(Long teamId);
+
+    // findAllByAdminId era un duplicato, findByAdminEmail basta e avanza.
 }

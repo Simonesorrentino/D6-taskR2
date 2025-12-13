@@ -1,19 +1,25 @@
 package com.groom.manvsclass.model.repository;
 
 import com.groom.manvsclass.model.Team;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-public interface TeamRepository extends MongoRepository<Team, String> {
-    //MODIFICA 02/12/2024: aggiutna verifica se esiste un team con il nome specificato
+import java.util.Optional;
+
+@Repository
+public interface TeamRepository extends JpaRepository<Team, Long> {
+
     boolean existsByName(String name);
 
+    // Cerca un team che contiene lo studente nella sua lista.
+    // Funziona SOLO se in Team.java hai:
+    // @ElementCollection
+    // private List<String> idStudenti;
+    @Query("SELECT t FROM Team t JOIN t.studentIds s WHERE s = :idStudente")
+    Team findByIdStudenti(@Param("idStudente") String idStudente);
 
-    /**
-     * Restituisce il Team in cui è presente l'id dello studente passato come parametro.
-     * Se l'id è presente all'interno della lista 'idStudenti' di un team, quel team viene ritornato.
-     *
-     * @param idStudente l'identificativo dello studente
-     * @return il Team associato allo studente oppure null se non trovato
-     */
-    Team findByIdStudenti(String idStudente);
+    // Se invece non hai mappato la lista studenti (perché complessa),
+    // commenta il metodo sopra per ora.
 }

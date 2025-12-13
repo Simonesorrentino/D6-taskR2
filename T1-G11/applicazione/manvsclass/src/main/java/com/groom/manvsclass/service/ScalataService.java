@@ -31,8 +31,8 @@ public class ScalataService {
         Scalata new_scalata = new Scalata();
         new_scalata.setUsername(scalata.getUsername());
         new_scalata.setScalataName(scalata.getScalataName());
-        new_scalata.setScalataDescription(scalata.getScalataDescription());
-        new_scalata.setNumberOfRounds(scalata.getNumberOfRounds());
+        new_scalata.setDescription(scalata.getDescription());
+        new_scalata.setNumberRounds(scalata.getNumberRounds());
         new_scalata.setSelectedClasses(scalata.getSelectedClasses());
 
         scalata_repo.save(new_scalata);

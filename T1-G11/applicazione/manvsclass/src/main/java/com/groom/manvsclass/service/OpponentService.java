@@ -1,14 +1,13 @@
 package com.groom.manvsclass.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groom.manvsclass.api.ApiGatewayClient;
 import com.groom.manvsclass.model.Admin;
+import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.Operation;
 import com.groom.manvsclass.model.Opponent;
-import com.groom.manvsclass.model.repository.ClassRepositoryMongoDB;
-import com.groom.manvsclass.model.repository.OperationRepository;
-import com.groom.manvsclass.model.repository.OpponentRepository;
-import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
+import com.groom.manvsclass.model.repository.*;
 import com.groom.manvsclass.service.exception.CoverageNotFoundException;
 import com.groom.manvsclass.service.exception.OpponentNotFoundException;
 import com.groom.manvsclass.service.exception.ScoreNotFoundException;
@@ -18,9 +17,6 @@ import com.groom.manvsclass.util.filesystem.upload.FileUploadResponse;
 import com.groom.manvsclass.util.filesystem.upload.FileUploadUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -35,7 +31,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,29 +40,33 @@ import java.util.stream.Collectors;
 public class OpponentService {
 
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(String.valueOf(OpponentService.class));
-    private final OperationRepository operationRepository;
+
     @Autowired
-    private final ClassRepositoryMongoDB classRepositoryMongoDB;
-    private final MongoTemplate mongoTemplate;
-    private final SearchRepositoryImpl searchRepository;
+    private OperationRepository operationRepository;
+
+    @Autowired
+    private ClassUTRepository classUTRepository;
+
+    @Autowired
+    private OpponentRepository opponentRepository;
+
     private final UploadOpponentService uploadOpponentService;
-    @Autowired
-    private final OpponentRepository opponentRepository;
-    private final Admin userAdmin = new Admin("default", "default", "default", "default", "default");
+    private final Admin userAdmin;
     private final ApiGatewayClient apiGatewayClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public OpponentService(OperationRepository operationRepository,
-                           ClassRepositoryMongoDB classRepositoryMongoDB,
+                           ClassUTRepository classRepository,
                            MongoTemplate mongoTemplate,
-                           SearchRepositoryImpl searchRepository,
                            UploadOpponentService uploadOpponentService, OpponentRepository opponentRepository, ApiGatewayClient apiGatewayClient) {
         this.operationRepository = operationRepository;
-        this.classRepositoryMongoDB = classRepositoryMongoDB;
-        this.mongoTemplate = mongoTemplate;
-        this.searchRepository = searchRepository;
+        this.classUTRepository = classRepository;
         this.uploadOpponentService = uploadOpponentService;
         this.opponentRepository = opponentRepository;
         this.apiGatewayClient = apiGatewayClient;
+
+        this.userAdmin = new Admin();
+        this.userAdmin.setUsername("default");
     }
 
     /*
@@ -75,7 +74,7 @@ public class OpponentService {
      */
     public ResponseEntity<?> getNomiClassiUT(String jwt) {
         // 2. Recupera tutte le ClassUT dal repository e restituisce solo i nomi
-        List<String> classNames = classRepositoryMongoDB.findAll()
+        List<String> classNames = classUTRepository.findAll()
                 .stream()
                 .map(ClassUT::getName) // Estrae solo i nomi
                 .collect(Collectors.toList());
@@ -123,89 +122,102 @@ public class OpponentService {
                 classe.getName(),
                 classUTFileName));
 
-        classe.setDate(LocalDate.now().toString());
+        classe.setDate(LocalDate.now());
 
-        classRepositoryMongoDB.save(classe);
+        classUTRepository.save(classe);
 
         System.out.println("Operazione completata con successo (uploadTest)");
 
         return ResponseEntity.ok(response);
     }
 
-
     public ResponseEntity<?> downloadClasse(@PathVariable("name") String name) throws Exception {
+        // Cerca per ID (nome classe)
+        Optional<ClassUT> classeOpt = classUTRepository.findById(name);
 
-        System.out.println("/downloadFile/{name} (HomeController) - name: " + name);
-        System.out.println("test");
-        try {
-            List<ClassUT> classe = searchRepository.findByText(name);
-            System.out.println("File download:");
-            System.out.println(classe.get(0).getUri());
-            ResponseEntity file = FileDownloadUtil.downloadClassFile(classe.get(0).getUri());
-            return file;
-        } catch (Exception e) {
-            System.out.println("Classe UT non trovata");
+        if (classeOpt.isPresent()) {
+            return FileDownloadUtil.downloadClassFile(classeOpt.get().getUri());
+        } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ClasseUT " + name + " non trovata");
         }
     }
 
     public List<ClassUT> getAllClassUTs() {
-        return classRepositoryMongoDB.findAll();
+        return classUTRepository.findAll();
     }
 
     public List<ClassUT> filterByDifficulty(String difficulty) {
-        return searchRepository.filterByDifficulty(difficulty);
+        // Metodo custom aggiunto in ClassRepository
+        return classUTRepository.findByDifficulty(difficulty);
     }
 
     public List<ClassUT> orderByDate() {
-        return searchRepository.orderByDate();
+        // Metodo custom aggiunto in ClassRepository
+        return classUTRepository.findAllByOrderByDateAsc();
     }
 
     public List<ClassUT> orderByName() {
-        return searchRepository.orderByName();
+        // Metodo custom aggiunto in ClassRepository
+        return classUTRepository.findAllByOrderByNameAsc();
     }
 
     public ResponseEntity<String> modificaClasse(String name, ClassUT newContent, String jwt, HttpServletRequest request) {
-        System.out.println("Token valido, può aggiornare informazioni inerenti le classi (update/{name})");
-        Query query = new Query();
-        query.addCriteria(Criteria.where("name").is(name));
-        Update update = new Update().set("name", newContent.getName())
-                .set("date", newContent.getDate())
-                .set("difficulty", newContent.getDifficulty())
-                .set("description", newContent.getDescription())
-                .set("category", newContent.getCategory());
-        long modifiedCount = mongoTemplate.updateFirst(query, update, ClassUT.class).getModifiedCount();
+        Optional<ClassUT> existingClassOpt = classUTRepository.findById(name);
 
-        if (modifiedCount > 0) {
-            LocalDate currentDate = LocalDate.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            String data = currentDate.format(formatter);
-            Operation operation1 = new Operation((int) operationRepository.count(), userAdminMongoDB.getUsername(), newContent.getName(), 1, data);
-            operationRepository.save(operation1);
+        if (existingClassOpt.isPresent()) {
+            ClassUT existingClass = existingClassOpt.get();
+
+            // Aggiorna i campi
+            existingClass.setDate(LocalDate.now());
+            existingClass.setDifficulty(newContent.getDifficulty());
+            existingClass.setDescription(newContent.getDescription());
+            existingClass.setCategory(newContent.getCategory());
+
+            // L'ID (name) non dovrebbe cambiare solitamente, ma se serve va gestito cancellando e ricreando
+
+            classUTRepository.save(existingClass);
+
+            // Log Operazione
+            Operation op = new Operation();
+            op.setOperationType(1); // 1 = Modifica
+            op.setDate(java.time.LocalDateTime.now());
+            op.setClassUT(existingClass);
+            // op.setAdmin(...) qui dovresti settare l'admin vero recuperato dal JWT
+
+            operationRepository.save(op);
+
             return new ResponseEntity<>("Aggiornamento eseguito correttamente.", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Nessuna classe trovata o nessuna modifica effettuata.", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Classe non trovata.", HttpStatus.NOT_FOUND);
         }
     }
 
     public ResponseEntity<?> eliminaClasse(String name) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where("name").is(name));
-        eliminaFile(name);
-        LocalDate currentDate = LocalDate.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String data = currentDate.format(formatter);
-        Operation operation1 = new Operation((int) operationRepository.count(), "userAdmin", name, 2, data);
-        operationRepository.save(operation1);
-        ClassUT deletedClass = mongoTemplate.findAndRemove(query, ClassUT.class);
+        if (classUTRepository.existsById(name)) {
+            // Elimina file fisico
+            try {
+                eliminaFile(name);
+            } catch (Exception e) {
+                logger.warning("Impossibile eliminare i file fisici per " + name);
+            }
 
-        Query query2 = new Query();
-        query2.addCriteria(Criteria.where("classUT").is(name));
-        mongoTemplate.findAndRemove(query, Opponent.class);
+            // Log Operazione
+            Operation op = new Operation();
+            op.setOperationType(2); // 2 = Cancellazione
+            op.setDate(java.time.LocalDateTime.now());
+            // Nota: non possiamo settare la ClassUT nell'operazione se la stiamo per cancellare
+            // (a meno che Operation.class_name non sia nullable o testuale)
 
-        apiGatewayClient.callDeleteAllClassUTOpponents(name);
-        if (deletedClass != null) {
-            return ResponseEntity.ok().body(deletedClass);
+            operationRepository.save(op);
+
+            // Elimina dal DB (Cascade dovrebbe eliminare gli opponents se configurato in SQL,
+            // altrimenti JPA potrebbe lamentarsi o lasciare orfani)
+            classUTRepository.deleteById(name);
+
+            // Chiamata esterna
+            apiGatewayClient.callDeleteAllClassUTOpponents(name);
+
+            return ResponseEntity.ok().body("Classe eliminata: " + name);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Classe non trovata");
         }
@@ -231,44 +243,48 @@ public class OpponentService {
 
 
     public List<Opponent> getAllOpponents() {
-        return opponentRepository.findAllOpponents();
+        return opponentRepository.findAll();
     }
 
     public Opponent getOpponentData(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
-        Optional<Opponent> opponent = opponentRepository.findOpponent(classUT, opponentType, opponentDifficulty);
-        if (opponent.isEmpty())
-            throw new OpponentNotFoundException();
-
-        return opponent.get();
+        return opponentRepository.findByClassUT_NameAndOpponentTypeAndDifficulty(classUT, opponentType, opponentDifficulty)
+                .orElseThrow(OpponentNotFoundException::new);
     }
 
     public EvosuiteScore getOpponentEvosuiteScore(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
-        Optional<EvosuiteScore> score = opponentRepository.findEvosuiteScore(classUT,
-                opponentType, opponentDifficulty);
+        Opponent opponent = opponentRepository.findByClassUT_NameAndOpponentTypeAndDifficulty(classUT, opponentType, opponentDifficulty)
+                .orElseThrow(ScoreNotFoundException::new);
 
-        if (score.isEmpty())
+        String jsonScore = opponent.getEvosuiteScore();
+        if (jsonScore == null) throw new ScoreNotFoundException();
+
+        try {
+            return objectMapper.readValue(jsonScore, EvosuiteScore.class);
+        } catch (JsonProcessingException e) {
+            logger.severe("Errore parsing EvosuiteScore JSON: " + e.getMessage());
             throw new ScoreNotFoundException();
-
-        return score.get();
+        }
     }
 
     public JacocoScore getOpponentJacocoScore(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
-        Optional<JacocoScore> score = opponentRepository.findJacocoScore(classUT,
-                opponentType, opponentDifficulty);
+        Opponent opponent = opponentRepository.findByClassUT_NameAndOpponentTypeAndDifficulty(classUT, opponentType, opponentDifficulty)
+                .orElseThrow(ScoreNotFoundException::new);
 
-        if (score.isEmpty())
+        String jsonScore = opponent.getJacocoScore();
+        if (jsonScore == null) throw new ScoreNotFoundException();
+
+        try {
+            return objectMapper.readValue(jsonScore, JacocoScore.class);
+        } catch (JsonProcessingException e) {
+            logger.severe("Errore parsing JacocoScore JSON: " + e.getMessage());
             throw new ScoreNotFoundException();
-
-        return score.get();
+        }
     }
 
     public String getOpponentCoverage(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
-        Optional<String> coverage = opponentRepository.findCoverage(classUT,
-                opponentType, opponentDifficulty);
+        Opponent opponent = opponentRepository.findByClassUT_NameAndOpponentTypeAndDifficulty(classUT, opponentType, opponentDifficulty)
+                .orElseThrow(CoverageNotFoundException::new);
 
-        if (coverage.isEmpty())
-            throw new CoverageNotFoundException();
-
-        return coverage.get();
+        return opponent.getCoverage();
     }
 }

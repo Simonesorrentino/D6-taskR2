@@ -44,4 +44,24 @@ public class Scalata {
     @ToString.Exclude
     private Admin creator;
 
+    @Transient
+    private String username; // Per ricevere lo username dell'admin dal JSON
+
+    @Transient
+    private List<String> selectedClasses; // Per ricevere i nomi delle classi dal JSON
+
+    // Assicurati di avere anche questo campo se il JSON usa "scalataName" invece di "name"
+    @Transient
+    private String scalataName;
+
+    // Helper per mantenere compatibilità col vecchio codice
+    public String getScalataName() {
+        return this.name != null ? this.name : this.scalataName;
+    }
+
+    public void setScalataName(String scalataName) {
+        this.scalataName = scalataName;
+        if (this.name == null) this.name = scalataName;
+    }
+
 }

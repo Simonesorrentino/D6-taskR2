@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CookieValue;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,211 +37,136 @@ public class AssignmentService {
     private StudentService studentService;
 
 
+    private boolean isOwnerOrProfessor(Long teamId, String adminEmail) {
+        // Cerca tutti gli admin di quel team e verifica se tra loro c'è quello loggato con i permessi giusti
+        List<TeamAdmin> admins = teamAdminRepository.findByTeamId(teamId);
+        return admins.stream()
+                .anyMatch(ta -> ta.getAdminEmail().equals(adminEmail) &&
+                        ("Owner".equals(ta.getRole()) || "Professor".equals(ta.getRole())));
+    }
+
     //Modifica 07/12/2024 : creazione funzione per la creazione di un assignment
     @Transactional
-    public ResponseEntity<?> creaAssignment(Assignment assignment,
-                                            String idTeam,
-                                            @CookieValue(name = "jwt", required = false) String jwt) {
+    public ResponseEntity<?> creaAssignment(Assignment assignment, Long idTeam, String jwt) {
         System.out.println("Creazione dell'Assignment in corso...");
 
-        // 1. Verifica il token JWT
-        if (jwt == null || jwt.isEmpty() || !jwtService.isJwtValid(jwt)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token JWT non valido o mancante.");
+        if (jwt == null || !jwtService.isJwtValid(jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token JWT non valido.");
         }
 
-        // 2. Estrai l'Admin dal token JWT
         String adminUsername = jwtService.getAdminFromJwt(jwt);
-        if (adminUsername == null || adminUsername.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Impossibile identificare l'Admin dal token JWT.");
+
+        if (assignment.getTitle() == null || assignment.getTitle().isEmpty()) {
+            return ResponseEntity.badRequest().body("Titolo obbligatorio.");
         }
 
-        // 3. Verifica i dati dell'Assignment
-        if (assignment.getTitolo() == null || assignment.getTitolo().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Il titolo dell'Assignment è obbligatorio.");
-        }
-        if (assignment.getDataScadenza() == null || assignment.getDataScadenza().before(new Date())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("La data di scadenza deve essere una data futura.");
+        // CORREZIONE DATA: Usa LocalDateTime e isBefore
+        if (assignment.getExpirationDate() == null || assignment.getExpirationDate().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body("La data di scadenza deve essere futura.");
         }
 
-        // 4. Recupera il Team dal repository
         Team existingTeam = teamRepository.findById(idTeam).orElse(null);
         if (existingTeam == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Il team con ID " + idTeam + " non è stato trovato.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team non trovato.");
         }
 
-        // 5. Verifica se l'Admin ha i permessi per questo Team
-        TeamAdmin teamAdmin = teamAdminRepository.findByTeamId(idTeam);
-        if (teamAdmin == null || !teamAdmin.getAdminId().equals(adminUsername) ||
-                (!"Owner".equals(teamAdmin.getRole()) && !"Professor".equals(teamAdmin.getRole()))) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per creare un Assignment per questo Team.");
+        if (!isOwnerOrProfessor(idTeam, adminUsername)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi.");
         }
 
-        // 6. Aggiorna i dettagli dell'Assignment con i dati del Team
-        assignment.setIdTeam(idTeam); // Imposta l'ID del team
-        assignment.setNomeTeam(existingTeam.getName()); // Imposta il nome del team (assumendo che sia presente nella classe Team)
+        // CORREZIONE RELAZIONE: Setta l'oggetto Team, non solo l'ID stringa
+        assignment.setTeam(existingTeam);
 
-        // 7. Aggiungi un ID univoco al team (se non specificato)
-        if (assignment.getIdAssignment() == null || assignment.getIdAssignment().isEmpty()) {
-            assignment.setIdAssignment(Util.generateUniqueId());
-        }
+        // CORREZIONE ID: Rimosso Util.generateUniqueId(). Il DB genererà l'ID (SERIAL).
 
-        // 8. Salva l'Assignment
         assignmentRepository.save(assignment);
 
-        // 9. Invia notifica agli utenti del team
-        List<String> idsStudentiTeam = existingTeam.getStudenti();
-        List<Integer> integerList = idsStudentiTeam.stream()
-                .map(Integer::parseInt) // Converte ogni stringa in intero
+        // Notifiche (logica invariata, adattata ai tipi)
+        // Convertiamo la lista di stringhe (studenti) in lista di interi per il servizio notifiche
+        List<Integer> idsUtenti = existingTeam.getStudenti().stream()
+                .filter(s -> s.matches("\\d+")) // Filtra solo quelli numerici per sicurezza
+                .map(Integer::parseInt)
                 .collect(Collectors.toList());
 
-        String Title = "Assignment";
-        String Message = "Nuovo Assignment: " + assignment.getTitolo();
-        notificationService.sendNotificationsToUsers(integerList, Title, Message, "Team");
+        if (!idsUtenti.isEmpty()) {
+            notificationService.sendNotificationsToUsers(idsUtenti, "Nuovo Assignment",
+                    "Nuovo compito: " + assignment.getTitle(), "Team");
+        }
 
-        //10. Invio email agli utenti del team
-        //emailService.sendTeamNewAssignment(idsStudentiTeam, existingTeam, assignment, jwt);
-
-        // 13. Restituisci la risposta di successo
-        return ResponseEntity.status(HttpStatus.CREATED).body("Assignment creato con successo e associato al Team.");
+        return ResponseEntity.status(HttpStatus.CREATED).body("Assignment creato con successo.");
     }
 
     //Modifica 08/12/2024: creazione funzioni visualizzaTeamAssignment,visualizzaAssignments e deleteAssignment
     // Funzione aggiornata per visualizzare gli Assignment di un Team
-    public ResponseEntity<?> visualizzaTeamAssignment(String idTeam, @CookieValue(name = "jwt", required = false) String jwt) {
-        System.out.println("Recupero degli Assignment del Team in corso...");
-
-        try {
-            // 1. Verifica se il token JWT è valido
-            if (jwt == null || jwt.isEmpty() || !jwtService.isJwtValid(jwt)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token JWT non valido o mancante.");
-            }
-
-            // 2. Estrai l'ID dell'Admin dal JWT
-            String adminUsername = jwtService.getAdminFromJwt(jwt);
-            if (adminUsername == null || adminUsername.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Impossibile identificare l'Admin dal token JWT.");
-            }
-
-            // 3. Recupera il Team dal repository utilizzando l'idTeam
-            Team existingTeam = teamRepository.findById(idTeam).orElse(null);
-            if (existingTeam == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con ID " + idTeam + " non trovato.");
-            }
-
-            // 4. Verifica se l'Admin ha i permessi per visualizzare gli Assignment del Team
-            TeamAdmin teamAdmin = teamAdminRepository.findByTeamId(idTeam);
-            if (teamAdmin == null || !teamAdmin.getAdminId().equals(adminUsername) ||
-                    (!"Owner".equals(teamAdmin.getRole()) && !"Professor".equals(teamAdmin.getRole()))) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per visualizzare gli assignment di questo team.");
-            }
-
-            // 5. Recupera i dettagli degli Assignment associati al Team
-            List<Assignment> assignmentS = assignmentRepository.findByTeamId(idTeam);
-            if (assignmentS == null || assignmentS.isEmpty()) {
-                return ResponseEntity.ok("Nessun assignment trovato per il Team con ID " + idTeam);
-            }
-
-            // 6. Restituisci gli Assignment trovati
-            return ResponseEntity.ok(assignmentS);
-
-        } catch (Exception e) {
-            // Gestione di eventuali errori inaspettati
-            System.err.println("Errore durante il recupero degli assignment: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Si è verificato un errore durante il recupero degli assignment.");
+    public ResponseEntity<?> visualizzaTeamAssignment(Long idTeam, String jwt) {
+        if (jwt == null || !jwtService.isJwtValid(jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token non valido.");
         }
+
+        String adminUsername = jwtService.getAdminFromJwt(jwt);
+
+        if (!teamRepository.existsById(idTeam)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team non trovato.");
+        }
+
+        if (!isOwnerOrProfessor(idTeam, adminUsername)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai permessi.");
+        }
+
+        List<Assignment> assignments = assignmentRepository.findByTeamId(idTeam);
+        return ResponseEntity.ok(assignments);
     }
 
-    public ResponseEntity<?> visualizzaAssignments(@CookieValue(name = "jwt", required = false) String jwt) {
-        System.out.println("Recupero degli Assignment associati all'Admin in corso...");
-
-        try {
-            // 1. Verifica se il token JWT è valido
-            if (jwt == null || jwt.isEmpty() || !jwtService.isJwtValid(jwt)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token JWT non valido o mancante.");
-            }
-
-            // 2. Estrai l'ID dell'Admin dal JWT
-            String adminUsername = jwtService.getAdminFromJwt(jwt);
-            if (adminUsername == null || adminUsername.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Impossibile identificare l'Admin dal token JWT.");
-            }
-
-            // 3. Recupera tutti i team associati all'Admin
-            List<TeamAdmin> teamAdminAssociations = teamAdminRepository.findAllByAdminId(adminUsername);
-            if (teamAdminAssociations == null || teamAdminAssociations.isEmpty()) {
-                return ResponseEntity.ok("Non sei associato ad alcun team.");
-            }
-
-            //Non sei associato ad alcun team.
-            // 4. Recupera gli ID dei team associati
-            List<String> teamIds = teamAdminAssociations.stream()
-                    .map(TeamAdmin::getTeamId)
-                    .collect(Collectors.toList());
-
-            // 5. Recupera tutti gli assignment associati ai team
-            List<Assignment> assignmentS = assignmentRepository.findAllByTeamIdIn(teamIds);
-            if (assignmentS == null || assignmentS.isEmpty()) {
-                return ResponseEntity.ok("Non sono stati trovati assignment per i tuoi team.");
-            }
-
-            // 6. Restituisce gli assignment trovati
-            return ResponseEntity.ok(assignmentS);
-
-        } catch (Exception e) {
-            // Gestione di eventuali errori inaspettati
-            System.err.println("Errore durante il recupero degli assignment: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Si è verificato un errore durante il recupero degli assignment.");
+    public ResponseEntity<?> visualizzaAssignments(String jwt) {
+        if (jwt == null || !jwtService.isJwtValid(jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token non valido.");
         }
+
+        String adminUsername = jwtService.getAdminFromJwt(jwt);
+
+        // Trova tutti i team gestiti dall'admin
+        List<TeamAdmin> teamAssociations = teamAdminRepository.findByAdminEmail(adminUsername);
+
+        if (teamAssociations.isEmpty()) {
+            return ResponseEntity.ok("Nessun team associato.");
+        }
+
+        List<Long> teamIds = teamAssociations.stream()
+                .map(TeamAdmin::getTeamId)
+                .collect(Collectors.toList());
+
+        List<Assignment> assignments = assignmentRepository.findAllByTeamIdIn(teamIds);
+        return ResponseEntity.ok(assignments);
     }
 
     @Transactional
-    public ResponseEntity<?> deleteAssignment(String idAssignment, String jwt) {
-        System.out.println("Rimozione dell'Assignment in corso...");
-
-        // 1. Verifica se il token JWT è valido
-        if (jwt == null || jwt.isEmpty() || !jwtService.isJwtValid(jwt)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token JWT non valido o mancante.");
+    public ResponseEntity<?> deleteAssignment(Long idAssignment, String jwt) {
+        if (jwt == null || !jwtService.isJwtValid(jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token non valido.");
         }
 
-        // 2. Estrai l'ID dell'Admin dal JWT
         String adminUsername = jwtService.getAdminFromJwt(jwt);
-        if (adminUsername == null || adminUsername.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Impossibile identificare l'Admin dal token JWT.");
-        }
 
-        // 3. Recupera l'Assignment dal database
         Assignment existingAssignment = assignmentRepository.findById(idAssignment).orElse(null);
         if (existingAssignment == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Assignment con ID " + idAssignment + " non trovato.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Assignment non trovato.");
         }
 
-        // 4. Recupera l'ID del team dall'Assignment
-        String idTeam = existingAssignment.getTeamId();
-        if (idTeam == null || idTeam.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("L'Assignment non ha un Team associato.");
+        // Recuperiamo il team tramite la relazione
+        Team team = existingAssignment.getTeam();
+        if (team == null) {
+            // Caso limite: assignment orfano (non dovrebbe succedere col DB relazionale ben fatto)
+            assignmentRepository.delete(existingAssignment);
+            return ResponseEntity.ok("Assignment orfano eliminato.");
         }
 
-        // 5. Recupera il Team dal repository utilizzando l'ID del Team
-        Team existingTeam = teamRepository.findById(idTeam).orElse(null);
-        if (existingTeam == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con ID " + idTeam + " non trovato.");
+        if (!isOwnerOrProfessor(team.getId(), adminUsername)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi.");
         }
 
-        // 6. Verifica se l'Admin ha i permessi per rimuovere l'Assignment del Team
-        TeamAdmin teamAdmin = teamAdminRepository.findByTeamId(idTeam);
-        if (teamAdmin == null || !teamAdmin.getAdminId().equals(adminUsername) ||
-                (!"Owner".equals(teamAdmin.getRole()) && !"Professor".equals(teamAdmin.getRole()))) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per rimuovere gli assignment di questo team.");
-        }
-
-        // 7. Rimuovi l'Assignment dal database
-        assignmentRepository.deleteById(idAssignment);
-
-        // 8. Restituisci la risposta di successo
-        return ResponseEntity.status(HttpStatus.OK).body("Assignment rimosso con successo dal Team.");
+        assignmentRepository.delete(existingAssignment);
+        return ResponseEntity.ok().body("Assignment rimosso.");
     }
-
-
 }
 
     

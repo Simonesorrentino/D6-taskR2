@@ -1,7 +1,9 @@
 package com.groom.manvsclass.service;
 
 import com.groom.manvsclass.api.ApiGatewayClient;
+import com.groom.manvsclass.model.ClassUT;
 import com.groom.manvsclass.model.Opponent;
+import com.groom.manvsclass.model.repository.ClassUTRepository;
 import com.groom.manvsclass.model.repository.OpponentRepository;
 import com.groom.manvsclass.util.filesystem.FileOperationUtil;
 import org.jsoup.Jsoup;
@@ -10,6 +12,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
@@ -20,6 +23,7 @@ import testrobotchallenge.commons.models.score.Coverage;
 import testrobotchallenge.commons.models.score.EvosuiteScore;
 import testrobotchallenge.commons.models.score.JacocoScore;
 import testrobotchallenge.commons.util.ExtractScore;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -49,6 +53,9 @@ public class UploadOpponentService {
 
     private final ApiGatewayClient apiGatewayClient;
     private final OpponentRepository opponentRepository;
+
+    @Autowired // Iniettiamo il repository delle classi per fare il collegamento
+    private ClassUTRepository classUTRepository;
 
     public UploadOpponentService(ApiGatewayClient apiGatewayClient, OpponentRepository opponentRepository) {
         this.apiGatewayClient = apiGatewayClient;
@@ -257,6 +264,13 @@ public class UploadOpponentService {
     }
 
     private void uploadNewOpponents(String classUTFileName, String classUTName, MultipartFile classUTFile, Path operationTmpFolder, String robotType, Path volumeBasePath) throws IOException {
+
+        ClassUT classUTEntity = classUTRepository.findById(classUTName).orElse(null);
+        if (classUTEntity == null) {
+            logger.error("Impossibile salvare gli opponent: ClasseUT {} non trovata nel DB.", classUTName);
+            return; // O lancia eccezione
+        }
+
         for (File levelFolder : Objects.requireNonNull(operationTmpFolder.toFile().listFiles())) {
             if (!levelFolder.isDirectory()) {
                 logger.info("Ignoring file " + levelFolder.getName() + " because it is not a directory");
@@ -398,14 +412,24 @@ public class UploadOpponentService {
             evosuiteScore.setCBranchCoverage(new Coverage(evoSuiteStatistics[7][0], evoSuiteStatistics[7][1]));
 
             Opponent opponent = new Opponent();
-            opponent.setClassUT(classUTName);
+            opponent.setClassUT(classUTEntity);
             opponent.setOpponentType(robotType);
             opponent.setOpponentDifficulty(difficulty);
             opponent.setCoverage(coverage);
-            opponent.setEvosuiteScore(evosuiteScore);
-            opponent.setJacocoScore(jacocoScore);
+            ObjectMapper mapper = new ObjectMapper();
 
-            opponentRepository.saveOpponent(opponent);
+            try {
+                String evosuiteJson = mapper.writeValueAsString(evosuiteScore);
+                opponent.setEvosuiteScore(evosuiteJson);
+
+                String jacocoJson = mapper.writeValueAsString(jacocoScore);
+                opponent.setJacocoScore(jacocoJson);
+            } catch (IOException e) {
+                logger.error("Errore nella serializzazione JSON degli score", e);
+                // Gestisci l'errore o continua (i campi resteranno null)
+            }
+
+            opponentRepository.save(opponent);
 
             for (GameMode mode : GameMode.values()) {
                 apiGatewayClient.callAddNewOpponent(classUTName, mode, robotType, difficulty);

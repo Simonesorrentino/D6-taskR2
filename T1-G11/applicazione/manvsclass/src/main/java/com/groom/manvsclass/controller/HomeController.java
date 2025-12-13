@@ -22,7 +22,6 @@
 package com.groom.manvsclass.controller;
 
 import com.groom.manvsclass.model.Interaction;
-import com.groom.manvsclass.service.AdminServiceMongoDB;
 import com.groom.manvsclass.util.Util;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;

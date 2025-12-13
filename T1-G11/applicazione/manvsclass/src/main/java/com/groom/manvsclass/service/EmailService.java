@@ -17,7 +17,7 @@
 
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.AssignmentMongoDB;
+import com.groom.manvsclass.model.Assignment;
 import com.groom.manvsclass.model.Team;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -91,7 +92,7 @@ public class EmailService {
     }
 
     @Async
-    public ResponseEntity<String> sendTeamNewAssignment(List<String> idsStudents, Team team, AssignmentMongoDB assignmentMongoDB, String jwt) {
+    public ResponseEntity<String> sendTeamNewAssignment(List<String> idsStudents, Team team, Assignment assignmentMongoDB, String jwt) {
 
         ResponseEntity<?> dettagliStudentiResponse = studentService.ottieniStudentiDettagli(idsStudents, jwt);
         if (!HttpStatus.OK.equals(dettagliStudentiResponse.getStatusCode())) {
@@ -108,7 +109,7 @@ public class EmailService {
         // 12. Invia email di notifica agli studenti aggiunti
 
         try {
-            sendTeamNewAssignment(emails, team.getName(), assignmentMongoDB.getDataScadenza(), assignmentMongoDB.getTitolo(), assignmentMongoDB.getDescrizione());
+            sendTeamNewAssignment(emails, team.getName(), assignmentMongoDB.getExpirationDate(), assignmentMongoDB.getTitle(), assignmentMongoDB.getDescription());
         } catch (MessagingException e) {
             System.out.println("Errore durante l'invio della email.");
         }
@@ -116,7 +117,7 @@ public class EmailService {
     }
 
     //Mail nuovo assignment agli studenti.
-    public void sendTeamNewAssignment(List<String> emails, String teamName, java.util.Date dataScadenza, String titoloAssignment, String descrizione) throws MessagingException {
+    public void sendTeamNewAssignment(List<String> emails, String teamName, LocalDateTime dataScadenza, String titoloAssignment, String descrizione) throws MessagingException {
         for (String email : emails) {
             MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
