@@ -19,17 +19,8 @@ public class FlywayConfig {
     public Flyway flyway() {
         return Flyway.configure()
                 .dataSource(dataSource)
-                // Percorso dove si trova il file V1__initial_schema.sql
                 .locations("classpath:db/migrations")
-                // RUCIALE per lo schema preesistente
-                .baselineOnMigrate(true)
-                // Se usi uno schema diverso da 'public', specificarlo qui:
-                // .schemas("tuo_schema_db")
-
-                // Opzionale: Specificare la versione iniziale per la baseline,
-                // in base al tuo file V1.
-                .baselineVersion("1")
-
+                .baselineOnMigrate(false) // <--- IMPOSTA SU FALSE O RIMUOVI QUESTA LINEA
                 .load();
     }
 }
