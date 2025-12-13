@@ -5,6 +5,7 @@ import com.groom.manvsclass.service.HintService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -61,5 +62,26 @@ public class HintController {
 
         String response = hintService.deleteHintsByType(type, jwtToken);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> updateHint(
+            @PathVariable Long id,
+            @RequestParam("name") String name,
+            @RequestParam("content") String content,
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @CookieValue(name = "jwt") String jwtToken) {
+
+        String response = hintService.updateHint(id, name, content, file, jwtToken);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/move")
+    public ResponseEntity<String> moveHint(
+            @PathVariable Long id,
+            @RequestParam("direction") String direction,
+            @CookieValue(name = "jwt") String jwtToken) {
+        hintService.moveHint(id, direction, jwtToken);
+        return new ResponseEntity<>("Ordine aggiornato.", HttpStatus.OK);
     }
 }

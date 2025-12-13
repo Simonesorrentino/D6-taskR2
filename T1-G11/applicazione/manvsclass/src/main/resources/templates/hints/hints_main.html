@@ -84,6 +84,65 @@
     </div>
 </div>
 
+<div class="modal fade" id="editHintModal" tabindex="-1" role="dialog" aria-labelledby="editHintModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editHintModalLabel" th:text="#{ui.hint.modal.title}">Modifica Suggerimento</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editHintForm">
+                    <input type="hidden" id="editHintId">
+
+                    <div class="form-group">
+                        <label for="editHintName" th:text="#{ui.hint.modal.label.name}">Titolo (Name)</label>
+                        <input type="text" class="form-control" id="editHintName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editHintContent" th:text="#{ui.hint.modal.label.content}">Contenuto</label>
+                        <textarea class="form-control" id="editHintContent" rows="5" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editHintImage" th:text="#{ui.hint.modal.label.image.new}">Nuova Immagine (Opzionale)</label>
+                        <input type="file" class="form-control-file" id="editHintImage" accept="image/*">
+                        <small class="form-text text-muted" th:text="#{ui.hint.modal.help.image}">Carica un file solo se vuoi sostituire l'immagine attuale.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" th:text="#{ui.hint.btn.cancel}">Annulla</button>
+                <button type="button" class="btn btn-primary" onclick="submitEditHint()" th:text="#{ui.hint.btn.save}">Salva Modifiche</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successModalLabel" th:text="#{ui.hint.title.success}">Successo</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="reloadCurrentHintDetail()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="successMessageContent" th:text="#{ui.hint.msg.success.update}">Suggerimento aggiornato con successo.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="reloadCurrentHintDetail()" th:text="#{ui.hint.btn.continue}">
+                    Continua
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -91,6 +150,77 @@
 <script th:src="@{/t1/js/utils/api.js}"></script>
 <script th:src="@{/t1/js/utils/cookie_util.js}"></script>
 <script th:src="@{/t1/js/utils/renderErrors.js}"></script>
+
+<script th:src="@{/t1/js/utils/api.js}"></script>
+
+<script th:inline="javascript">
+    /*
+     * Questo oggetto "msg" viene generato dal server Thymeleaf
+     * e contiene le traduzioni nella lingua corrente.
+     */
+    const serverMessages = {
+        loading_generic: /*[[#{ui.hint.loading.generic}]]*/ 'Loading...',
+        loading_classes: /*[[#{ui.hint.loading.classes}]]*/ 'Loading...',
+        loading_detail: /*[[#{ui.hint.loading.detail}]]*/ 'Loading...',
+        loading_class_hints: /*[[#{ui.hint.loading.specific}]]*/ 'Loading {0}...',
+
+        back_selection: /*[[#{ui.hint.back.selection}]]*/ 'Back',
+        back_list: /*[[#{ui.hint.back.list}]]*/ 'Back',
+        back_class_list: /*[[#{ui.hint.back.classlist}]]*/ 'Back',
+
+        btn_delete_all_generic: /*[[#{ui.hint.btn.delete.all.generic}]]*/ 'Del All',
+        btn_delete_all_class: /*[[#{ui.hint.btn.delete.all.class}]]*/ 'Del All',
+        btn_delete_all_specific: /*[[#{ui.hint.btn.delete.specific}]]*/ 'Del {0}',
+        btn_edit: /*[[#{ui.hint.btn.edit}]]*/ 'Edit',
+        btn_delete: /*[[#{ui.hint.btn.delete}]]*/ 'Delete',
+        btn_save: /*[[#{ui.hint.btn.save}]]*/ 'Save',
+        btn_cancel: /*[[#{ui.hint.btn.cancel}]]*/ 'Cancel',
+        btn_continue: /*[[#{ui.hint.btn.continue}]]*/ 'Continue',
+
+        title_generic: /*[[#{ui.hint.title.generic}]]*/ 'Generic',
+        title_classes: /*[[#{ui.hint.title.classes}]]*/ 'Classes',
+        title_class_detail: /*[[#{ui.hint.title.specific}]]*/ 'Hints {0}',
+        title_detail: /*[[#{ui.hint.title.detail}]]*/ 'Detail {0}',
+        title_success: /*[[#{ui.hint.title.success}]]*/ 'Success',
+        title_error: /*[[#{ui.hint.title.error}]]*/ 'Error',
+
+        col_actions: /*[[#{ui.hint.col.actions}]]*/ 'Actions',
+        col_order: /*[[#{ui.hint.col.order}]]*/ 'Order',
+        col_title: /*[[#{ui.hint.col.title}]]*/ 'Title',
+        col_content: /*[[#{ui.hint.col.content}]]*/ 'Content',
+        col_type: /*[[#{ui.hint.col.type}]]*/ 'Type',
+        col_class_name: /*[[#{ui.hint.col.classname}]]*/ 'Class Name',
+        col_hint_count: /*[[#{ui.hint.col.count}]]*/ 'Count',
+
+        label_title: /*[[#{ui.hint.label.title}]]*/ 'Title:',
+        label_type: /*[[#{ui.hint.label.type}]]*/ 'Type:',
+        label_order: /*[[#{ui.hint.label.order}]]*/ 'Order:',
+        label_content: /*[[#{ui.hint.label.content}]]*/ 'Content:',
+        label_image: /*[[#{ui.hint.label.image}]]*/ 'Image:',
+        label_creator: /*[[#{ui.hint.label.creator}]]*/ 'Creator:',
+        label_date: /*[[#{ui.hint.label.date}]]*/ 'Date:',
+        label_no_image: /*[[#{ui.hint.label.noimage}]]*/ 'No img',
+
+        msg_no_generic: /*[[#{ui.hint.msg.no.generic}]]*/ 'No hints',
+        msg_no_classes: /*[[#{ui.hint.msg.no.classes}]]*/ 'No classes',
+        msg_no_hints: /*[[#{ui.hint.msg.no.hints}]]*/ 'No hints',
+        msg_detail_not_found: /*[[#{ui.hint.msg.detail.notfound}]]*/ 'Not found',
+        msg_success_update: /*[[#{ui.hint.msg.success.update}]]*/ 'Updated',
+        msg_error_fetch: /*[[#{ui.hint.msg.error.fetch}]]*/ 'Error {0}',
+
+        msg_confirm_delete_all_generic: /*[[#{ui.hint.confirm.del.all.generic}]]*/ 'Confirm?',
+        msg_confirm_delete_all_class: /*[[#{ui.hint.confirm.del.all.class}]]*/ 'Confirm?',
+        msg_confirm_delete_specific: /*[[#{ui.hint.confirm.del.specific}]]*/ 'Confirm {0}?',
+        msg_confirm_delete_single: /*[[#{ui.hint.confirm.del.single}]]*/ 'Confirm?',
+
+        err_fields_required: /*[[#{ui.hint.err.required}]]*/ 'Required',
+        err_data_missing: /*[[#{ui.hint.err.missing}]]*/ 'Missing',
+        err_communication: /*[[#{ui.hint.err.comm}]]*/ 'Comm Error',
+        err_unknown: /*[[#{ui.hint.err.unknown}]]*/ 'Unknown Error'
+    };
+</script>
+
+<script th:src="@{/t1/js/hints_main.js}"></script>
 
 <script th:src="@{/t1/js/hints/hints_main.js}"></script>
 

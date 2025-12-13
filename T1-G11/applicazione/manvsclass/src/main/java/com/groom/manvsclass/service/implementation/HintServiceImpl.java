@@ -18,6 +18,8 @@ import com.groom.manvsclass.util.HintSpecifications;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -53,9 +55,12 @@ public class HintServiceImpl implements HintService {
 
     @Autowired
     private AdminRepository adminRepository;
-    
+
     @Autowired
     private HintMapper hintMapper;
+
+    @Autowired
+    private MessageSource messageSource; // <--- INIEZIONE MESSAGE SOURCE
 
     @Value("${t1.upload-dir}")
     private String uploadDir;
@@ -63,9 +68,13 @@ public class HintServiceImpl implements HintService {
     @Autowired
     private Validator validator;
 
+    // Helper per recuperare i messaggi in base alla lingua corrente
+    private String getMessage(String key, Object... args) {
+        return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
+    }
+
     @Override
     public List<HintResponse> getHints(Map<String, String> queryParams, String jwtToken) {
-
         jwtVerify(jwtToken);
 
         Specification<HintEntity> spec = HintSpecifications.withDynamicQuery(queryParams);
@@ -79,6 +88,7 @@ public class HintServiceImpl implements HintService {
     }
 
     @Override
+    @Transactional
     public String createHintsFromFile(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken) {
 
         jwtVerify(jwtToken);
@@ -89,40 +99,40 @@ public class HintServiceImpl implements HintService {
 
         String adminEmail = jwtService.getAdminFromJwt(jwtToken);
         if (adminEmail == null) {
-            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Utente non autorizzato o token JWT malformato.");
+            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, getMessage("hint.unauthorized"));
         }
 
         List<Hint> hintList;
         try {
             hintList = objectMapper.readValue(file.getInputStream(), new TypeReference<List<Hint>>() {});
 
-            //Validazione contenuto JSON
+            // Validazione contenuto JSON (DTO Validation)
             for (Hint hint : hintList) {
                 Set<ConstraintViolation<Hint>> violations = validator.validate(hint);
 
                 if (!violations.isEmpty()) {
-                    // Se ci sono violazioni, costruisci un messaggio di errore e lancia un'eccezione.
                     String violationMessage = violations.stream()
                             .map(v -> v.getPropertyPath() + ": " + v.getMessage())
                             .collect(Collectors.joining(", "));
 
-                    throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Il contenuto del file non è valido");
+                    throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, getMessage("hint.file.invalid.content", violationMessage));
                 }
             }
 
         } catch (IOException e) {
-            throw new HttpClientErrorException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Formato file non valido. Assicurati che sia un JSON valido.");
+            throw new HttpClientErrorException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, getMessage("hint.file.invalid.format"));
         }
 
         if (hintList == null || hintList.isEmpty()) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Il file non contiene suggerimenti validi da caricare.");
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, getMessage("hint.file.empty"));
         }
 
         AdminEntity adminEntity = adminRepository.findById(adminEmail).orElse(null);
         if (adminEntity == null) {
-            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Amministratore non trovato nel database.");
+            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, getMessage("hint.admin.notfound"));
         }
 
+        // Verifica esistenza classi UT
         List<String> classNames = hintList.stream()
                 .filter(h -> h.getType().equals(HintTypeEnum.CLASS))
                 .map(h -> h.getClassUTName() != null ? h.getClassUTName() : null)
@@ -133,45 +143,55 @@ public class HintServiceImpl implements HintService {
         if (!classNames.isEmpty()) {
             long existingClassCount = classUTRepository.countExistingClasses(classNames);
             if (existingClassCount != classNames.size()) {
-                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Classe UT non trovata.");
+                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, getMessage("hint.class.notfound"));
             }
         }
 
-        List<ClassUTEntity> requiredClassUTs = classUTRepository.findAllById(classNames);
-        Map<String, ClassUTEntity> classUtMap = requiredClassUTs.stream()
-                .collect(Collectors.toMap(ClassUTEntity::getName, c -> c));
-
+        // Mappa delle immagini
         Map<String, MultipartFile> imageMap = imageFiles.stream()
                 .filter(img -> img.getOriginalFilename() != null && !img.getOriginalFilename().isEmpty())
                 .collect(Collectors.toMap(MultipartFile::getOriginalFilename, img -> img));
 
-        List<HintEntity> hintEntityList = new ArrayList<>();
-
+        // Ciclo di salvataggio
         for (Hint hint : hintList) {
 
             HintEntity existingHint = hintRepository.findByContentAndTypeAndClassUtName(hint.getContent(), hint.getType(), hint.getClassUTName());
             if(existingHint != null) {
-                throw new HttpClientErrorException(HttpStatus.CONFLICT, "Suggerimento già esistente.");
+                throw new HttpClientErrorException(HttpStatus.CONFLICT, getMessage("hint.duplicate"));
             }
 
             HintEntity hintEntity = hintMapper.dtoToEntity(hint);
 
+            // 1. VALIDAZIONE CAMPO CONTENT
             if (hintEntity.getContent() == null || hintEntity.getContent().trim().isEmpty()) {
-                throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY, "Campi mancanti: 'content' è obbligatorio.");
+                throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY, getMessage("hint.content.missing"));
+            }
+
+            // 2. VALIDAZIONE NUOVO CAMPO NAME
+            if (hintEntity.getName() == null || hintEntity.getName().trim().isEmpty()) {
+                throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY, getMessage("hint.name.missing"));
             }
 
             HintEntity hintWithTopOrder;
 
+            // Gestione Ordinamento
             if (hintEntity.getType() == HintTypeEnum.CLASS) {
                 if (hintEntity.getClassUt() == null) {
-                    throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY, "Campi mancanti: 'classUTName' è obbligatorio per type='class'");
+                    throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY, getMessage("hint.classutname.missing"));
                 }
-                hintWithTopOrder = hintRepository.findMaxOrderHint(hintEntity.getClassUt().getName(), hintEntity.getType()).orElse(null);
+                hintWithTopOrder = hintRepository.findFirstByClassUtNameAndTypeOrderByOrderDesc(
+                        hintEntity.getClassUt().getName(),
+                        hintEntity.getType()
+                ).orElse(null);
+
             } else if (hintEntity.getType() == HintTypeEnum.GENERIC) {
                 hintEntity.setClassUt(null);
-                hintWithTopOrder = hintRepository.findMaxOrderHint(null, hintEntity.getType()).orElse(null);
+                hintWithTopOrder = hintRepository.findFirstByClassUtNameAndTypeOrderByOrderDesc(
+                        null,
+                        hintEntity.getType()
+                ).orElse(null);
             } else {
-                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Tipo di suggerimento non valido. Deve essere 'generic' o 'class'");
+                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, getMessage("hint.type.invalid"));
             }
 
             if (hintWithTopOrder != null) {
@@ -180,28 +200,27 @@ public class HintServiceImpl implements HintService {
                 hintEntity.setOrder(1);
             }
 
+            // Gestione Immagini
             if (hint.getImageUri() != null && !hint.getImageUri().isEmpty()) {
 
                 String identifier = hint.getImageUri();
                 MultipartFile imageFile = imageMap.get(identifier);
 
                 if (imageFile != null) {
-
                     try {
                         String newFileName = System.currentTimeMillis() + "_" + identifier;
                         Path filePath = Paths.get(uploadDir, newFileName);
                         imageFile.transferTo(filePath.toFile());
-                        //hintEntity.setImageUri(uploadDir + newFileName);
                         hintEntity.setImageUri("/uploads/" + newFileName);
 
                     } catch (IOException e) {
                         log.error("Errore durante il salvataggio del file immagine {}: {}", identifier, e.getMessage());
                         throw new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
-                                "Errore I/O durante il salvataggio dell'immagine: " + identifier);
+                                getMessage("hint.image.save.error", identifier));
                     }
                 } else {
                     throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
-                            "URI dell'immagine trovato nel JSON, ma file non allegato.");
+                            getMessage("hint.image.missing.file"));
                 }
             }
 
@@ -210,16 +229,53 @@ public class HintServiceImpl implements HintService {
             try {
                 hintRepository.save(hintEntity);
             } catch (Exception e) {
-                throw new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Errore interno durante il salvataggio dei suggerimenti.");
+                log.error("Errore DB Save: ", e);
+                throw new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, getMessage("hint.save.internal.error"));
             }
         }
 
-        return "Suggerimenti caricati con successo.";
+        return getMessage("hint.upload.success");
     }
 
     @Override
-    public String updateHint(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken) {
-        return "";
+    @Transactional
+    public String updateHint(Long id, String name, String content, MultipartFile imageFile, String jwtToken) {
+        jwtVerify(jwtToken);
+
+        HintEntity hintEntity = hintRepository.findById(id)
+                .orElseThrow(() -> new HttpClientErrorException(HttpStatus.NOT_FOUND, getMessage("hint.notfound.id", id)));
+
+        if (name != null && !name.trim().isEmpty()) {
+            hintEntity.setName(name);
+        }
+        if (content != null && !content.trim().isEmpty()) {
+            hintEntity.setContent(content);
+        }
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            try {
+                if (hintEntity.getImageUri() != null) {
+                    deleteImageFile(hintEntity.getImageUri());
+                }
+
+                String originalFilename = imageFile.getOriginalFilename();
+                String safeFileName = (originalFilename != null) ? originalFilename.replaceAll("[^a-zA-Z0-9\\.\\-]", "_") : "img";
+                String newFileName = System.currentTimeMillis() + "_" + safeFileName;
+
+                Path filePath = Paths.get(uploadDir, newFileName);
+                imageFile.transferTo(filePath.toFile());
+
+                hintEntity.setImageUri("/uploads/" + newFileName);
+
+            } catch (IOException e) {
+                log.error("Errore salvataggio nuova immagine per hint {}: {}", id, e.getMessage());
+                throw new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, getMessage("hint.image.update.error"));
+            }
+        }
+
+        hintRepository.save(hintEntity);
+
+        return getMessage("hint.update.success");
     }
 
     @Override
@@ -236,7 +292,7 @@ public class HintServiceImpl implements HintService {
         }
 
         if (CollectionUtils.isEmpty(hintEntityList)) {
-            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare per " + classUT + ".");
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, getMessage("hint.delete.class.notfound", classUT));
         }
 
         hintRepository.deleteAll(hintEntityList);
@@ -245,7 +301,7 @@ public class HintServiceImpl implements HintService {
             deleteImageFile(hint.getImageUri());
         }
 
-        return "Suggerimenti eliminati con successo.";
+        return getMessage("hint.delete.success");
     }
 
     @Override
@@ -262,23 +318,24 @@ public class HintServiceImpl implements HintService {
         }
 
         if (hintEntity == null) {
-            String target = type == HintTypeEnum.GENERIC ? "generico con ordine " + order : "per " + classUT + " con ordine " + order;
-            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Non ci sono suggerimenti da eliminare: " + target);
+            // Costruiamo la parte dinamica del messaggio usando placeholder
+            String target = type == HintTypeEnum.GENERIC
+                    ? getMessage("hint.target.generic", order)
+                    : getMessage("hint.target.class", classUT, order);
+
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, getMessage("hint.delete.order.notfound", target));
         }
 
         hintRepository.delete(hintEntity);
         deleteImageFile(hintEntity.getImageUri());
 
-        return "Suggerimento eliminato con successo.";
+        return getMessage("hint.delete.single.success");
     }
 
     private void deleteImageFile(String imageUri) {
         if (imageUri != null && !imageUri.trim().isEmpty() && imageUri.startsWith("/uploads/")) {
             try {
-                // Rimuovi il prefisso HTTP "/uploads/" per ottenere il nome del file
                 String fileName = imageUri.substring("/uploads/".length());
-
-                // Ricostruisci il percorso fisico usando la directory di upload
                 Path filePath = Paths.get(uploadDir, fileName);
 
                 if (Files.exists(filePath)) {
@@ -297,7 +354,7 @@ public class HintServiceImpl implements HintService {
 
     void jwtVerify(String jwtToken) {
         if (jwtToken == null || jwtToken.isEmpty() || !jwtService.isJwtValid(jwtToken)) {
-            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Invalid JWT token");
+            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, getMessage("hint.jwt.invalid"));
         }
     }
 
@@ -309,13 +366,13 @@ public class HintServiceImpl implements HintService {
         try {
             typeEnum = HintTypeEnum.valueOf(type);
         } catch (IllegalArgumentException e) {
-            return "Errore: Il tipo '" + type + "' non è valido. Usa 'CLASS' o 'GENERIC'.";
+            return getMessage("hint.type.enum.invalid", type);
         }
 
         List<HintEntity> hintsToDelete = hintRepository.findByType(typeEnum);
 
         if (hintsToDelete.isEmpty()) {
-            return "Nessun suggerimento di tipo " + type + " trovato.";
+            return getMessage("hint.type.notfound", type);
         }
         for (HintEntity hintEntity : hintsToDelete) {
             if (hintEntity.getImageUri() != null && !hintEntity.getImageUri().isEmpty()) {
@@ -325,6 +382,45 @@ public class HintServiceImpl implements HintService {
 
         hintRepository.deleteByType(typeEnum);
 
-        return "Tutti i suggerimenti di tipo " + type + " sono stati eliminati con successo.";
+        return getMessage("hint.delete.type.success", type);
+    }
+
+    @Override
+    @Transactional
+    public void moveHint(Long id, String direction, String jwtToken) {
+        jwtVerify(jwtToken);
+
+        HintEntity currentHint = hintRepository.findById(id)
+                .orElseThrow(() -> new HttpClientErrorException(HttpStatus.NOT_FOUND, getMessage("hint.notfound")));
+
+        int currentOrder = currentHint.getOrder();
+        int targetOrder;
+
+        if ("UP".equalsIgnoreCase(direction)) {
+            if (currentOrder <= 1) return;
+            targetOrder = currentOrder - 1;
+        } else if ("DOWN".equalsIgnoreCase(direction)) {
+            targetOrder = currentOrder + 1;
+        } else {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, getMessage("hint.move.direction.invalid"));
+        }
+
+        String className = (currentHint.getClassUt() != null) ? currentHint.getClassUt().getName() : null;
+
+        HintEntity neighborHint = hintRepository.findByClassUtNameAndTypeAndOrder(className, currentHint.getType(), targetOrder)
+                .orElse(null);
+
+        if (neighborHint != null) {
+            int tempOrder = -1;
+
+            neighborHint.setOrder(tempOrder);
+            hintRepository.saveAndFlush(neighborHint);
+
+            currentHint.setOrder(targetOrder);
+            hintRepository.saveAndFlush(currentHint);
+
+            neighborHint.setOrder(currentOrder);
+            hintRepository.save(neighborHint);
+        }
     }
 }

@@ -1,10 +1,9 @@
 /*
- * Copyright (c) 2025 Stefano Marano https://github.com/StefanoMarano80017
- * All rights reserved.
- * Versione Definitiva: UI con Pulsanti "Elimina Tutti".
+ * Copyright (c) 2025 Stefano Marano
+ * Versione: Bridge Thymeleaf -> JS
  */
 
-// Mappa id pulsanti a view
+// === CONFIGURAZIONE URL ===
 const links = {
     navDashboardAdmin: VIEWS.DASHBOARD_ADMIN,
     navHintsMain: VIEWS.HINTS_MAIN,
@@ -13,6 +12,27 @@ const links = {
 };
 assignUrls(links);
 
+// === FUNZIONE TRADUZIONE (Legge dal serverMessages iniettato nell'HTML) ===
+function t(key, ...args) {
+    // Controlla se l'oggetto esiste (iniettato da Thymeleaf)
+    if (typeof serverMessages === 'undefined') {
+        console.error("Errore: serverMessages non definito. Controlla hints_main.html");
+        return key;
+    }
+
+    let text = serverMessages[key] || key;
+
+    // Sostituzione placeholder {0}, {1}...
+    args.forEach((arg, index) => {
+        text = text.replace(`{${index}}`, arg);
+    });
+
+    return text;
+}
+
+
+// === VARIABILI GLOBALI ===
+let currentActiveHint = null;
 
 // === FUNZIONI DI UTILITY ===
 
@@ -28,66 +48,59 @@ function escapeHtml(unsafe) {
 
 function toggleInitialView(show) {
     const initialButtons = document.getElementById('initial-buttons');
-    if (initialButtons) {
-        initialButtons.style.display = show ? 'flex' : 'none';
-    }
+    if (initialButtons) initialButtons.style.display = show ? 'flex' : 'none';
 
     const navbarContent = document.getElementById('navbarSupportedContent');
-    if (navbarContent) {
-        navbarContent.style.display = show ? 'block' : 'none';
-    }
+    if (navbarContent) navbarContent.style.display = show ? 'block' : 'none';
 }
 
 function setDynamicContent(html) {
     document.getElementById('dynamic-content').innerHTML = html;
 }
 
+function getActionButtons(hintId, isFirst) {
+    return `
+        <div class="btn-group-vertical btn-group-sm">
+            <button onclick="event.stopPropagation(); moveHintJS(${hintId}, 'UP')"
+                    class="btn btn-outline-secondary" ${isFirst ? 'disabled' : ''} title="UP">
+                <i class="fa fa-chevron-up"></i>
+            </button>
+            <button onclick="event.stopPropagation(); moveHintJS(${hintId}, 'DOWN')"
+                    class="btn btn-outline-secondary" title="DOWN">
+                <i class="fa fa-chevron-down"></i>
+            </button>
+        </div>
+    `;
+}
+
 // === FUNZIONI DI ELIMINAZIONE ===
 
-// 1. Elimina singolo suggerimento (esistente)
 async function deleteHintByClassUTAndOrder(classUTName, order) {
-    if (!confirm(messages.confirmDeleteSingle)) {
-        return;
-    }
+    if (!confirm(t('msg_confirm_delete_single'))) return;
 
     const safeClassUTName = classUTName === 'null' ? 'null' : encodeURIComponent(classUTName);
     const url = `${APIS.DELETE_HINT_BY_CLASS_AND_ORDER}/${safeClassUTName}/order/${order}`;
-
     await callDeleteHint(url);
 }
 
-// 2. Elimina TUTTI i suggerimenti di una specifica classe (NUOVO)
 async function deleteAllHintsForSpecificClass(classUTName) {
-    if (!confirm(`Sei sicuro di voler eliminare TUTTI i suggerimenti per la classe ${classUTName}?`)) {
-        return;
-    }
-    // Assume che l'endpoint sia .../hints/class/{NomeClasse}
+    if (!confirm(t('msg_confirm_delete_specific', classUTName))) return;
+
     const safeClassUTName = encodeURIComponent(classUTName);
     const url = `${APIS.DELETE_HINT_BY_CLASS}/${safeClassUTName}`;
-
     await callDeleteHint(url);
 }
 
-// 3. Elimina TUTTI i suggerimenti di tipo CLASS (Globale) (ABILITATO)
 async function deleteAllClassHints() {
-    if (!confirm("Sei sicuro di voler eliminare TUTTI i suggerimenti di tipo CLASS dal sistema? Questa operazione è irreversibile.")) {
-        return;
-    }
-    // NOTA: Assicurati che il Backend supporti questa chiamata.
-    // Se l'endpoint per cancellare tutti i CLASS è diverso, modifica l'URL qui sotto.
-    // Esempio ipotetico: /hints/type/CLASS
-    const url = `${APIS.DELETE_HINT_BY_TYPE}/CLASS`;
-    // Se non hai un endpoint by Type, ma usi quello by Class 'all', adatta di conseguenza.
+    if (!confirm(t('msg_confirm_delete_all_class'))) return;
 
+    const url = `${APIS.DELETE_HINT_BY_TYPE}/CLASS`;
     await callDeleteHint(url);
 }
 
-// 4. Elimina TUTTI i suggerimenti Generici (ESISTENTE)
 async function deleteAllGenericHints() {
-    if (!confirm(messages.confirmDeleteGeneric)) {
-        return;
-    }
-    // Endpoint: .../hints/class/null (come da tua configurazione precedente)
+    if (!confirm(t('msg_confirm_delete_all_generic'))) return;
+
     const url = `${APIS.DELETE_HINT_BY_CLASS}/null`;
     await callDeleteHint(url);
 }
@@ -99,33 +112,53 @@ async function callDeleteHint(url) {
             method: "DELETE",
             headers: { 'Content-Type': 'application/json' },
         },
-        {
-            reload: true
-        });
+        { reload: true });
     } catch (error) {
-        let errorMessage = "Errore sconosciuto nel Back-End.";
-
-        if (error.response && error.response.message) {
-            errorMessage = error.response.message;
-        } else if (error.message) {
-             errorMessage = error.message;
-        } else if (typeof error === 'string') {
-             errorMessage = error;
-        }
+        let errorMessage = t('err_unknown');
+        if (error.response && error.response.message) errorMessage = error.response.message;
+        else if (error.message) errorMessage = error.message;
 
         displayError(errorMessage);
-        return;
     }
 }
 
-// === GESTIONE DELLA RICERCA ===
+// === API MOVEMENT ===
+async function moveHintJS(id, direction) {
+    const url = `/hints/${id}/move?direction=${direction}`;
+    const token = getCookie("jwtToken");
 
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (response.ok) {
+            if (document.getElementById('genericTable')) {
+                renderGenericHintsView();
+            } else {
+                const titleEl = document.querySelector('h2');
+                if (titleEl) {
+                     const classNameMatch = titleEl.innerText.replace(t('title_class_detail', ''), '').trim();
+                     if(classNameMatch) {
+                         renderClassHintsDetailView(classNameMatch);
+                     } else {
+                         location.reload();
+                     }
+                }
+            }
+        } else {
+            console.error("Errore spostamento");
+        }
+    } catch (e) {
+        console.error("Errore rete", e);
+    }
+}
+
+
+// === GESTIONE DELLA RICERCA ===
 function handleSearchSubmit(event) {
     event.preventDefault();
-    const searchValue = document.getElementById('searchInput').value.trim();
-    if (searchValue) {
-        alert("La funzionalità di ricerca non è ancora pienamente supportata.");
-    }
     document.location.reload();
 }
 
@@ -134,56 +167,63 @@ function handleSearchSubmit(event) {
 // --- VIEW 1: Elenco Suggerimenti Generici ---
 async function renderGenericHintsView() {
     toggleInitialView(false);
-    setDynamicContent('<p class="text-info">Caricamento suggerimenti generici...</p>');
+    setDynamicContent(`<p class="text-info">${t('loading_generic')}</p>`);
 
     try {
         const hints = await callGetHints("type=GENERIC");
 
-        // Bottone Back + Bottone Elimina Tutto
         const headerButtons = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <button onclick="document.location.reload()" class="btn btn-sm btn-secondary">
-                    <i class="fa fa-arrow-left"></i> Torna alla selezione
+                    <i class="fa fa-arrow-left"></i> ${t('back_selection')}
                 </button>
                 ${(hints && hints.length > 0) ? `
                 <button onclick="deleteAllGenericHints()" class="btn btn-sm btn-danger">
-                    <i class="fa fa-trash"></i> Elimina Tutti i Generici
+                    <i class="fa fa-trash"></i> ${t('btn_delete_all_generic')}
                 </button>` : ''}
             </div>
         `;
 
         if (!hints || hints.length === 0) {
             setDynamicContent(`
-                <h2>Suggerimenti Generici</h2>
+                <h2>${t('title_generic')}</h2>
                 ${headerButtons}
-                <p class="text-warning">Nessun suggerimento generico trovato.</p>
+                <p class="text-warning">${t('msg_no_generic')}</p>
             `);
             return;
         }
 
+        hints.sort((a, b) => a.order - b.order);
+
         let tableHtml = `
-            <h2>Suggerimenti Generici</h2>
+            <h2>${t('title_generic')}</h2>
             ${headerButtons}
-            <table class="table table-hover table-striped">
+            <table id="genericTable" class="table table-hover table-striped">
                 <thead>
                     <tr>
-                        <th style="width: 10%;">Ordine</th>
-                        <th style="width: 70%;">Contenuto</th>
-                        <th style="width: 20%;">Tipo</th>
+                        <th style="width: 5%;">${t('col_actions')}</th>
+                        <th style="width: 5%;">${t('col_order')}</th>
+                        <th style="width: 20%;">${t('col_title')}</th>
+                        <th style="width: 55%;">${t('col_content')}</th>
+                        <th style="width: 15%;">${t('col_type')}</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
 
-        for (const hint of hints) {
-            const safeContentSnippet = escapeHtml(hint.content).substring(0, 150) + (hint.content.length > 150 ? '...' : '');
-            const safeOrder = hint.order;
+        for (let i = 0; i < hints.length; i++) {
+            const hint = hints[i];
+            const safeName = escapeHtml(hint.name);
+            const safeContentSnippet = escapeHtml(hint.content).substring(0, 100) + (hint.content.length > 100 ? '...' : '');
+            const actionButtons = getActionButtons(hint.id, i === 0);
 
             tableHtml += `
-                <tr onclick="renderHintDetailView('${safeOrder}', 'GENERIC', 'null')" style="cursor:pointer;">
-                    <td>#${safeOrder}</td>
+                <tr onclick="renderHintDetailView('${hint.order}', 'GENERIC')" style="cursor:pointer;">
+                    <td>${actionButtons}</td>
+                    <td>${hint.order}</td>
+                    <td><strong>${safeName}</strong></td>
                     <td>${safeContentSnippet}</td>
-                    <td>Generico</td>
+                    <td><span class="badge badge-info">${hint.type}</span></td>
                 </tr>
             `;
         }
@@ -192,59 +232,55 @@ async function renderGenericHintsView() {
         setDynamicContent(tableHtml);
 
     } catch (error) {
-        console.error("Errore generico:", error);
-        setDynamicContent(`<p class="text-danger">Errore nel caricamento: ${error.message}.</p>`);
+        setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', error.message)}</p>`);
     }
 }
 
 // --- VIEW 2: Elenco Classi ---
 async function renderClassHintsListView() {
     toggleInitialView(false);
-    setDynamicContent('<p class="text-info">Caricamento classi...</p>');
+    setDynamicContent(`<p class="text-info">${t('loading_classes')}</p>`);
 
     try {
         const hints = await callGetHints("type=CLASS");
 
-        // Bottone Back + Bottone Elimina Tutto (Globale Classi)
         const headerButtons = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <button onclick="document.location.reload()" class="btn btn-sm btn-secondary">
-                    <i class="fa fa-arrow-left"></i> Torna alla selezione
+                    <i class="fa fa-arrow-left"></i> ${t('back_selection')}
                 </button>
                 ${(hints && hints.length > 0) ? `
                 <button onclick="deleteAllClassHints()" class="btn btn-sm btn-danger">
-                    <i class="fa fa-trash"></i> Elimina TUTTI i Class Hints
+                    <i class="fa fa-trash"></i> ${t('btn_delete_all_class')}
                 </button>` : ''}
             </div>
         `;
 
         if (!hints || hints.length === 0) {
             setDynamicContent(`
-                <h2>Classi con Suggerimenti</h2>
+                <h2>${t('title_classes')}</h2>
                 ${headerButtons}
-                <p class="text-warning">Nessun suggerimento di classe trovato.</p>
+                <p class="text-warning">${t('msg_no_classes')}</p>
             `);
             return;
         }
 
         const classGroup = hints.reduce((acc, hint) => {
             const className = hint.classUTName;
-            if (className) {
-                acc[className] = (acc[className] || 0) + 1;
-            }
+            if (className) acc[className] = (acc[className] || 0) + 1;
             return acc;
         }, {});
 
         const sortedClassNames = Object.keys(classGroup).sort();
 
         let tableHtml = `
-            <h2>Classi con Suggerimenti</h2>
+            <h2>${t('title_classes')}</h2>
             ${headerButtons}
             <table class="table table-hover table-striped">
                 <thead>
                     <tr>
-                        <th style="width: 70%;">Nome Classe</th>
-                        <th style="width: 30%;">Numero Suggerimenti</th>
+                        <th style="width: 70%;">${t('col_class_name')}</th>
+                        <th style="width: 30%;">${t('col_hint_count')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -266,8 +302,7 @@ async function renderClassHintsListView() {
         setDynamicContent(tableHtml);
 
     } catch (error) {
-        console.error("Errore classi:", error);
-        setDynamicContent(`<p class="text-danger">Errore nel caricamento: ${error.message}.</p>`);
+        setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', error.message)}</p>`);
     }
 }
 
@@ -275,56 +310,63 @@ async function renderClassHintsListView() {
 async function renderClassHintsDetailView(classUTName) {
     toggleInitialView(false);
     const safeClassName = escapeHtml(classUTName);
-    setDynamicContent(`<p class="text-info">Caricamento suggerimenti per <strong>${safeClassName}</strong>...</p>`);
+    setDynamicContent(`<p class="text-info">${t('loading_class_hints', safeClassName)}</p>`);
 
     try {
         const hints = await callGetHints(`type=CLASS&classUTName=${encodeURIComponent(classUTName)}`);
 
-        // Bottone Back + Bottone Elimina Tutto per QUESTA classe
         const headerButtons = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <button onclick="renderClassHintsListView()" class="btn btn-sm btn-secondary">
-                    <i class="fa fa-arrow-left"></i> Torna all'elenco Classi
+                    <i class="fa fa-arrow-left"></i> ${t('back_class_list')}
                 </button>
                 ${(hints && hints.length > 0) ? `
                 <button onclick="deleteAllHintsForSpecificClass('${safeClassName}')" class="btn btn-sm btn-danger">
-                    <i class="fa fa-trash"></i> Elimina Tutti per ${safeClassName}
+                    <i class="fa fa-trash"></i> ${t('btn_delete_all_specific', safeClassName)}
                 </button>` : ''}
             </div>
         `;
 
         if (!hints || hints.length === 0) {
             setDynamicContent(`
-                <h2>Suggerimenti per ${safeClassName}</h2>
+                <h2>${t('title_class_detail', safeClassName)}</h2>
                 ${headerButtons}
-                <p class="text-warning">Nessun suggerimento trovato.</p>
+                <p class="text-warning">${t('msg_no_hints')}</p>
             `);
             return;
         }
 
+        hints.sort((a, b) => a.order - b.order);
+
         let tableHtml = `
-            <h2>Suggerimenti per ${safeClassName}</h2>
+            <h2>${t('title_class_detail', safeClassName)}</h2>
             ${headerButtons}
             <table class="table table-hover table-striped">
                 <thead>
                     <tr>
-                        <th style="width: 10%;">Ordine</th>
-                        <th style="width: 70%;">Contenuto</th>
-                        <th style="width: 20%;">Tipo</th>
+                        <th style="width: 5%;">${t('col_actions')}</th>
+                        <th style="width: 5%;">${t('col_order')}</th>
+                        <th style="width: 20%;">${t('col_title')}</th>
+                        <th style="width: 55%;">${t('col_content')}</th>
+                        <th style="width: 15%;">${t('col_type')}</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
 
-        for (const hint of hints) {
-            const safeContentSnippet = escapeHtml(hint.content).substring(0, 150) + (hint.content.length > 150 ? '...' : '');
-            const safeOrder = hint.order;
+        for (let i = 0; i < hints.length; i++) {
+            const hint = hints[i];
+            const safeName = escapeHtml(hint.name);
+            const safeContentSnippet = escapeHtml(hint.content).substring(0, 100) + (hint.content.length > 100 ? '...' : '');
+            const actionButtons = getActionButtons(hint.id, i === 0);
 
             tableHtml += `
-                <tr onclick="renderHintDetailView('${safeOrder}', 'CLASS', '${safeClassName}')" style="cursor:pointer;">
-                    <td>#${safeOrder}</td>
+                <tr onclick="renderHintDetailView('${hint.order}', 'CLASS', '${safeClassName}')" style="cursor:pointer;">
+                    <td>${actionButtons}</td>
+                    <td>${hint.order}</td>
+                    <td><strong>${safeName}</strong></td>
                     <td>${safeContentSnippet}</td>
-                    <td>${hint.type}</td>
+                    <td><span class="badge badge-info">${hint.type}</span></td>
                 </tr>
             `;
         }
@@ -333,19 +375,17 @@ async function renderClassHintsDetailView(classUTName) {
         setDynamicContent(tableHtml);
 
     } catch (error) {
-        console.error(`Errore suggerimenti classe ${classUTName}:`, error);
-        setDynamicContent(`<p class="text-danger">Errore nel caricamento: ${error.message}.</p>`);
+        setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', error.message)}</p>`);
     }
 }
 
-// --- VIEW 3: Dettaglio Suggerimento (INVARIATO) ---
+// --- VIEW 3: Dettaglio Suggerimento ---
 async function renderHintDetailView(order, type, classUTName = null) {
     toggleInitialView(false);
-    setDynamicContent('<p class="text-info">Caricamento dettaglio suggerimento...</p>');
+    setDynamicContent(`<p class="text-info">${t('loading_detail')}</p>`);
 
     try {
         let urlParams = new URLSearchParams({ type: type, order: order }).toString();
-
         if (classUTName && classUTName !== 'null') {
             urlParams += `&classUTName=${encodeURIComponent(classUTName)}`;
         }
@@ -354,23 +394,22 @@ async function renderHintDetailView(order, type, classUTName = null) {
         const hintData = (Array.isArray(hints) && hints.length > 0) ? hints[0] : null;
 
         if (!hintData) {
-            setDynamicContent('<p class="text-warning">Dettaglio suggerimento non trovato.</p>');
+            setDynamicContent(`<p class="text-warning">${t('msg_detail_not_found')}</p>`);
             return;
         }
 
+        // SALVATAGGIO GLOBALE
+        currentActiveHint = hintData;
+        currentActiveHint.safeClassUTName = hintData.classUTName || 'null';
+
         const currentClassUTName = hintData.classUTName || 'null';
-        const safeClassUTName = escapeHtml(currentClassUTName) || 'Generico';
+        const safeName = escapeHtml(hintData.name) || 'Senza Titolo';
+        const safeContent = escapeHtml(hintData.content) || '-';
+        const safeImageUri = escapeHtml(hintData.imageUri);
         const adminEmail = escapeHtml(hintData.adminEmail) || 'N/A';
         const createdAt = hintData.createdAt ? new Date(hintData.createdAt).toLocaleDateString() : 'N/D';
-        const safeContent = escapeHtml(hintData.content) || 'Nessun contenuto definito';
-        const safeImageUri = escapeHtml(hintData.imageUri);
 
-        let detailTitle = "";
-        if (type === 'GENERIC' || currentClassUTName === 'null') {
-            detailTitle = `Dettaglio Suggerimento Generico #${hintData.order}`;
-        } else {
-            detailTitle = `Dettaglio Suggerimento #${hintData.order} (${safeClassUTName})`;
-        }
+        let detailTitle = t('title_detail', safeName);
 
         let backFunction = (type === 'GENERIC' || currentClassUTName === 'null')
                            ? 'renderGenericHintsView()'
@@ -379,71 +418,166 @@ async function renderHintDetailView(order, type, classUTName = null) {
         const detailHtml = `
             <h2>${detailTitle}</h2>
             <button onclick="${backFunction}" class="btn btn-secondary mb-3">
-                <i class="fa fa-arrow-left"></i> Torna all'elenco
+                <i class="fa fa-arrow-left"></i> ${t('back_list')}
             </button>
 
-            <p><strong>Tipo:</strong> ${hintData.type}</p>
-            <p><strong>Ordine:</strong> ${hintData.order}</p>
-            <p><strong>Contenuto:</strong> ${safeContent}</p>
+            <div class="card p-4">
+                <p><strong>${t('label_title')}</strong> ${safeName}</p>
+                <p><strong>${t('label_type')}</strong> <span class="badge badge-info">${hintData.type}</span></p>
+                <p><strong>${t('label_order')}</strong> ${hintData.order}</p>
+                <p><strong>${t('label_content')}</strong><br>${safeContent}</p>
 
-            ${safeImageUri ?
-                `<div>
-                    <p><strong>Immagine:</strong></p>
-                    <img src="${safeImageUri}" alt="Immagine Suggerimento" class="img-fluid border rounded" style="max-width: 600px; height: auto; margin-top: 5px;"/>
-                </div>`
-                : '<p><strong>Immagine:</strong> <em>Nessuna immagine allegata.</em></p>'}
+                ${safeImageUri ?
+                    `<div>
+                        <p><strong>${t('label_image')}</strong></p>
+                        <img src="${safeImageUri}" alt="Immagine Suggerimento" class="img-fluid border rounded" style="max-width: 600px; height: auto; margin-top: 5px;"/>
+                    </div>`
+                    : `<p><strong>${t('label_image')}</strong> <em>${t('label_no_image')}</em></p>`}
 
-            <br>
-            <p><strong>Creatore:</strong> ${adminEmail}</p>
-            <p><strong>Data Creazione:</strong> ${createdAt}</p>
+                <br>
+                <p><strong>${t('label_creator')}</strong> ${adminEmail}</p>
+                <p><strong>${t('label_date')}</strong> ${createdAt}</p>
 
-            <button type="button"
-                    onclick="deleteHintByClassUTAndOrder('${currentClassUTName}', ${hintData.order})"
-                    class="btn btn-icon btn-danger mt-3">
-                <i class="fa fa-trash"></i> Elimina Suggerimento
-            </button>
+                <div class="mt-3">
+                    <button type="button" onclick="openEditModal()" class="btn btn-warning mr-2 text-white">
+                        <i class="fa fa-pencil"></i> ${t('btn_edit')}
+                    </button>
+
+                    <button type="button"
+                            onclick="deleteHintByClassUTAndOrder('${currentClassUTName}', ${hintData.order})"
+                            class="btn btn-danger">
+                        <i class="fa fa-trash"></i> ${t('btn_delete')}
+                    </button>
+                </div>
+            </div>
         `;
         setDynamicContent(detailHtml);
 
     } catch (error) {
-        console.error("Errore dettaglio:", error);
-        setDynamicContent(`<p class="text-danger">Errore nel caricamento: ${error.message}.</p>`);
+        setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', error.message)}</p>`);
+    }
+}
+
+
+// === GESTIONE MODIFICA E MODALI ===
+
+function openEditModal() {
+    if (!currentActiveHint) {
+        alert(t('err_data_missing'));
+        return;
+    }
+    document.getElementById('editHintForm').reset();
+
+    document.getElementById('editHintId').value = currentActiveHint.id;
+    document.getElementById('editHintName').value = currentActiveHint.name;
+    document.getElementById('editHintContent').value = currentActiveHint.content;
+
+    $('#editHintModal').modal('show');
+}
+
+async function submitEditHint() {
+    const id = document.getElementById('editHintId').value;
+    const name = document.getElementById('editHintName').value;
+    const content = document.getElementById('editHintContent').value;
+    const imageInput = document.getElementById('editHintImage');
+
+    if (!name || !content) {
+        alert(t('err_fields_required'));
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('content', content);
+
+    if (imageInput.files.length > 0) {
+        formData.append('file', imageInput.files[0]);
+    }
+
+    const url = `/hints/update/${id}`;
+
+    try {
+        const token = getCookie("jwtToken");
+
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: formData
+        });
+
+        if (response.ok) {
+            $('#editHintModal').modal('hide');
+
+            if(currentActiveHint) {
+                currentActiveHint.name = name;
+                currentActiveHint.content = content;
+            }
+
+            document.getElementById('successModalLabel').innerText = t('title_success');
+            document.getElementById('successMessageContent').innerText = t('msg_success_update');
+
+            const successBtn = document.querySelector('#successModal .btn-primary');
+            if(successBtn) successBtn.innerText = t('btn_continue');
+
+            $('#successModal').modal('show');
+
+        } else {
+            const errorText = await response.text();
+            alert(t('title_error') + ": " + errorText);
+        }
+    } catch (error) {
+        console.error("Errore fetch update:", error);
+        alert(t('err_communication'));
+    }
+}
+
+function reloadCurrentHintDetail() {
+    $('#successModal').modal('hide');
+
+    if (currentActiveHint) {
+        renderHintDetailView(
+            currentActiveHint.order,
+            currentActiveHint.type,
+            currentActiveHint.safeClassUTName
+        );
+    } else {
+        renderGenericHintsView();
     }
 }
 
 // === INIZIALIZZAZIONE ===
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById('viewGenericHintsBtn').addEventListener('click', renderGenericHintsView);
-    document.getElementById('viewClassHintsBtn').addEventListener('click', renderClassHintsListView);
-    document.getElementById("searchForm").addEventListener("submit", handleSearchSubmit);
+    // Traduzione testi statici iniziali
+    const btnGeneric = document.getElementById('viewGenericHintsBtn');
+    const btnClass = document.getElementById('viewClassHintsBtn');
+
+    if(btnGeneric) {
+        btnGeneric.innerHTML = `<i class="fa fa-list"></i> ${t('title_generic')}`;
+        btnGeneric.addEventListener('click', renderGenericHintsView);
+    }
+    if(btnClass) {
+        btnClass.innerHTML = `<i class="fa fa-list"></i> ${t('title_classes')}`;
+        btnClass.addEventListener('click', renderClassHintsListView);
+    }
+
+    if(document.getElementById("searchForm")) {
+        document.getElementById("searchForm").addEventListener("submit", handleSearchSubmit);
+    }
+
     toggleInitialView(true);
 });
 
 // === ERROR DISPLAY ===
 function displayError(message, containerId = null) {
-    let errorContainer;
-    if (containerId) {
-        errorContainer = document.getElementById(containerId);
-    }
-    if (!errorContainer) {
-        errorContainer = document.getElementById('api-error-alert-container');
-    }
-    if (!errorContainer) {
-        errorContainer = document.getElementById('dynamic-content') ||
-                         document.getElementById('main-view-container');
-    }
-    if (!errorContainer) {
-        errorContainer = document.getElementById('main-content') || document.body;
-    }
-
-    if (!errorContainer) return;
+    let errorContainer = containerId ? document.getElementById(containerId) : document.getElementById('api-error-alert-container');
+    if (!errorContainer) errorContainer = document.getElementById('dynamic-content') || document.getElementById('main-view-container') || document.body;
 
     const oldAlert = document.getElementById('api-error-alert');
     if (oldAlert) oldAlert.remove();
 
     const errorHtml = `
         <div id="api-error-alert" class="alert alert-danger mt-3" role="alert" style="color: #842029; background-color: #f8d7da; border-color: #f5c2c7; padding: 15px; margin-bottom: 20px;">
-            <strong>Errore:</strong> ${escapeHtml(message)}
+            <strong>${t('title_error')}:</strong> ${escapeHtml(message)}
             <button type="button" class="close" data-dismiss="alert" aria-label="Close"
                     onclick="document.getElementById('api-error-alert').remove()">
                 <span aria-hidden="true">&times;</span>

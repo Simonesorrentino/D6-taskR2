@@ -29,6 +29,9 @@ public class HintEntity {
     @JoinColumn(name = "class_ut_name", referencedColumnName = "name")
     private ClassUTEntity classUt;
 
+    @Column(name = "name", nullable = false)
+    private String name;
+
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
 

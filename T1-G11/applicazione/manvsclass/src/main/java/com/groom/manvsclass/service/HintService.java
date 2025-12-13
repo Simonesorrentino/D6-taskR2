@@ -12,11 +12,13 @@ public interface HintService {
 
     String createHintsFromFile(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken);
 
-    String updateHint(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken);
+    String updateHint(Long id, String name, String content, MultipartFile imageFile, String jwtToken);
 
     String deleteHintByClassUT(String classUT, String jwtToken);
 
     String deleteHintByClassUTAndOrder(String classUT, Integer order, String jwtToken);
 
     String deleteHintsByType(String type, String jwtToken);
+
+    void moveHint(Long id, String direction, String jwtToken);
 }

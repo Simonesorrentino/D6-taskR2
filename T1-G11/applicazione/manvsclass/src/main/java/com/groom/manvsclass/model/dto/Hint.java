@@ -16,6 +16,9 @@ public class Hint {
     private String classUTName;
 
     @NotNull
+    private String name;
+
+    @NotNull
     private String content;
 
     private String imageUri;

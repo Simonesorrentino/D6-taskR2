@@ -21,15 +21,7 @@ public interface HintRepository extends JpaRepository<HintEntity, Long>, JpaSpec
                                         @Param("type") HintTypeEnum type,
                                         @Param("classUtName") String classUtName);
 
-    @Query("SELECT h FROM HintEntity h " +
-            "WHERE h.type = :type AND " +
-            "((h.type = 'CLASS' AND h.classUt.name = :classUtName) OR " +
-            " (h.type = 'GENERIC' AND h.classUt IS NULL AND :classUtName IS NULL))" +
-            "ORDER BY h.order DESC")
-    Optional<HintEntity> findMaxOrderHint(
-            @Param("classUtName") String classUtName,
-            @Param("type") HintTypeEnum type
-    );
+    Optional<HintEntity> findFirstByClassUtNameAndTypeOrderByOrderDesc(String classUtName, HintTypeEnum type);
 
     HintEntity findByContentAndTypeAndClassUtName(String content,  HintTypeEnum type, String classUtName);
 
@@ -42,4 +34,15 @@ public interface HintRepository extends JpaRepository<HintEntity, Long>, JpaSpec
     HintEntity findByTypeAndOrder(HintTypeEnum type, Integer order);
 
     void deleteByType(HintTypeEnum type);
+
+    @Query("SELECT CASE WHEN COUNT(h) > 0 THEN true ELSE false END FROM HintEntity h " +
+            "WHERE h.type = :type AND h.order = :order AND " +
+            "( (:classUtName IS NULL AND h.classUt IS NULL) OR (h.classUt.name = :classUtName) )")
+    boolean existsByClassUtNameAndTypeAndOrder(
+            @Param("classUtName") String classUtName,
+            @Param("type") HintTypeEnum type,
+            @Param("order") Integer order
+    );
+
+    Optional<HintEntity> findByClassUtNameAndTypeAndOrder(String classUtName, HintTypeEnum type, Integer order);
 }
