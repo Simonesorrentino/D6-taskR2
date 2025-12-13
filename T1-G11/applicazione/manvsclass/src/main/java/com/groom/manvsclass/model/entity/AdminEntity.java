@@ -1,4 +1,4 @@
-package com.groom.manvsclass.model;
+package com.groom.manvsclass.model.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

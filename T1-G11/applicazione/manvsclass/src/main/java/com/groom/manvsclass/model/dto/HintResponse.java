@@ -1,6 +1,5 @@
 package com.groom.manvsclass.model.dto;
 
-import com.groom.manvsclass.model.ClassUTEntity;
 import com.groom.manvsclass.model.enums.HintTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;

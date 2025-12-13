@@ -1,6 +1,6 @@
 package com.groom.manvsclass.util;
 
-import com.groom.manvsclass.model.HintEntity;
+import com.groom.manvsclass.model.entity.HintEntity;
 import com.groom.manvsclass.model.enums.HintTypeEnum;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;

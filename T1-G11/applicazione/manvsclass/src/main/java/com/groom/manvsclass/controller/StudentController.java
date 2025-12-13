@@ -2,7 +2,7 @@ package com.groom.manvsclass.controller;
 
 import com.groom.manvsclass.model.AssignmentMongoDB;
 import com.groom.manvsclass.model.Team;
-import com.groom.manvsclass.model.repository.AssignmentRepository;
+import com.groom.manvsclass.model.repository.mongo.AssignmentRepository;
 import com.groom.manvsclass.service.TeamService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -3,8 +3,7 @@
  */
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.AdminEntity;
-import com.groom.manvsclass.model.AdminMongoDB;
+import com.groom.manvsclass.model.entity.AdminEntity;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

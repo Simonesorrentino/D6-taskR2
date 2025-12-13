@@ -1,11 +1,11 @@
 package com.groom.manvsclass.mapper;
 
-import com.groom.manvsclass.model.ClassUTEntity;
-import com.groom.manvsclass.model.HintEntity;
+import com.groom.manvsclass.model.entity.ClassUTEntity;
+import com.groom.manvsclass.model.entity.HintEntity;
 import com.groom.manvsclass.model.dto.Hint;
 import com.groom.manvsclass.model.dto.HintResponse;
-import com.groom.manvsclass.model.repository.AdminRepository;
-import com.groom.manvsclass.model.repository.ClassUTRepository;
+import com.groom.manvsclass.model.repository.jpa.AdminRepository;
+import com.groom.manvsclass.model.repository.jpa.ClassUTRepository;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;

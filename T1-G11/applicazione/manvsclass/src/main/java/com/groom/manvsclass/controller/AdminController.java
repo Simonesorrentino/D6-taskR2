@@ -1,6 +1,6 @@
 package com.groom.manvsclass.controller;
 
-import com.groom.manvsclass.model.AdminEntity;
+import com.groom.manvsclass.model.entity.AdminEntity;
 import com.groom.manvsclass.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

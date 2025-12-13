@@ -2,7 +2,7 @@ package com.groom.manvsclass.service;
 
 import com.groom.manvsclass.api.ApiGatewayClient;
 import com.groom.manvsclass.model.Opponent;
-import com.groom.manvsclass.model.repository.OpponentRepository;
+import com.groom.manvsclass.model.repository.mongo.OpponentRepository;
 import com.groom.manvsclass.util.filesystem.FileOperationUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

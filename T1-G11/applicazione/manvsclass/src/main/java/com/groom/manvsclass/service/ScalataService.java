@@ -4,7 +4,7 @@
 package com.groom.manvsclass.service;
 
 import com.groom.manvsclass.model.Scalata;
-import com.groom.manvsclass.model.repository.ScalataRepository;
+import com.groom.manvsclass.model.repository.mongo.ScalataRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

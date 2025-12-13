@@ -4,12 +4,13 @@
 
 package com.groom.manvsclass.service;
 
+import com.groom.manvsclass.model.AdminMongoDB;
 import com.groom.manvsclass.model.AssignmentMongoDB;
 import com.groom.manvsclass.model.Team;
 import com.groom.manvsclass.model.TeamAdmin;
-import com.groom.manvsclass.model.repository.AssignmentRepository;
-import com.groom.manvsclass.model.repository.TeamAdminRepository;
-import com.groom.manvsclass.model.repository.TeamRepository;
+import com.groom.manvsclass.model.repository.mongo.AssignmentRepository;
+import com.groom.manvsclass.model.repository.mongo.TeamAdminRepository;
+import com.groom.manvsclass.model.repository.mongo.TeamRepository;
 import com.groom.manvsclass.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
