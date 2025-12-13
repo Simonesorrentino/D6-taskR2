@@ -19,7 +19,7 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 @ToString
-public class Opponent {
+public class OpponentMongoDB {
 
     @Id
     private String id;

@@ -1,7 +1,6 @@
 package com.groom.manvsclass.model.repository.jpa;
 
-import com.groom.manvsclass.model.HintEntity;
-import com.groom.manvsclass.model.dto.Hint;
+import com.groom.manvsclass.model.entity.HintEntity;
 import com.groom.manvsclass.model.enums.HintTypeEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

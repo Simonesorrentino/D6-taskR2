@@ -21,9 +21,9 @@
 
 package com.groom.manvsclass.controller;
 
-import com.groom.manvsclass.model.ClassUT;
-import com.groom.manvsclass.model.interaction;
-import com.groom.manvsclass.service.AdminServiceMongoDB;
+import com.groom.manvsclass.model.entity.ClassUTEntity;
+import com.groom.manvsclass.model.interactionMongoDB;
+import com.groom.manvsclass.service.AdminService;
 import com.groom.manvsclass.util.Util;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -35,11 +35,11 @@ import java.util.List;
 @Controller
 public class HomeController {
 
-    private final AdminServiceMongoDB adminServiceMongoDB;
+    private final AdminService adminService;
     private final Util utilsService;
 
-    public HomeController(AdminServiceMongoDB adminServiceMongoDB, Util utilsService) {
-        this.adminServiceMongoDB = adminServiceMongoDB;
+    public HomeController(AdminService adminService, Util utilsService) {
+        this.adminService = adminService;
         this.utilsService = utilsService;
     }
 
@@ -52,28 +52,28 @@ public class HomeController {
     }
 
     @PostMapping("/newinteraction")
-    public ResponseEntity<interaction> uploadInteraction(@RequestBody interaction interazione) {
-        interaction savedInteraction = utilsService.uploadInteraction(interazione);
-        return ResponseEntity.ok(savedInteraction);
+    public ResponseEntity<interactionMongoDB> uploadInteraction(@RequestBody interactionMongoDB interazione) {
+        interactionMongoDB savedInteractionMongoDB = utilsService.uploadInteraction(interazione);
+        return ResponseEntity.ok(savedInteractionMongoDB);
     }
 
     @GetMapping("/Cfilterby/{category}")
-    public ResponseEntity<List<ClassUT>> filtraClassi(@PathVariable String category, @CookieValue(name = "jwt", required = false) String jwt) {
-        return adminServiceMongoDB.filtraClassi(category, jwt);
+    public ResponseEntity<List<ClassUTEntity>> filtraClassi(@PathVariable String category, @CookieValue(name = "jwt", required = false) String jwt) {
+        return adminService.filtraClassi(category, jwt);
     }
 
     @GetMapping("/Cfilterby/{text}/{category}")
-    public ResponseEntity<List<ClassUT>> filtraClassi(@PathVariable String text, @PathVariable String category, @CookieValue(name = "jwt", required = false) String jwt) {
-        return adminServiceMongoDB.filtraClassi(text, category, jwt);
+    public ResponseEntity<List<ClassUTEntity>> filtraClassi(@PathVariable String text, @PathVariable String category, @CookieValue(name = "jwt", required = false) String jwt) {
+        return adminService.filtraClassi(text, category, jwt);
     }
 
     @GetMapping("/interaction")
-    public List<interaction> elencaInt() {
+    public List<interactionMongoDB> elencaInt() {
         return utilsService.elencaInt();
     }
 
     @GetMapping("/findReport")
-    public List<interaction> elencaReport() {
+    public List<interactionMongoDB> elencaReport() {
         return utilsService.elencaReport();
     }
 
@@ -88,7 +88,7 @@ public class HomeController {
     }
 
     @PostMapping("/deleteint/{id}")
-    public interaction eliminaInteraction(@PathVariable int id) {
+    public interactionMongoDB eliminaInteraction(@PathVariable int id) {
         return utilsService.eliminaInteraction(id);
     }
 }

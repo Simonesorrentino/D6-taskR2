@@ -3,7 +3,7 @@
  */
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.Scalata;
+import com.groom.manvsclass.model.ScalataMongoDB;
 import com.groom.manvsclass.model.repository.mongo.ScalataRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,24 +23,24 @@ public class ScalataService {
     @Autowired
     private JwtService jwtService;
 
-    public ResponseEntity<?> uploadScalata(Scalata scalata, String jwt) {
+    public ResponseEntity<?> uploadScalata(ScalataMongoDB scalataMongoDB, String jwt) {
         if (!jwtService.isJwtValid(jwt)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("(POST /configureScalata) Attenzione, non sei loggato!");
         }
 
-        Scalata new_scalata = new Scalata();
-        new_scalata.setUsername(scalata.getUsername());
-        new_scalata.setScalataName(scalata.getScalataName());
-        new_scalata.setScalataDescription(scalata.getScalataDescription());
-        new_scalata.setNumberOfRounds(scalata.getNumberOfRounds());
-        new_scalata.setSelectedClasses(scalata.getSelectedClasses());
+        ScalataMongoDB new_scalataMongoDB = new ScalataMongoDB();
+        new_scalataMongoDB.setUsername(scalataMongoDB.getUsername());
+        new_scalataMongoDB.setScalataName(scalataMongoDB.getScalataName());
+        new_scalataMongoDB.setScalataDescription(scalataMongoDB.getScalataDescription());
+        new_scalataMongoDB.setNumberOfRounds(scalataMongoDB.getNumberOfRounds());
+        new_scalataMongoDB.setSelectedClasses(scalataMongoDB.getSelectedClasses());
 
-        scalata_repo.save(new_scalata);
-        return ResponseEntity.ok().body(new_scalata);
+        scalata_repo.save(new_scalataMongoDB);
+        return ResponseEntity.ok().body(new_scalataMongoDB);
     }
 
     public ResponseEntity<?> listScalate() {
-        List<Scalata> scalate = scalata_repo.findAll();
+        List<ScalataMongoDB> scalate = scalata_repo.findAll();
         return new ResponseEntity<>(scalate, HttpStatus.OK);
     }
 
@@ -49,21 +49,21 @@ public class ScalataService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("(DELETE /delete_scalata/{scalataName}) Attenzione, non sei loggato!");
         }
 
-        List<Scalata> scalata = scalata_repo.findByScalataNameContaining(scalataName);
-        if (scalata.isEmpty()) {
+        List<ScalataMongoDB> scalataMongoDB = scalata_repo.findByScalataNameContaining(scalataName);
+        if (scalataMongoDB.isEmpty()) {
             return new ResponseEntity<>("Scalata con nome: " + scalataName + " non trovata", HttpStatus.NOT_FOUND);
         } else {
-            scalata_repo.delete(scalata.get(0));
+            scalata_repo.delete(scalataMongoDB.get(0));
             return new ResponseEntity<>("Scalata con nome: " + scalataName + " rimossa", HttpStatus.OK);
         }
     }
 
     public ResponseEntity<?> retrieveScalataByName(String scalataName) {
-        List<Scalata> scalata = scalata_repo.findByScalataNameContaining(scalataName);
-        if (scalata.isEmpty()) {
+        List<ScalataMongoDB> scalataMongoDB = scalata_repo.findByScalataNameContaining(scalataName);
+        if (scalataMongoDB.isEmpty()) {
             return new ResponseEntity<>("Scalata with name: " + scalataName + " not found", HttpStatus.NOT_FOUND);
         } else {
-            return new ResponseEntity<>(scalata, HttpStatus.OK);
+            return new ResponseEntity<>(scalataMongoDB, HttpStatus.OK);
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.groom.manvsclass.model.repository.mongo;
 
-import com.groom.manvsclass.model.Scalata;
+import com.groom.manvsclass.model.ScalataMongoDB;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
@@ -14,15 +14,15 @@ import java.util.List;
  * save(), findOne(), findAll(), count(), delete(), ... and
  * this allow to perform CRUD operation on the 'Scalata' objects
  */
-public interface ScalataRepository extends MongoRepository<Scalata, String> {
+public interface ScalataRepository extends MongoRepository<ScalataMongoDB, String> {
 
     // Returns all the Scalata objects with the given author
-    List<Scalata> findByUsernameContaining(String username);
+    List<ScalataMongoDB> findByUsernameContaining(String username);
 
     // Returns all the Scalata objects with the given rounds
-    List<Scalata> findByNumberOfRoundsContaining(int numberOfRounds);
+    List<ScalataMongoDB> findByNumberOfRoundsContaining(int numberOfRounds);
 
     // Returns all the Scalata objects with the given name
-    List<Scalata> findByScalataNameContaining(String scalataName);
+    List<ScalataMongoDB> findByScalataNameContaining(String scalataName);
 
 }

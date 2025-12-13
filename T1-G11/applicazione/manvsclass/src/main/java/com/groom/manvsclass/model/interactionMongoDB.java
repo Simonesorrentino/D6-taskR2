@@ -4,7 +4,7 @@ package com.groom.manvsclass.model;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "interaction")
-public class interaction {
+public class interactionMongoDB {
     private int id_i; //Id interazione
     private String email; //Email utente
     private String name; //Id classe
@@ -14,7 +14,7 @@ public class interaction {
     private String date;
 
 
-    public interaction(int id_i, String email, String name, long id, int type, String date) {
+    public interactionMongoDB(int id_i, String email, String name, long id, int type, String date) {
         this.setId_i(id_i);
         this.setEmail(email);
         this.setName(name);
@@ -23,7 +23,7 @@ public class interaction {
         this.setDate(date);
     }
 
-    public interaction() {
+    public interactionMongoDB() {
 
     }
 

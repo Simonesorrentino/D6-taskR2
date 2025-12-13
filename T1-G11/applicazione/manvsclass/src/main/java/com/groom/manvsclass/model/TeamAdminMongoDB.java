@@ -4,7 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "TeamManagement")
-public class TeamAdmin {
+public class TeamAdminMongoDB {
     @Id
     private String id; // Identificativo univoco della relazione
 
@@ -15,7 +15,7 @@ public class TeamAdmin {
     private boolean isActive; // Stato attuale della relazione
 
     // Costruttore
-    public TeamAdmin(String adminId, String teamId, String teamName, String role, boolean isActive) {
+    public TeamAdminMongoDB(String adminId, String teamId, String teamName, String role, boolean isActive) {
         this.adminId = adminId;
         this.teamId = teamId;
         this.teamName = teamName;

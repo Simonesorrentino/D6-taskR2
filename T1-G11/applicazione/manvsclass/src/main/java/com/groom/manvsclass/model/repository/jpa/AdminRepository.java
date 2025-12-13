@@ -8,4 +8,8 @@ import org.springframework.stereotype.Repository;
 public interface AdminRepository extends JpaRepository<AdminEntity, String> {
 
     AdminEntity findByInvitationToken(String invitationToken);
+
+    AdminEntity findByResetToken(String resetToken);
+
+    AdminEntity findByUsername(String username);
 }

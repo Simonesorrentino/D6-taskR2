@@ -1,6 +1,6 @@
 package com.groom.manvsclass.model.repository.mongo;
 
-import com.groom.manvsclass.model.Opponent;
+import com.groom.manvsclass.model.OpponentMongoDB;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -25,19 +25,19 @@ public class OpponentRepositoryImpl implements OpponentRepository {
     }
 
     @Override
-    public List<Opponent> findAllOpponents() {
-        return mongoTemplate.findAll(Opponent.class, "opponents");
+    public List<OpponentMongoDB> findAllOpponents() {
+        return mongoTemplate.findAll(OpponentMongoDB.class, "opponents");
     }
 
     @Override
-    public void saveOpponent(Opponent opponent) {
-        mongoTemplate.save(opponent, "opponents");
+    public void saveOpponent(OpponentMongoDB opponentMongoDB) {
+        mongoTemplate.save(opponentMongoDB, "opponents");
     }
 
     @Override
-    public Optional<Opponent> findOpponent(String classUT, String type, OpponentDifficulty difficulty) {
+    public Optional<OpponentMongoDB> findOpponent(String classUT, String type, OpponentDifficulty difficulty) {
         Query query = buildQuery(classUT, type, difficulty);
-        Opponent result = mongoTemplate.findOne(query, Opponent.class, "opponents");
+        OpponentMongoDB result = mongoTemplate.findOne(query, OpponentMongoDB.class, "opponents");
         return Optional.ofNullable(result);
     }
 

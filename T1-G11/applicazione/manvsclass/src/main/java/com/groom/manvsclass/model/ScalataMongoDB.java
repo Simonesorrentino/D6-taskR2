@@ -12,7 +12,7 @@ import java.util.List;
  * the @Id annotation is used to specify the primary key field of the entity
  */
 @Document(collection = "scalate")
-public class Scalata {
+public class ScalataMongoDB {
 
     @Id
     private String scalataName;
@@ -23,12 +23,12 @@ public class Scalata {
     private List<String> selectedClasses;
 
     //Void Constructor
-    public Scalata() {
+    public ScalataMongoDB() {
 
     }
 
     //Constructor
-    public Scalata(String username, String scalataName, String scalataDescription, int numberOfRounds, List<String> selectedClasses) {
+    public ScalataMongoDB(String username, String scalataName, String scalataDescription, int numberOfRounds, List<String> selectedClasses) {
 
         this.username = username;
         this.scalataName = scalataName;

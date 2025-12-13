@@ -1,8 +1,6 @@
 package com.groom.manvsclass.model.repository.mongo;
 
-import com.groom.manvsclass.model.AdminMongoDB;
-import com.groom.manvsclass.model.ClassUT;
-import com.groom.manvsclass.model.interaction;
+import com.groom.manvsclass.model.interactionMongoDB;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -40,9 +38,9 @@ public class SearchRepositoryImpl {
         return count;
     }
 
-    public List<interaction> findReport() {
+    public List<interactionMongoDB> findReport() {
 
-        final List<interaction> posts = new ArrayList<>();
+        final List<interactionMongoDB> posts = new ArrayList<>();
 
         MongoDatabase database = client.getDatabase("manvsclass");
         MongoCollection<Document> collection = database.getCollection("interaction");
@@ -55,202 +53,7 @@ public class SearchRepositoryImpl {
                 )
         );
 
-        result.forEach(doc -> posts.add(converter.read(interaction.class, doc)));
-
-        return posts;
-    }
-
-    public List<ClassUT> findByText(String text) {
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("ClassUT");
-
-        Bson search = Filters.regex("name", ".*" + text + ".*", "i");
-
-        List<ClassUT> posts = new ArrayList<>();
-        collection.find(search).forEach(doc -> posts.add(converter.read(ClassUT.class, doc)));
-
-        return posts;
-    }
-
-
-    public AdminMongoDB findAdminByUsername(String username) {
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("Admin");
-        Bson filter = Filters.eq("username", username);
-        Document result = collection.find(filter).first();
-        if (result == null) {
-            return null;
-        }
-        //Admin admin = new Admin("gg","ff","gg","hh");
-        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
-        adminMongoDB.setUsername(result.getString("username"));
-        adminMongoDB.setPassword(result.getString("password"));
-        return adminMongoDB;
-    }
-
-    //MODIFICA (15/02/2024) : Aggiunta ricerca per email
-    public AdminMongoDB findAdminByEmail(String email) {
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("Admin");
-        Bson filter = Filters.eq("email", email);
-        Document result = collection.find(filter).first();
-        if (result == null) {
-            return null;
-        }
-        //Admin admin = new Admin("gg","ff","gg","hh");
-        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
-        adminMongoDB.setEmail(result.getString("email"));
-        adminMongoDB.setNome(result.getString("nome"));
-        adminMongoDB.setCognome(result.getString("cognome"));
-        adminMongoDB.setUsername(result.getString("username"));
-        // admin.setResetToken(result.getString("resetToken"));
-        return adminMongoDB;
-    }
-
-    public AdminMongoDB findAdminByResetToken(String resetToken) {
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("Admin");
-        Bson filter = Filters.eq("resetToken", resetToken);
-        Document result = collection.find(filter).first();
-        if (result == null) {
-            return null;
-        }
-        //Admin admin = new Admin("gg","ff","gg","hh");
-        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
-        adminMongoDB.setResetToken(result.getString("resetToken"));
-        return adminMongoDB;
-    }
-
-    public AdminMongoDB findAdminByInvitationToken(String invitationToken) {
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("Admin");
-        Bson filter = Filters.eq("invitationToken", invitationToken);
-        Document result = collection.find(filter).first();
-        if (result == null) {
-            return null;
-        }
-        //Admin admin = new Admin("gg","ff","gg","hh");
-        AdminMongoDB adminMongoDB = new AdminMongoDB("gg", "ff", "gg", "hh", "jj");
-        adminMongoDB.setInvitationToken(result.getString("invitationToken"));
-        return adminMongoDB;
-    }
-
-    //FINE MODIFICA (15/02/2024)
-    public List<ClassUT> searchAndFilter(String text, String category) {
-
-        final List<ClassUT> posts = new ArrayList<>();
-
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("ClassUT");
-
-        AggregateIterable<Document> result = collection.aggregate(
-                Arrays.asList(
-                        new Document("$search",
-                                new Document("index", "default")
-                                        .append("text",
-                                                new Document("query", text)
-                                                        .append("path", Arrays.asList("name", "description")))),
-                        new Document("$match",
-                                new Document("category", category))
-                )
-        );
-
-        result.forEach(doc -> posts.add(converter.read(ClassUT.class, doc)));
-
-        return posts;
-    }
-
-    public List<ClassUT> filterByCategory(String category) {
-
-        final List<ClassUT> posts = new ArrayList<>();
-
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("ClassUT");
-
-        AggregateIterable<Document> result = collection.aggregate(Arrays.asList(new Document("$search",
-                new Document("index", "default")
-                        .append("text",
-                                new Document("query", category)
-                                        .append("path", "category")))));
-
-        result.forEach(doc -> posts.add(converter.read(ClassUT.class, doc)));
-
-        return posts;
-    }
-
-
-    public List<ClassUT> orderByDate() {
-
-        final List<ClassUT> posts = new ArrayList<>();
-
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("ClassUT");
-
-        AggregateIterable<Document> result = collection.aggregate(
-                Arrays.asList(
-                        new Document("$sort",
-                                new Document("date", 1)
-                        )
-                )
-        );
-
-        result.forEach(doc -> posts.add(converter.read(ClassUT.class, doc)));
-
-        return posts;
-    }
-
-    public List<ClassUT> orderByName() {
-
-        final List<ClassUT> posts = new ArrayList<>();
-
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("ClassUT");
-
-        AggregateIterable<Document> result = collection.aggregate(
-                Arrays.asList(
-                        new Document("$sort",
-                                new Document("name", 1)
-                        )
-                )
-        );
-
-        result.forEach(doc -> posts.add(converter.read(ClassUT.class, doc)));
-
-        return posts;
-    }
-
-    public List<ClassUT> filterByDifficulty(String difficulty) {
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("ClassUT");
-
-        Bson filter = Filters.eq("difficulty", difficulty);
-
-        List<ClassUT> posts = new ArrayList<>();
-        collection.find(filter).forEach(doc -> posts.add(converter.read(ClassUT.class, doc)));
-
-        return posts;
-    }
-
-    public List<ClassUT> searchAndDFilter(String text, String difficulty) {
-
-        final List<ClassUT> posts = new ArrayList<>();
-
-        MongoDatabase database = client.getDatabase("manvsclass");
-        MongoCollection<Document> collection = database.getCollection("ClassUT");
-
-        AggregateIterable<Document> result = collection.aggregate(
-                Arrays.asList(
-                        new Document("$search",
-                                new Document("index", "default")
-                                        .append("text",
-                                                new Document("query", text)
-                                                        .append("path", Arrays.asList("name", "description")))),
-                        new Document("$match",
-                                new Document("difficulty", difficulty))
-                )
-        );
-
-        result.forEach(doc -> posts.add(converter.read(ClassUT.class, doc)));
+        result.forEach(doc -> posts.add(converter.read(interactionMongoDB.class, doc)));
 
         return posts;
     }

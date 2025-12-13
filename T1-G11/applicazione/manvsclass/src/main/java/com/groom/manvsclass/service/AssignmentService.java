@@ -1,10 +1,9 @@
 //Modifica 08/12/2024: Creazione Service per Assignment
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.AdminMongoDB;
 import com.groom.manvsclass.model.AssignmentMongoDB;
-import com.groom.manvsclass.model.Team;
-import com.groom.manvsclass.model.TeamAdmin;
+import com.groom.manvsclass.model.TeamMongoDB;
+import com.groom.manvsclass.model.TeamAdminMongoDB;
 import com.groom.manvsclass.model.repository.mongo.AssignmentRepository;
 import com.groom.manvsclass.model.repository.mongo.TeamAdminRepository;
 import com.groom.manvsclass.model.repository.mongo.TeamRepository;
@@ -64,21 +63,21 @@ public class AssignmentService {
         }
 
         // 4. Recupera il Team dal repository
-        Team existingTeam = teamRepository.findById(idTeam).orElse(null);
-        if (existingTeam == null) {
+        TeamMongoDB existingTeamMongoDB = teamRepository.findById(idTeam).orElse(null);
+        if (existingTeamMongoDB == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Il team con ID " + idTeam + " non è stato trovato.");
         }
 
         // 5. Verifica se l'Admin ha i permessi per questo Team
-        TeamAdmin teamAdmin = teamAdminRepository.findByTeamId(idTeam);
-        if (teamAdmin == null || !teamAdmin.getAdminId().equals(adminUsername) ||
-                (!"Owner".equals(teamAdmin.getRole()) && !"Professor".equals(teamAdmin.getRole()))) {
+        TeamAdminMongoDB teamAdminMongoDB = teamAdminRepository.findByTeamId(idTeam);
+        if (teamAdminMongoDB == null || !teamAdminMongoDB.getAdminId().equals(adminUsername) ||
+                (!"Owner".equals(teamAdminMongoDB.getRole()) && !"Professor".equals(teamAdminMongoDB.getRole()))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per creare un Assignment per questo Team.");
         }
 
         // 6. Aggiorna i dettagli dell'Assignment con i dati del Team
         assignmentMongoDB.setIdTeam(idTeam); // Imposta l'ID del team
-        assignmentMongoDB.setNomeTeam(existingTeam.getName()); // Imposta il nome del team (assumendo che sia presente nella classe Team)
+        assignmentMongoDB.setNomeTeam(existingTeamMongoDB.getName()); // Imposta il nome del team (assumendo che sia presente nella classe Team)
 
         // 7. Aggiungi un ID univoco al team (se non specificato)
         if (assignmentMongoDB.getIdAssignment() == null || assignmentMongoDB.getIdAssignment().isEmpty()) {
@@ -89,7 +88,7 @@ public class AssignmentService {
         assignmentRepository.save(assignmentMongoDB);
 
         // 9. Invia notifica agli utenti del team
-        List<String> idsStudentiTeam = existingTeam.getStudenti();
+        List<String> idsStudentiTeam = existingTeamMongoDB.getStudenti();
         List<Integer> integerList = idsStudentiTeam.stream()
                 .map(Integer::parseInt) // Converte ogni stringa in intero
                 .collect(Collectors.toList());
@@ -123,15 +122,15 @@ public class AssignmentService {
             }
 
             // 3. Recupera il Team dal repository utilizzando l'idTeam
-            Team existingTeam = teamRepository.findById(idTeam).orElse(null);
-            if (existingTeam == null) {
+            TeamMongoDB existingTeamMongoDB = teamRepository.findById(idTeam).orElse(null);
+            if (existingTeamMongoDB == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con ID " + idTeam + " non trovato.");
             }
 
             // 4. Verifica se l'Admin ha i permessi per visualizzare gli Assignment del Team
-            TeamAdmin teamAdmin = teamAdminRepository.findByTeamId(idTeam);
-            if (teamAdmin == null || !teamAdmin.getAdminId().equals(adminUsername) ||
-                    (!"Owner".equals(teamAdmin.getRole()) && !"Professor".equals(teamAdmin.getRole()))) {
+            TeamAdminMongoDB teamAdminMongoDB = teamAdminRepository.findByTeamId(idTeam);
+            if (teamAdminMongoDB == null || !teamAdminMongoDB.getAdminId().equals(adminUsername) ||
+                    (!"Owner".equals(teamAdminMongoDB.getRole()) && !"Professor".equals(teamAdminMongoDB.getRole()))) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per visualizzare gli assignment di questo team.");
             }
 
@@ -167,15 +166,15 @@ public class AssignmentService {
             }
 
             // 3. Recupera tutti i team associati all'Admin
-            List<TeamAdmin> teamAdminAssociations = teamAdminRepository.findAllByAdminId(adminUsername);
-            if (teamAdminAssociations == null || teamAdminAssociations.isEmpty()) {
+            List<TeamAdminMongoDB> teamAdminMongoDBAssociations = teamAdminRepository.findAllByAdminId(adminUsername);
+            if (teamAdminMongoDBAssociations == null || teamAdminMongoDBAssociations.isEmpty()) {
                 return ResponseEntity.ok("Non sei associato ad alcun team.");
             }
 
             //Non sei associato ad alcun team.
             // 4. Recupera gli ID dei team associati
-            List<String> teamIds = teamAdminAssociations.stream()
-                    .map(TeamAdmin::getTeamId)
+            List<String> teamIds = teamAdminMongoDBAssociations.stream()
+                    .map(TeamAdminMongoDB::getTeamId)
                     .collect(Collectors.toList());
 
             // 5. Recupera tutti gli assignment associati ai team
@@ -222,15 +221,15 @@ public class AssignmentService {
         }
 
         // 5. Recupera il Team dal repository utilizzando l'ID del Team
-        Team existingTeam = teamRepository.findById(idTeam).orElse(null);
-        if (existingTeam == null) {
+        TeamMongoDB existingTeamMongoDB = teamRepository.findById(idTeam).orElse(null);
+        if (existingTeamMongoDB == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con ID " + idTeam + " non trovato.");
         }
 
         // 6. Verifica se l'Admin ha i permessi per rimuovere l'Assignment del Team
-        TeamAdmin teamAdmin = teamAdminRepository.findByTeamId(idTeam);
-        if (teamAdmin == null || !teamAdmin.getAdminId().equals(adminUsername) ||
-                (!"Owner".equals(teamAdmin.getRole()) && !"Professor".equals(teamAdmin.getRole()))) {
+        TeamAdminMongoDB teamAdminMongoDB = teamAdminRepository.findByTeamId(idTeam);
+        if (teamAdminMongoDB == null || !teamAdminMongoDB.getAdminId().equals(adminUsername) ||
+                (!"Owner".equals(teamAdminMongoDB.getRole()) && !"Professor".equals(teamAdminMongoDB.getRole()))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per rimuovere gli assignment di questo team.");
         }
 

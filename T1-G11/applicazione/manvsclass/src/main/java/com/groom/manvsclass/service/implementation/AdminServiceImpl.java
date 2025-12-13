@@ -2,9 +2,9 @@ package com.groom.manvsclass.service.implementation;
 
 
 import com.groom.manvsclass.model.entity.AdminEntity;
-import com.groom.manvsclass.model.ClassUT;
+import com.groom.manvsclass.model.entity.ClassUTEntity;
 import com.groom.manvsclass.model.repository.jpa.AdminRepository;
-import com.groom.manvsclass.model.repository.mongo.SearchRepositoryImpl;
+import com.groom.manvsclass.model.repository.jpa.ClassUTRepository;
 import com.groom.manvsclass.service.AdminService;
 import com.groom.manvsclass.service.EmailService;
 import com.groom.manvsclass.service.JwtService;
@@ -26,23 +26,23 @@ import java.util.regex.Pattern;
 public class AdminServiceImpl implements AdminService {
 
     private final AdminRepository adminRepository;
+    private final ClassUTRepository classUTRepository;
     private final JwtService jwtService;
     private final PasswordEncoder myPasswordEncoder;
     private final EmailService emailService;
-    private final SearchRepositoryImpl searchRepository;
 
     @Autowired
     public AdminServiceImpl(
             AdminRepository adminRepository,
+            ClassUTRepository classUTRepository,
             JwtService jwtService,
             PasswordEncoder myPasswordEncoder,
-            EmailService emailService,
-            SearchRepositoryImpl searchRepository) {
+            EmailService emailService) {
         this.adminRepository = adminRepository;
+        this.classUTRepository = classUTRepository;
         this.jwtService = jwtService;
         this.myPasswordEncoder = myPasswordEncoder;
         this.emailService = emailService;
-        this.searchRepository = searchRepository;
     }
 
 
@@ -150,9 +150,9 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public ResponseEntity<List<ClassUT>> filtraClassi(String text, String category, String jwt) {
+    public ResponseEntity<List<ClassUTEntity>> filtraClassi(String text, String category, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
-            List<ClassUT> classiFiltrate = searchRepository.searchAndFilter(text, category);
+            List<ClassUTEntity> classiFiltrate = classUTRepository.searchAndFilter(text, category);
             return ResponseEntity.ok().body(classiFiltrate);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
@@ -160,9 +160,9 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public ResponseEntity<List<ClassUT>> filtraClassi(String category, String jwt) {
+    public ResponseEntity<List<ClassUTEntity>> filtraClassi(String category, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
-            List<ClassUT> classiFiltrate = searchRepository.filterByCategory(category);
+            List<ClassUTEntity> classiFiltrate = classUTRepository.findByCategory(category);
             return ResponseEntity.ok().body(classiFiltrate);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);

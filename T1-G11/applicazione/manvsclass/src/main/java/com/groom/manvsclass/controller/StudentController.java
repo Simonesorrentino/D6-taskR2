@@ -1,7 +1,7 @@
 package com.groom.manvsclass.controller;
 
 import com.groom.manvsclass.model.AssignmentMongoDB;
-import com.groom.manvsclass.model.Team;
+import com.groom.manvsclass.model.TeamMongoDB;
 import com.groom.manvsclass.model.repository.mongo.AssignmentRepository;
 import com.groom.manvsclass.service.TeamService;
 import org.slf4j.Logger;
@@ -35,21 +35,21 @@ public class StudentController {
         try {
 
             // 1. Verifica se l'utente ha un team 
-            Team existingTeam = teamService.getTeamByStudentId(studentId);
-            if (existingTeam == null) {
+            TeamMongoDB existingTeamMongoDB = teamService.getTeamByStudentId(studentId);
+            if (existingTeamMongoDB == null) {
                 //il team non esiste 
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body("L'utente non è associato a un Team");
             }
 
             // 2. Recupera gli Assignment associati al Team
-            List<AssignmentMongoDB> assignmentMongoDBS = assignmentRepository.findByTeamId(existingTeam.getIdTeam());
+            List<AssignmentMongoDB> assignmentMongoDBS = assignmentRepository.findByTeamId(existingTeamMongoDB.getIdTeam());
             if (assignmentMongoDBS == null || assignmentMongoDBS.isEmpty()) {
                 assignmentMongoDBS = new ArrayList<>();
             }
 
             // 3. Crea la struttura di risposta
             Map<String, Object> response = new HashMap<>();
-            response.put("team", existingTeam);
+            response.put("team", existingTeamMongoDB);
             response.put("assignments", assignmentMongoDBS);
 
             // 4. Restituisci la risposta

@@ -3,14 +3,14 @@ package com.groom.manvsclass.model;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "Operation")
-public class Operation {
+public class OperationMongoDB {
     private int id_op;
     private String username_admin;
     private String nome_classe;
     private int type;
     private String date;
 
-    public Operation(int id_op, String username_admin, String nome_classe, int type, String date) {
+    public OperationMongoDB(int id_op, String username_admin, String nome_classe, int type, String date) {
         this.id_op = id_op;
         this.username_admin = username_admin;
         this.nome_classe = nome_classe;

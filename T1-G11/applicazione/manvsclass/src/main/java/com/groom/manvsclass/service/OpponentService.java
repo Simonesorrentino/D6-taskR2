@@ -2,14 +2,13 @@ package com.groom.manvsclass.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groom.manvsclass.api.ApiGatewayClient;
-import com.groom.manvsclass.model.AdminMongoDB;
-import com.groom.manvsclass.model.ClassUT;
-import com.groom.manvsclass.model.Operation;
-import com.groom.manvsclass.model.Opponent;
-import com.groom.manvsclass.model.repository.mongo.ClassRepositoryMongoDB;
+import com.groom.manvsclass.model.OperationMongoDB;
+import com.groom.manvsclass.model.OpponentMongoDB;
+import com.groom.manvsclass.model.entity.AdminEntity;
+import com.groom.manvsclass.model.entity.ClassUTEntity;
+import com.groom.manvsclass.model.repository.jpa.ClassUTRepository;
 import com.groom.manvsclass.model.repository.mongo.OperationRepository;
 import com.groom.manvsclass.model.repository.mongo.OpponentRepository;
-import com.groom.manvsclass.model.repository.mongo.SearchRepositoryImpl;
 import com.groom.manvsclass.service.exception.CoverageNotFoundException;
 import com.groom.manvsclass.service.exception.OpponentNotFoundException;
 import com.groom.manvsclass.service.exception.ScoreNotFoundException;
@@ -47,28 +46,27 @@ public class OpponentService {
 
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(String.valueOf(OpponentService.class));
     private final OperationRepository operationRepository;
-    @Autowired
-    private final ClassRepositoryMongoDB classRepositoryMongoDB;
     private final MongoTemplate mongoTemplate;
-    private final SearchRepositoryImpl searchRepository;
     private final UploadOpponentService uploadOpponentService;
     @Autowired
     private final OpponentRepository opponentRepository;
-    private final AdminMongoDB userAdminMongoDB = new AdminMongoDB("default", "default", "default", "default", "default");
+    private final AdminEntity userAdminEntity = new AdminEntity();
     private final ApiGatewayClient apiGatewayClient;
 
+    private final ClassUTRepository classUTRepository;
+
     public OpponentService(OperationRepository operationRepository,
-                           ClassRepositoryMongoDB classRepositoryMongoDB,
                            MongoTemplate mongoTemplate,
-                           SearchRepositoryImpl searchRepository,
-                           UploadOpponentService uploadOpponentService, OpponentRepository opponentRepository, ApiGatewayClient apiGatewayClient) {
+                           UploadOpponentService uploadOpponentService,
+                           OpponentRepository opponentRepository,
+                           ApiGatewayClient apiGatewayClient,
+                           ClassUTRepository classUTRepository) {
         this.operationRepository = operationRepository;
-        this.classRepositoryMongoDB = classRepositoryMongoDB;
         this.mongoTemplate = mongoTemplate;
-        this.searchRepository = searchRepository;
         this.uploadOpponentService = uploadOpponentService;
         this.opponentRepository = opponentRepository;
         this.apiGatewayClient = apiGatewayClient;
+        this.classUTRepository = classUTRepository;
     }
 
     /*
@@ -76,9 +74,9 @@ public class OpponentService {
      */
     public ResponseEntity<?> getNomiClassiUT(String jwt) {
         // 2. Recupera tutte le ClassUT dal repository e restituisce solo i nomi
-        List<String> classNames = classRepositoryMongoDB.findAll()
+        List<String> classNames = classUTRepository.findAll()
                 .stream()
-                .map(ClassUT::getName) // Estrae solo i nomi
+                .map(ClassUTEntity::getName) // Estrae solo i nomi
                 .collect(Collectors.toList());
 
         // 3. Ritorna i nomi delle classi con lo status HTTP 200 (OK)
@@ -100,7 +98,7 @@ public class OpponentService {
 
         // Parsing dei dettagli della classe
         ObjectMapper mapper = new ObjectMapper();
-        ClassUT classe = mapper.readValue(classUTDetails, ClassUT.class);
+        ClassUTEntity classe = mapper.readValue(classUTDetails, ClassUTEntity.class);
 
         // Nome del file e dimensione
         String classUTFileName = StringUtils.cleanPath(Objects.requireNonNull(classUTFile.getOriginalFilename()));
@@ -124,9 +122,9 @@ public class OpponentService {
                 classe.getName(),
                 classUTFileName));
 
-        classe.setDate(LocalDate.now().toString());
+        classe.setDate(LocalDate.now());
 
-        classRepositoryMongoDB.save(classe);
+        classUTRepository.save(classe);
 
         System.out.println("Operazione completata con successo (uploadTest)");
 
@@ -139,7 +137,7 @@ public class OpponentService {
         System.out.println("/downloadFile/{name} (HomeController) - name: " + name);
         System.out.println("test");
         try {
-            List<ClassUT> classe = searchRepository.findByText(name);
+            List<ClassUTEntity> classe = classUTRepository.findByNameLike(name);
             System.out.println("File download:");
             System.out.println(classe.get(0).getUri());
             ResponseEntity file = FileDownloadUtil.downloadClassFile(classe.get(0).getUri());
@@ -150,23 +148,23 @@ public class OpponentService {
         }
     }
 
-    public List<ClassUT> getAllClassUTs() {
-        return classRepositoryMongoDB.findAll();
+    public List<ClassUTEntity> getAllClassUTs() {
+        return classUTRepository.findAll();
     }
 
-    public List<ClassUT> filterByDifficulty(String difficulty) {
-        return searchRepository.filterByDifficulty(difficulty);
+    public List<ClassUTEntity> filterByDifficulty(String difficulty) {
+        return classUTRepository.findByDifficulty(difficulty);
     }
 
-    public List<ClassUT> orderByDate() {
-        return searchRepository.orderByDate();
+    public List<ClassUTEntity> orderByDate() {
+        return classUTRepository.findAllByOrderByDateAsc();
     }
 
-    public List<ClassUT> orderByName() {
-        return searchRepository.orderByName();
+    public List<ClassUTEntity> orderByName() {
+        return classUTRepository.findAllByOrderByNameAsc();
     }
 
-    public ResponseEntity<String> modificaClasse(String name, ClassUT newContent, String jwt, HttpServletRequest request) {
+    public ResponseEntity<String> modificaClasse(String name, ClassUTEntity newContent, String jwt, HttpServletRequest request) {
         System.out.println("Token valido, può aggiornare informazioni inerenti le classi (update/{name})");
         Query query = new Query();
         query.addCriteria(Criteria.where("name").is(name));
@@ -175,14 +173,18 @@ public class OpponentService {
                 .set("difficulty", newContent.getDifficulty())
                 .set("description", newContent.getDescription())
                 .set("category", newContent.getCategory());
-        long modifiedCount = mongoTemplate.updateFirst(query, update, ClassUT.class).getModifiedCount();
+        long modifiedCount = mongoTemplate.updateFirst(query, update, ClassUTEntity.class).getModifiedCount();
 
         if (modifiedCount > 0) {
             LocalDate currentDate = LocalDate.now();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String data = currentDate.format(formatter);
-            Operation operation1 = new Operation((int) operationRepository.count(), userAdminMongoDB.getUsername(), newContent.getName(), 1, data);
-            operationRepository.save(operation1);
+            userAdminEntity.setName("default");
+            userAdminEntity.setUsername("default");
+            userAdminEntity.setPassword("default");
+            userAdminEntity.setSurname("default");
+            OperationMongoDB operationMongoDB1 = new OperationMongoDB((int) operationRepository.count(), userAdminEntity.getUsername(), newContent.getName(), 1, data);
+            operationRepository.save(operationMongoDB1);
             return new ResponseEntity<>("Aggiornamento eseguito correttamente.", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Nessuna classe trovata o nessuna modifica effettuata.", HttpStatus.NOT_FOUND);
@@ -196,13 +198,13 @@ public class OpponentService {
         LocalDate currentDate = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String data = currentDate.format(formatter);
-        Operation operation1 = new Operation((int) operationRepository.count(), "userAdmin", name, 2, data);
-        operationRepository.save(operation1);
-        ClassUT deletedClass = mongoTemplate.findAndRemove(query, ClassUT.class);
+        OperationMongoDB operationMongoDB1 = new OperationMongoDB((int) operationRepository.count(), "userAdmin", name, 2, data);
+        operationRepository.save(operationMongoDB1);
+        ClassUTEntity deletedClass = mongoTemplate.findAndRemove(query, ClassUTEntity.class);
 
         Query query2 = new Query();
         query2.addCriteria(Criteria.where("classUT").is(name));
-        mongoTemplate.findAndRemove(query, Opponent.class);
+        mongoTemplate.findAndRemove(query, OpponentMongoDB.class);
 
         apiGatewayClient.callDeleteAllClassUTOpponents(name);
         if (deletedClass != null) {
@@ -231,12 +233,12 @@ public class OpponentService {
     }
 
 
-    public List<Opponent> getAllOpponents() {
+    public List<OpponentMongoDB> getAllOpponents() {
         return opponentRepository.findAllOpponents();
     }
 
-    public Opponent getOpponentData(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
-        Optional<Opponent> opponent = opponentRepository.findOpponent(classUT, opponentType, opponentDifficulty);
+    public OpponentMongoDB getOpponentData(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
+        Optional<OpponentMongoDB> opponent = opponentRepository.findOpponent(classUT, opponentType, opponentDifficulty);
         if (opponent.isEmpty())
             throw new OpponentNotFoundException();
 

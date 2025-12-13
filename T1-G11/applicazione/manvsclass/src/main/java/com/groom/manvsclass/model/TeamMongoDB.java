@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 @Document(collection = "Team")
-public class Team {
+public class TeamMongoDB {
     @Id
     private String idTeam;
     private String name;
@@ -17,7 +17,7 @@ public class Team {
     private List<String> idStudenti; // Lista di ID o nomi degli studenti
 
     // Costruttore
-    public Team(String idTeam, String name) {
+    public TeamMongoDB(String idTeam, String name) {
         this.idTeam = idTeam;
         this.name = name;
         this.numeroStudenti = 0; //Default

@@ -1,7 +1,7 @@
 package com.groom.manvsclass.service;
 
 import com.groom.manvsclass.api.ApiGatewayClient;
-import com.groom.manvsclass.model.Opponent;
+import com.groom.manvsclass.model.OpponentMongoDB;
 import com.groom.manvsclass.model.repository.mongo.OpponentRepository;
 import com.groom.manvsclass.util.filesystem.FileOperationUtil;
 import org.jsoup.Jsoup;
@@ -397,15 +397,15 @@ public class UploadOpponentService {
             evosuiteScore.setMethodNoExceptionCoverage(new Coverage(evoSuiteStatistics[6][0], evoSuiteStatistics[6][1]));
             evosuiteScore.setCBranchCoverage(new Coverage(evoSuiteStatistics[7][0], evoSuiteStatistics[7][1]));
 
-            Opponent opponent = new Opponent();
-            opponent.setClassUT(classUTName);
-            opponent.setOpponentType(robotType);
-            opponent.setOpponentDifficulty(difficulty);
-            opponent.setCoverage(coverage);
-            opponent.setEvosuiteScore(evosuiteScore);
-            opponent.setJacocoScore(jacocoScore);
+            OpponentMongoDB opponentMongoDB = new OpponentMongoDB();
+            opponentMongoDB.setClassUT(classUTName);
+            opponentMongoDB.setOpponentType(robotType);
+            opponentMongoDB.setOpponentDifficulty(difficulty);
+            opponentMongoDB.setCoverage(coverage);
+            opponentMongoDB.setEvosuiteScore(evosuiteScore);
+            opponentMongoDB.setJacocoScore(jacocoScore);
 
-            opponentRepository.saveOpponent(opponent);
+            opponentRepository.saveOpponent(opponentMongoDB);
 
             for (GameMode mode : GameMode.values()) {
                 apiGatewayClient.callAddNewOpponent(classUTName, mode, robotType, difficulty);
