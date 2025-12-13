@@ -1,6 +1,6 @@
-package com.groom.manvsclass.model.repository;
+package com.groom.manvsclass.model.repository.jpa;
 
-import com.groom.manvsclass.model.ClassUTEntity;
+import com.groom.manvsclass.model.entity.ClassUTEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -1,6 +1,6 @@
-package com.groom.manvsclass.model.repository;
+package com.groom.manvsclass.model.repository.jpa;
 
-import com.groom.manvsclass.model.AdminEntity;
+import com.groom.manvsclass.model.entity.AdminEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,4 +1,4 @@
-package com.groom.manvsclass.model.repository;
+package com.groom.manvsclass.model.repository.jpa;
 
 import com.groom.manvsclass.model.HintEntity;
 import com.groom.manvsclass.model.dto.Hint;

@@ -1,7 +1,7 @@
 package com.groom.manvsclass.controller.view;
 
 import com.groom.manvsclass.model.ClassUT;
-import com.groom.manvsclass.model.repository.ClassRepositoryMongoDB;
+import com.groom.manvsclass.model.repository.mongo.ClassRepositoryMongoDB;
 import com.groom.manvsclass.service.OpponentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

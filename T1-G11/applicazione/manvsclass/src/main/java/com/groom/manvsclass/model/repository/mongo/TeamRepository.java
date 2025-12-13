@@ -1,4 +1,4 @@
-package com.groom.manvsclass.model.repository;
+package com.groom.manvsclass.model.repository.mongo;
 
 import com.groom.manvsclass.model.Team;
 import org.springframework.data.mongodb.repository.MongoRepository;

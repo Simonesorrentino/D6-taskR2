@@ -12,6 +12,13 @@ spring:
       database: manvsclass
       port: 27017
       host: localhost
+  flyway:
+    enabled: true # <-- DA FALSE A TRUE: ATTIVA FLYWAY
+    # CRUCIALE: Dice a Flyway di registrare la migrazione V1 come eseguita,
+    # dato che le tabelle esistono già.
+    baseline-on-migrate: true
+    # Assicurati che il percorso sia corretto:
+    locations: classpath:db/migrations
 
   datasource:
     url: ${POSTGRES_URL:jdbc:postgresql://localhost:5433/manvsclass}
@@ -21,7 +28,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
 
 t1:

@@ -1,11 +1,9 @@
-package com.groom.manvsclass.model;
+package com.groom.manvsclass.model.entity;
 
 import com.groom.manvsclass.model.enums.HintTypeEnum;
-import jdk.jfr.Timespan;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.annotation.CreatedBy;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -14,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity()
-@Table(name = "hints")
+@Table(name = "hint")
 public class HintEntity {
 
     @Id

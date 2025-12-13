@@ -1,6 +1,6 @@
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.AdminEntity;
+import com.groom.manvsclass.model.entity.AdminEntity;
 import com.groom.manvsclass.model.ClassUT;
 import org.springframework.http.ResponseEntity;
 

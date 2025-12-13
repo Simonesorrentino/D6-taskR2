@@ -4,8 +4,8 @@
 package com.groom.manvsclass.util;
 
 import com.groom.manvsclass.model.interaction;
-import com.groom.manvsclass.model.repository.InteractionRepository;
-import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
+import com.groom.manvsclass.model.repository.mongo.InteractionRepository;
+import com.groom.manvsclass.model.repository.mongo.SearchRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;

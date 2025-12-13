@@ -5,10 +5,10 @@ package com.groom.manvsclass.service;
 
 import com.groom.manvsclass.model.AdminMongoDB;
 import com.groom.manvsclass.model.ClassUT;
-import com.groom.manvsclass.model.repository.AdminRepositoryMongoDB;
-import com.groom.manvsclass.model.repository.ClassRepositoryMongoDB;
-import com.groom.manvsclass.model.repository.OperationRepository;
-import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
+import com.groom.manvsclass.model.repository.mongo.AdminRepositoryMongoDB;
+import com.groom.manvsclass.model.repository.mongo.ClassRepositoryMongoDB;
+import com.groom.manvsclass.model.repository.mongo.OperationRepository;
+import com.groom.manvsclass.model.repository.mongo.SearchRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;

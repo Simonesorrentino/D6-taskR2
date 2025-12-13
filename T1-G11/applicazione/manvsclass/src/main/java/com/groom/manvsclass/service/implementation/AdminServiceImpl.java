@@ -1,10 +1,10 @@
 package com.groom.manvsclass.service.implementation;
 
 
-import com.groom.manvsclass.model.AdminEntity;
+import com.groom.manvsclass.model.entity.AdminEntity;
 import com.groom.manvsclass.model.ClassUT;
-import com.groom.manvsclass.model.repository.AdminRepository;
-import com.groom.manvsclass.model.repository.SearchRepositoryImpl;
+import com.groom.manvsclass.model.repository.jpa.AdminRepository;
+import com.groom.manvsclass.model.repository.mongo.SearchRepositoryImpl;
 import com.groom.manvsclass.service.AdminService;
 import com.groom.manvsclass.service.EmailService;
 import com.groom.manvsclass.service.JwtService;

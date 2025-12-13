@@ -1,6 +1,6 @@
 //Modifica 07/12/2024: Creazione AssignmentRepository
 
-package com.groom.manvsclass.model.repository;
+package com.groom.manvsclass.model.repository.mongo;
 
 import com.groom.manvsclass.model.AssignmentMongoDB;
 import org.springframework.data.mongodb.repository.MongoRepository;
