@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Stefano Marano
- * Versione: Bridge Thymeleaf -> JS
+ * Versione: Full Bootstrap Modals (No native alerts)
  */
 
 // === CONFIGURAZIONE URL ===
@@ -12,44 +12,51 @@ const links = {
 };
 assignUrls(links);
 
-// === FUNZIONE TRADUZIONE (Legge dal serverMessages iniettato nell'HTML) ===
+// === FUNZIONE TRADUZIONE ===
 function t(key, ...args) {
-    // Controlla se l'oggetto esiste (iniettato da Thymeleaf)
     if (typeof serverMessages === 'undefined') {
-        console.error("Errore: serverMessages non definito. Controlla hints_main.html");
+        console.error("Errore: serverMessages non definito.");
         return key;
     }
-
     let text = serverMessages[key] || key;
-
-    // Sostituzione placeholder {0}, {1}...
     args.forEach((arg, index) => {
         text = text.replace(`{${index}}`, arg);
     });
-
     return text;
 }
 
-
 // === VARIABILI GLOBALI ===
 let currentActiveHint = null;
+let pendingDeleteAction = null; // Variabile per memorizzare l'azione di eliminazione da eseguire
 
-// === FUNZIONI DI UTILITY ===
+// === GESTIONE STORICO NAVIGAZIONE ===
+window.addEventListener('popstate', (event) => {
+    const state = event.state;
+    if (!state) {
+        toggleInitialView(true);
+        setDynamicContent('');
+        return;
+    }
+    if (state.view === 'generic') {
+        renderGenericHintsView(false);
+    } else if (state.view === 'classes') {
+        renderClassHintsListView(false);
+    } else if (state.view === 'class_detail') {
+        renderClassHintsDetailView(state.className, false);
+    } else if (state.view === 'hint_detail') {
+        renderHintDetailView(state.order, state.type, state.classUTName, false);
+    }
+});
 
+// === UTILITY ===
 function escapeHtml(unsafe) {
     if (!unsafe) return '';
-    return unsafe.toString().replace(/&/g, "&amp;")
-                 .replace(/</g, "&lt;")
-                 .replace(/>/g, "&gt;")
-                 .replace(/"/g, "&quot;")
-                 .replace(/'/g, "&#039;")
-                 .replace(/`/g, "&#x60;");
+    return unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;").replace(/`/g, "&#x60;");
 }
 
 function toggleInitialView(show) {
     const initialButtons = document.getElementById('initial-buttons');
     if (initialButtons) initialButtons.style.display = show ? 'flex' : 'none';
-
     const navbarContent = document.getElementById('navbarSupportedContent');
     if (navbarContent) navbarContent.style.display = show ? 'block' : 'none';
 }
@@ -58,51 +65,154 @@ function setDynamicContent(html) {
     document.getElementById('dynamic-content').innerHTML = html;
 }
 
+// === GESTIONE MODALI DI CONFERMA (Nuova Funzione) ===
+function showConfirmModal(message, confirmCallback) {
+    // 1. Imposta il testo del messaggio
+    document.getElementById('confirmModalBody').innerText = message;
+
+    // 2. Salva la funzione da eseguire in caso di click su "Sì"
+    pendingDeleteAction = confirmCallback;
+
+    // 3. Mostra la modale
+    $('#confirmModal').modal('show');
+}
+
+// Listener per il bottone "Sì" della modale (definito una volta sola all'avvio)
+document.addEventListener("DOMContentLoaded", () => {
+    // ... altri listener esistenti ...
+    const confirmBtn = document.getElementById('confirmModalBtn');
+    if(confirmBtn) {
+        confirmBtn.addEventListener('click', () => {
+            if (pendingDeleteAction) {
+                pendingDeleteAction(); // Esegue la funzione salvata
+            }
+            $('#confirmModal').modal('hide'); // Chiude la modale
+        });
+    }
+
+    // Setup bottoni iniziali
+    const btnGeneric = document.getElementById('viewGenericHintsBtn');
+    const btnClass = document.getElementById('viewClassHintsBtn');
+    if(btnGeneric) {
+        btnGeneric.innerHTML = `<i class="fa fa-list"></i> ${t('title_generic')}`;
+        btnGeneric.addEventListener('click', () => renderGenericHintsView(true));
+    }
+    if(btnClass) {
+        btnClass.innerHTML = `<i class="fa fa-list"></i> ${t('title_classes')}`;
+        btnClass.addEventListener('click', () => renderClassHintsListView(true));
+    }
+    toggleInitialView(true);
+});
+
+
+// === RICERCA ===
+function getSearchBarHtml(placeholderKey, value = "") {
+    const key = placeholderKey || 'placeholder_search';
+    return `
+        <form id="dynamicSearchForm" class="form-inline my-2 my-lg-0">
+            <input class="form-control mr-sm-2" type="search" id="searchInput" value="${escapeHtml(value)}" placeholder="${t(key)}" aria-label="Search">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit"><i class="fa fa-search"></i> ${t('btn_search')}</button>
+        </form>
+    `;
+}
+function restoreSearchFocus(value) {
+    const input = document.getElementById('searchInput');
+    if (input) { input.focus(); input.value = ''; input.value = value; }
+}
+function handleSearchSubmit(event) {
+    event.preventDefault();
+    const state = history.state;
+    if (!state) return;
+    if (state.view === 'generic') renderGenericHintsView(false);
+    else if (state.view === 'classes') renderClassHintsListView(false);
+    else if (state.view === 'class_detail') renderClassHintsDetailView(state.className, false);
+}
+function attachSearchListener() {
+    const form = document.getElementById('dynamicSearchForm');
+    if (form) {
+        form.removeEventListener('submit', handleSearchSubmit);
+        form.addEventListener('submit', handleSearchSubmit);
+    }
+}
 function getActionButtons(hintId, isFirst) {
     return `
         <div class="btn-group-vertical btn-group-sm">
-            <button onclick="event.stopPropagation(); moveHintJS(${hintId}, 'UP')"
-                    class="btn btn-outline-secondary" ${isFirst ? 'disabled' : ''} title="UP">
-                <i class="fa fa-chevron-up"></i>
-            </button>
-            <button onclick="event.stopPropagation(); moveHintJS(${hintId}, 'DOWN')"
-                    class="btn btn-outline-secondary" title="DOWN">
-                <i class="fa fa-chevron-down"></i>
-            </button>
-        </div>
-    `;
+            <button onclick="event.stopPropagation(); moveHintJS(${hintId}, 'UP')" class="btn btn-outline-secondary" ${isFirst ? 'disabled' : ''}><i class="fa fa-chevron-up"></i></button>
+            <button onclick="event.stopPropagation(); moveHintJS(${hintId}, 'DOWN')" class="btn btn-outline-secondary"><i class="fa fa-chevron-down"></i></button>
+        </div>`;
 }
 
-// === FUNZIONI DI ELIMINAZIONE ===
+// === FUNZIONI DI ELIMINAZIONE (Aggiornate per usare showConfirmModal) ===
 
-async function deleteHintByClassUTAndOrder(classUTName, order) {
-    if (!confirm(t('msg_confirm_delete_single'))) return;
+// Wrapper per l'eliminazione singolo suggerimento
+function tryDeleteHint(classUTName, order) {
+    showConfirmModal(t('msg_confirm_delete_single'), () => {
+        executeDeleteHint(classUTName, order);
+    });
+}
 
-    const safeClassUTName = classUTName === 'null' ? 'null' : encodeURIComponent(classUTName);
+// Logica effettiva di eliminazione (chiamata dalla modale)
+async function executeDeleteHint(classUTName, order) {
+    const isGeneric = (classUTName === 'null' || !classUTName);
+    const safeClassUTName = isGeneric ? 'null' : encodeURIComponent(classUTName);
     const url = `${APIS.DELETE_HINT_BY_CLASS_AND_ORDER}/${safeClassUTName}/order/${order}`;
-    await callDeleteHint(url);
+    const token = getCookie("jwtToken");
+
+    try {
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            if (isGeneric) {
+                history.replaceState({ view: 'generic' }, "Generic Hints", "#generic");
+                await renderGenericHintsView(false);
+            } else {
+                try {
+                    const hints = await callGetHints(`type=CLASS&classUTName=${safeClassUTName}`);
+                    if (hints && hints.length > 0) {
+                        history.replaceState({ view: 'class_detail', className: classUTName }, "Class Detail", "#class/" + classUTName);
+                        await renderClassHintsDetailView(classUTName, false);
+                    } else {
+                        history.replaceState({ view: 'classes' }, "Class List", "#classes");
+                        await renderClassHintsListView(false);
+                    }
+                } catch (e) {
+                    history.replaceState({ view: 'classes' }, "Class List", "#classes");
+                    await renderClassHintsListView(false);
+                }
+            }
+        } else {
+            const err = await response.text();
+            displayError(t('title_error') + ": " + err);
+        }
+    } catch (error) {
+        displayError(t('err_communication'));
+    }
 }
 
-async function deleteAllHintsForSpecificClass(classUTName) {
-    if (!confirm(t('msg_confirm_delete_specific', classUTName))) return;
-
-    const safeClassUTName = encodeURIComponent(classUTName);
-    const url = `${APIS.DELETE_HINT_BY_CLASS}/${safeClassUTName}`;
-    await callDeleteHint(url);
+// Wrapper per eliminazione di massa
+function tryDeleteAllGeneric() {
+    showConfirmModal(t('msg_confirm_delete_all_generic'), async () => {
+        const url = `${APIS.DELETE_HINT_BY_CLASS}/null`;
+        await callDeleteHint(url);
+    });
 }
 
-async function deleteAllClassHints() {
-    if (!confirm(t('msg_confirm_delete_all_class'))) return;
-
-    const url = `${APIS.DELETE_HINT_BY_TYPE}/CLASS`;
-    await callDeleteHint(url);
+function tryDeleteAllClassHints() {
+    showConfirmModal(t('msg_confirm_delete_all_class'), async () => {
+        const url = `${APIS.DELETE_HINT_BY_TYPE}/CLASS`;
+        await callDeleteHint(url);
+    });
 }
 
-async function deleteAllGenericHints() {
-    if (!confirm(t('msg_confirm_delete_all_generic'))) return;
-
-    const url = `${APIS.DELETE_HINT_BY_CLASS}/null`;
-    await callDeleteHint(url);
+function tryDeleteAllSpecific(classUTName) {
+    showConfirmModal(t('msg_confirm_delete_specific', classUTName), async () => {
+        const safeClassUTName = encodeURIComponent(classUTName);
+        const url = `${APIS.DELETE_HINT_BY_CLASS}/${safeClassUTName}`;
+        await callDeleteHint(url);
+    });
 }
 
 async function callDeleteHint(url) {
@@ -111,13 +221,11 @@ async function callDeleteHint(url) {
             url: url,
             method: "DELETE",
             headers: { 'Content-Type': 'application/json' },
-        },
-        { reload: true });
+        }, { reload: true });
     } catch (error) {
         let errorMessage = t('err_unknown');
         if (error.response && error.response.message) errorMessage = error.response.message;
         else if (error.message) errorMessage = error.message;
-
         displayError(errorMessage);
     }
 }
@@ -126,465 +234,221 @@ async function callDeleteHint(url) {
 async function moveHintJS(id, direction) {
     const url = `/hints/${id}/move?direction=${direction}`;
     const token = getCookie("jwtToken");
-
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-
+        const response = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
         if (response.ok) {
-            if (document.getElementById('genericTable')) {
-                renderGenericHintsView();
-            } else {
-                const titleEl = document.querySelector('h2');
-                if (titleEl) {
-                     const classNameMatch = titleEl.innerText.replace(t('title_class_detail', ''), '').trim();
-                     if(classNameMatch) {
-                         renderClassHintsDetailView(classNameMatch);
-                     } else {
-                         location.reload();
-                     }
-                }
-            }
-        } else {
-            console.error("Errore spostamento");
+            const currentView = history.state ? history.state.view : null;
+            if (currentView === 'generic') renderGenericHintsView(false);
+            else if (currentView === 'class_detail') renderClassHintsDetailView(history.state.className, false);
+            else location.reload();
         }
-    } catch (e) {
-        console.error("Errore rete", e);
-    }
+    } catch (e) { console.error("Errore rete", e); }
 }
 
+// === VISTE DI RENDERING (Aggiornati i button onclick) ===
 
-// === GESTIONE DELLA RICERCA ===
-function handleSearchSubmit(event) {
-    event.preventDefault();
-    document.location.reload();
-}
-
-// === VISTE DI RENDERING ===
-
-// --- VIEW 1: Elenco Suggerimenti Generici ---
-async function renderGenericHintsView() {
+async function renderGenericHintsView(addToHistory = true) {
+    if (addToHistory) history.pushState({ view: 'generic' }, "Generic Hints", "#generic");
     toggleInitialView(false);
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput ? searchInput.value : "";
     setDynamicContent(`<p class="text-info">${t('loading_generic')}</p>`);
 
     try {
-        const hints = await callGetHints("type=GENERIC");
+        let queryParams = "type=GENERIC";
+        if (searchTerm) queryParams += `&search=${encodeURIComponent(searchTerm)}`;
+        const hints = await callGetHints(queryParams);
 
+        // NOTA: Aggiornato onclick per usare tryDeleteAllGeneric()
         const headerButtons = `
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <button onclick="document.location.reload()" class="btn btn-sm btn-secondary">
-                    <i class="fa fa-arrow-left"></i> ${t('back_selection')}
-                </button>
+                <div>${getSearchBarHtml('placeholder_search', searchTerm)}</div>
                 ${(hints && hints.length > 0) ? `
-                <button onclick="deleteAllGenericHints()" class="btn btn-sm btn-danger">
+                <button onclick="tryDeleteAllGeneric()" class="btn btn-sm btn-danger">
                     <i class="fa fa-trash"></i> ${t('btn_delete_all_generic')}
                 </button>` : ''}
-            </div>
-        `;
+            </div>`;
 
         if (!hints || hints.length === 0) {
-            setDynamicContent(`
-                <h2>${t('title_generic')}</h2>
-                ${headerButtons}
-                <p class="text-warning">${t('msg_no_generic')}</p>
-            `);
-            return;
+            setDynamicContent(`<h2>${t('title_generic')}</h2>${headerButtons}<p class="text-warning">${t('msg_no_generic')}</p>`);
+            attachSearchListener(); if(searchTerm) restoreSearchFocus(searchTerm); return;
         }
 
         hints.sort((a, b) => a.order - b.order);
-
-        let tableHtml = `
-            <h2>${t('title_generic')}</h2>
-            ${headerButtons}
-            <table id="genericTable" class="table table-hover table-striped">
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">${t('col_actions')}</th>
-                        <th style="width: 5%;">${t('col_order')}</th>
-                        <th style="width: 20%;">${t('col_title')}</th>
-                        <th style="width: 55%;">${t('col_content')}</th>
-                        <th style="width: 15%;">${t('col_type')}</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+        let tableHtml = `<h2>${t('title_generic')}</h2>${headerButtons}<table id="genericTable" class="table table-hover table-striped"><thead><tr><th style="width: 5%;">${t('col_actions')}</th><th style="width: 5%;">${t('col_order')}</th><th style="width: 20%;">${t('col_title')}</th><th style="width: 55%;">${t('col_content')}</th><th style="width: 15%;">${t('col_type')}</th></tr></thead><tbody>`;
 
         for (let i = 0; i < hints.length; i++) {
-            const hint = hints[i];
-            const safeName = escapeHtml(hint.name);
-            const safeContentSnippet = escapeHtml(hint.content).substring(0, 100) + (hint.content.length > 100 ? '...' : '');
-            const actionButtons = getActionButtons(hint.id, i === 0);
-
-            tableHtml += `
-                <tr onclick="renderHintDetailView('${hint.order}', 'GENERIC')" style="cursor:pointer;">
-                    <td>${actionButtons}</td>
-                    <td>${hint.order}</td>
-                    <td><strong>${safeName}</strong></td>
-                    <td>${safeContentSnippet}</td>
-                    <td><span class="badge badge-info">${hint.type}</span></td>
-                </tr>
-            `;
+            const h = hints[i];
+            tableHtml += `<tr onclick="renderHintDetailView('${h.order}', 'GENERIC')" style="cursor:pointer;"><td>${getActionButtons(h.id, i===0)}</td><td>${h.order}</td><td><strong>${escapeHtml(h.name)}</strong></td><td>${escapeHtml(h.content).substring(0, 100)}...</td><td><span class="badge badge-info">${h.type}</span></td></tr>`;
         }
-
         tableHtml += `</tbody></table>`;
-        setDynamicContent(tableHtml);
-
-    } catch (error) {
-        setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', error.message)}</p>`);
-    }
+        setDynamicContent(tableHtml); attachSearchListener(); if(searchTerm) restoreSearchFocus(searchTerm);
+    } catch (e) { setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', e.message)}</p>`); }
 }
 
-// --- VIEW 2: Elenco Classi ---
-async function renderClassHintsListView() {
+async function renderClassHintsListView(addToHistory = true) {
+    if (addToHistory) history.pushState({ view: 'classes' }, "Class List", "#classes");
     toggleInitialView(false);
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput ? searchInput.value : "";
     setDynamicContent(`<p class="text-info">${t('loading_classes')}</p>`);
 
     try {
-        const hints = await callGetHints("type=CLASS");
+        let queryParams = "type=CLASS";
+        if (searchTerm) queryParams += `&search=${encodeURIComponent(searchTerm)}`;
+        const hints = await callGetHints(queryParams);
 
+        // NOTA: Aggiornato onclick per usare tryDeleteAllClassHints()
         const headerButtons = `
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <button onclick="document.location.reload()" class="btn btn-sm btn-secondary">
-                    <i class="fa fa-arrow-left"></i> ${t('back_selection')}
-                </button>
+                <div>${getSearchBarHtml('placeholder_class', searchTerm)}</div>
                 ${(hints && hints.length > 0) ? `
-                <button onclick="deleteAllClassHints()" class="btn btn-sm btn-danger">
+                <button onclick="tryDeleteAllClassHints()" class="btn btn-sm btn-danger">
                     <i class="fa fa-trash"></i> ${t('btn_delete_all_class')}
                 </button>` : ''}
-            </div>
-        `;
+            </div>`;
 
         if (!hints || hints.length === 0) {
-            setDynamicContent(`
-                <h2>${t('title_classes')}</h2>
-                ${headerButtons}
-                <p class="text-warning">${t('msg_no_classes')}</p>
-            `);
-            return;
+            setDynamicContent(`<h2>${t('title_classes')}</h2>${headerButtons}<p class="text-warning">${t('msg_no_classes')}</p>`);
+            attachSearchListener(); if(searchTerm) restoreSearchFocus(searchTerm); return;
         }
 
         const classGroup = hints.reduce((acc, hint) => {
-            const className = hint.classUTName;
-            if (className) acc[className] = (acc[className] || 0) + 1;
+            if (hint.classUTName) acc[hint.classUTName] = (acc[hint.classUTName] || 0) + 1;
             return acc;
         }, {});
 
-        const sortedClassNames = Object.keys(classGroup).sort();
-
-        let tableHtml = `
-            <h2>${t('title_classes')}</h2>
-            ${headerButtons}
-            <table class="table table-hover table-striped">
-                <thead>
-                    <tr>
-                        <th style="width: 70%;">${t('col_class_name')}</th>
-                        <th style="width: 30%;">${t('col_hint_count')}</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        for (const className of sortedClassNames) {
-            const safeClassName = escapeHtml(className);
-            const count = classGroup[className];
-
-            tableHtml += `
-                <tr onclick="renderClassHintsDetailView('${safeClassName}')" style="cursor:pointer;">
-                    <td>${safeClassName}</td>
-                    <td>${count}</td>
-                </tr>
-            `;
-        }
-
+        let tableHtml = `<h2>${t('title_classes')}</h2>${headerButtons}<table class="table table-hover table-striped"><thead><tr><th style="width: 70%;">${t('col_class_name')}</th><th style="width: 30%;">${t('col_hint_count')}</th></tr></thead><tbody>`;
+        Object.keys(classGroup).sort().forEach(c => {
+            tableHtml += `<tr onclick="renderClassHintsDetailView('${escapeHtml(c)}')" style="cursor:pointer;"><td>${escapeHtml(c)}</td><td>${classGroup[c]}</td></tr>`;
+        });
         tableHtml += `</tbody></table>`;
-        setDynamicContent(tableHtml);
-
-    } catch (error) {
-        setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', error.message)}</p>`);
-    }
+        setDynamicContent(tableHtml); attachSearchListener(); if(searchTerm) restoreSearchFocus(searchTerm);
+    } catch (e) { setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', e.message)}</p>`); }
 }
 
-// --- VIEW 2.1: Elenco Suggerimenti Classe Specifica ---
-async function renderClassHintsDetailView(classUTName) {
+async function renderClassHintsDetailView(classUTName, addToHistory = true) {
+    if (addToHistory) history.pushState({ view: 'class_detail', className: classUTName }, "Class Detail", "#class/" + classUTName);
     toggleInitialView(false);
     const safeClassName = escapeHtml(classUTName);
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput ? searchInput.value : "";
     setDynamicContent(`<p class="text-info">${t('loading_class_hints', safeClassName)}</p>`);
 
     try {
-        const hints = await callGetHints(`type=CLASS&classUTName=${encodeURIComponent(classUTName)}`);
+        let queryParams = `type=CLASS&classUTName=${encodeURIComponent(classUTName)}`;
+        if (searchTerm) queryParams += `&search=${encodeURIComponent(searchTerm)}`;
+        const hints = await callGetHints(queryParams);
 
+        // NOTA: Aggiornato onclick per usare tryDeleteAllSpecific()
         const headerButtons = `
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <button onclick="renderClassHintsListView()" class="btn btn-sm btn-secondary">
-                    <i class="fa fa-arrow-left"></i> ${t('back_class_list')}
-                </button>
+                <div class="d-flex align-items-center">${getSearchBarHtml('placeholder_simple', searchTerm)}</div>
                 ${(hints && hints.length > 0) ? `
-                <button onclick="deleteAllHintsForSpecificClass('${safeClassName}')" class="btn btn-sm btn-danger">
+                <button onclick="tryDeleteAllSpecific('${safeClassName}')" class="btn btn-sm btn-danger ml-2">
                     <i class="fa fa-trash"></i> ${t('btn_delete_all_specific', safeClassName)}
                 </button>` : ''}
-            </div>
-        `;
+            </div>`;
 
         if (!hints || hints.length === 0) {
-            setDynamicContent(`
-                <h2>${t('title_class_detail', safeClassName)}</h2>
-                ${headerButtons}
-                <p class="text-warning">${t('msg_no_hints')}</p>
-            `);
-            return;
+            setDynamicContent(`<h2>${t('title_class_detail', safeClassName)}</h2>${headerButtons}<p class="text-warning">${t('msg_no_hints')}</p>`);
+            attachSearchListener(); if(searchTerm) restoreSearchFocus(searchTerm); return;
         }
 
         hints.sort((a, b) => a.order - b.order);
-
-        let tableHtml = `
-            <h2>${t('title_class_detail', safeClassName)}</h2>
-            ${headerButtons}
-            <table class="table table-hover table-striped">
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">${t('col_actions')}</th>
-                        <th style="width: 5%;">${t('col_order')}</th>
-                        <th style="width: 20%;">${t('col_title')}</th>
-                        <th style="width: 55%;">${t('col_content')}</th>
-                        <th style="width: 15%;">${t('col_type')}</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+        let tableHtml = `<h2>${t('title_class_detail', safeClassName)}</h2>${headerButtons}<table class="table table-hover table-striped"><thead><tr><th style="width: 5%;">${t('col_actions')}</th><th style="width: 5%;">${t('col_order')}</th><th style="width: 20%;">${t('col_title')}</th><th style="width: 55%;">${t('col_content')}</th><th style="width: 15%;">${t('col_type')}</th></tr></thead><tbody>`;
 
         for (let i = 0; i < hints.length; i++) {
-            const hint = hints[i];
-            const safeName = escapeHtml(hint.name);
-            const safeContentSnippet = escapeHtml(hint.content).substring(0, 100) + (hint.content.length > 100 ? '...' : '');
-            const actionButtons = getActionButtons(hint.id, i === 0);
-
-            tableHtml += `
-                <tr onclick="renderHintDetailView('${hint.order}', 'CLASS', '${safeClassName}')" style="cursor:pointer;">
-                    <td>${actionButtons}</td>
-                    <td>${hint.order}</td>
-                    <td><strong>${safeName}</strong></td>
-                    <td>${safeContentSnippet}</td>
-                    <td><span class="badge badge-info">${hint.type}</span></td>
-                </tr>
-            `;
+            const h = hints[i];
+            tableHtml += `<tr onclick="renderHintDetailView('${h.order}', 'CLASS', '${safeClassName}')" style="cursor:pointer;"><td>${getActionButtons(h.id, i===0)}</td><td>${h.order}</td><td><strong>${escapeHtml(h.name)}</strong></td><td>${escapeHtml(h.content).substring(0, 100)}...</td><td><span class="badge badge-info">${h.type}</span></td></tr>`;
         }
-
         tableHtml += `</tbody></table>`;
-        setDynamicContent(tableHtml);
-
-    } catch (error) {
-        setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', error.message)}</p>`);
-    }
+        setDynamicContent(tableHtml); attachSearchListener(); if(searchTerm) restoreSearchFocus(searchTerm);
+    } catch (e) { setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', e.message)}</p>`); }
 }
 
-// --- VIEW 3: Dettaglio Suggerimento ---
-async function renderHintDetailView(order, type, classUTName = null) {
+async function renderHintDetailView(order, type, classUTName = null, addToHistory = true) {
+    if (addToHistory) history.pushState({ view: 'hint_detail', order: order, type: type, classUTName: classUTName }, "Hint Detail", "#detail");
     toggleInitialView(false);
     setDynamicContent(`<p class="text-info">${t('loading_detail')}</p>`);
 
     try {
         let urlParams = new URLSearchParams({ type: type, order: order }).toString();
-        if (classUTName && classUTName !== 'null') {
-            urlParams += `&classUTName=${encodeURIComponent(classUTName)}`;
-        }
-
+        if (classUTName && classUTName !== 'null') urlParams += `&classUTName=${encodeURIComponent(classUTName)}`;
         const hints = await callGetHints(urlParams);
         const hintData = (Array.isArray(hints) && hints.length > 0) ? hints[0] : null;
 
-        if (!hintData) {
-            setDynamicContent(`<p class="text-warning">${t('msg_detail_not_found')}</p>`);
-            return;
-        }
+        if (!hintData) { setDynamicContent(`<p class="text-warning">${t('msg_detail_not_found')}</p>`); return; }
 
-        // SALVATAGGIO GLOBALE
         currentActiveHint = hintData;
-        currentActiveHint.safeClassUTName = hintData.classUTName || 'null';
-
         const currentClassUTName = hintData.classUTName || 'null';
-        const safeName = escapeHtml(hintData.name) || 'Senza Titolo';
-        const safeContent = escapeHtml(hintData.content) || '-';
-        const safeImageUri = escapeHtml(hintData.imageUri);
-        const adminEmail = escapeHtml(hintData.adminEmail) || 'N/A';
-        const createdAt = hintData.createdAt ? new Date(hintData.createdAt).toLocaleDateString() : 'N/D';
+        const safeName = escapeHtml(hintData.name);
 
-        let detailTitle = t('title_detail', safeName);
-
-        let backFunction = (type === 'GENERIC' || currentClassUTName === 'null')
-                           ? 'renderGenericHintsView()'
-                           : `renderClassHintsDetailView('${escapeHtml(currentClassUTName)}')`;
-
+        // NOTA: onclick usa tryDeleteHint
         const detailHtml = `
-            <h2>${detailTitle}</h2>
-            <button onclick="${backFunction}" class="btn btn-secondary mb-3">
-                <i class="fa fa-arrow-left"></i> ${t('back_list')}
-            </button>
-
-            <div class="card p-4">
+            <h2>${t('title_detail', safeName)}</h2>
+            <div class="card p-4 mt-3">
                 <p><strong>${t('label_title')}</strong> ${safeName}</p>
                 <p><strong>${t('label_type')}</strong> <span class="badge badge-info">${hintData.type}</span></p>
                 <p><strong>${t('label_order')}</strong> ${hintData.order}</p>
-                <p><strong>${t('label_content')}</strong><br>${safeContent}</p>
-
-                ${safeImageUri ?
-                    `<div>
-                        <p><strong>${t('label_image')}</strong></p>
-                        <img src="${safeImageUri}" alt="Immagine Suggerimento" class="img-fluid border rounded" style="max-width: 600px; height: auto; margin-top: 5px;"/>
-                    </div>`
-                    : `<p><strong>${t('label_image')}</strong> <em>${t('label_no_image')}</em></p>`}
-
+                <p><strong>${t('label_content')}</strong><br>${escapeHtml(hintData.content)}</p>
+                ${hintData.imageUri ? `<div><p><strong>${t('label_image')}</strong></p><img src="${escapeHtml(hintData.imageUri)}" class="img-fluid border rounded" style="max-width: 600px;"/></div>` : `<p><strong>${t('label_image')}</strong> <em>${t('label_no_image')}</em></p>`}
                 <br>
-                <p><strong>${t('label_creator')}</strong> ${adminEmail}</p>
-                <p><strong>${t('label_date')}</strong> ${createdAt}</p>
-
+                <p><strong>${t('label_creator')}</strong> ${escapeHtml(hintData.adminEmail || 'N/A')}</p>
                 <div class="mt-3">
-                    <button type="button" onclick="openEditModal()" class="btn btn-warning mr-2 text-white">
-                        <i class="fa fa-pencil"></i> ${t('btn_edit')}
-                    </button>
-
-                    <button type="button"
-                            onclick="deleteHintByClassUTAndOrder('${currentClassUTName}', ${hintData.order})"
-                            class="btn btn-danger">
-                        <i class="fa fa-trash"></i> ${t('btn_delete')}
-                    </button>
+                    <button type="button" onclick="openEditModal()" class="btn btn-warning mr-2 text-white"><i class="fa fa-pencil"></i> ${t('btn_edit')}</button>
+                    <button type="button" onclick="tryDeleteHint('${currentClassUTName}', ${hintData.order})" class="btn btn-danger"><i class="fa fa-trash"></i> ${t('btn_delete')}</button>
                 </div>
-            </div>
-        `;
+            </div>`;
         setDynamicContent(detailHtml);
-
-    } catch (error) {
-        setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', error.message)}</p>`);
-    }
+    } catch (e) { setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', e.message)}</p>`); }
 }
 
-
-// === GESTIONE MODIFICA E MODALI ===
-
+// === EDIT E MODALI (Invariati) ===
 function openEditModal() {
-    if (!currentActiveHint) {
-        alert(t('err_data_missing'));
-        return;
-    }
+    if (!currentActiveHint) { alert(t('err_data_missing')); return; }
     document.getElementById('editHintForm').reset();
-
     document.getElementById('editHintId').value = currentActiveHint.id;
     document.getElementById('editHintName').value = currentActiveHint.name;
     document.getElementById('editHintContent').value = currentActiveHint.content;
-
     $('#editHintModal').modal('show');
 }
-
 async function submitEditHint() {
+    // Nota: qui ho lasciato l'alert per la validazione client side rapida, ma potresti volerlo sostituire.
+    // Per coerenza, se vuoi eliminare ANCHE QUESTI alert, dovremmo fare una modale informativa generica anche qui.
+    // Per ora mi limito a quelli di cancellazione come richiesto, ma fammi sapere se vuoi togliere anche questi.
     const id = document.getElementById('editHintId').value;
     const name = document.getElementById('editHintName').value;
     const content = document.getElementById('editHintContent').value;
     const imageInput = document.getElementById('editHintImage');
-
-    if (!name || !content) {
-        alert(t('err_fields_required'));
-        return;
-    }
+    if (!name || !content) { alert(t('err_fields_required')); return; }
 
     const formData = new FormData();
     formData.append('name', name);
     formData.append('content', content);
-
-    if (imageInput.files.length > 0) {
-        formData.append('file', imageInput.files[0]);
-    }
-
-    const url = `/hints/update/${id}`;
+    if (imageInput.files.length > 0) formData.append('file', imageInput.files[0]);
 
     try {
         const token = getCookie("jwtToken");
-
-        const response = await fetch(url, {
-            method: 'PUT',
-            headers: { 'Authorization': 'Bearer ' + token },
-            body: formData
-        });
-
+        const response = await fetch(`/hints/update/${id}`, { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
         if (response.ok) {
             $('#editHintModal').modal('hide');
-
-            if(currentActiveHint) {
-                currentActiveHint.name = name;
-                currentActiveHint.content = content;
-            }
-
+            if(currentActiveHint) { currentActiveHint.name = name; currentActiveHint.content = content; }
             document.getElementById('successModalLabel').innerText = t('title_success');
             document.getElementById('successMessageContent').innerText = t('msg_success_update');
-
-            const successBtn = document.querySelector('#successModal .btn-primary');
-            if(successBtn) successBtn.innerText = t('btn_continue');
-
             $('#successModal').modal('show');
-
         } else {
             const errorText = await response.text();
-            alert(t('title_error') + ": " + errorText);
+            displayError(t('title_error') + ": " + errorText);
         }
-    } catch (error) {
-        console.error("Errore fetch update:", error);
-        alert(t('err_communication'));
-    }
+    } catch (error) { displayError(t('err_communication')); }
 }
-
-function reloadCurrentHintDetail() {
-    $('#successModal').modal('hide');
-
-    if (currentActiveHint) {
-        renderHintDetailView(
-            currentActiveHint.order,
-            currentActiveHint.type,
-            currentActiveHint.safeClassUTName
-        );
-    } else {
-        renderGenericHintsView();
-    }
-}
-
-// === INIZIALIZZAZIONE ===
-document.addEventListener("DOMContentLoaded", () => {
-    // Traduzione testi statici iniziali
-    const btnGeneric = document.getElementById('viewGenericHintsBtn');
-    const btnClass = document.getElementById('viewClassHintsBtn');
-
-    if(btnGeneric) {
-        btnGeneric.innerHTML = `<i class="fa fa-list"></i> ${t('title_generic')}`;
-        btnGeneric.addEventListener('click', renderGenericHintsView);
-    }
-    if(btnClass) {
-        btnClass.innerHTML = `<i class="fa fa-list"></i> ${t('title_classes')}`;
-        btnClass.addEventListener('click', renderClassHintsListView);
-    }
-
-    if(document.getElementById("searchForm")) {
-        document.getElementById("searchForm").addEventListener("submit", handleSearchSubmit);
-    }
-
-    toggleInitialView(true);
-});
-
-// === ERROR DISPLAY ===
 function displayError(message, containerId = null) {
+    // Questo crea un alert Bootstrap nella pagina, quindi va bene (non è un popup del browser)
     let errorContainer = containerId ? document.getElementById(containerId) : document.getElementById('api-error-alert-container');
-    if (!errorContainer) errorContainer = document.getElementById('dynamic-content') || document.getElementById('main-view-container') || document.body;
-
-    const oldAlert = document.getElementById('api-error-alert');
-    if (oldAlert) oldAlert.remove();
-
-    const errorHtml = `
-        <div id="api-error-alert" class="alert alert-danger mt-3" role="alert" style="color: #842029; background-color: #f8d7da; border-color: #f5c2c7; padding: 15px; margin-bottom: 20px;">
-            <strong>${t('title_error')}:</strong> ${escapeHtml(message)}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"
-                    onclick="document.getElementById('api-error-alert').remove()">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    `;
-
+    if (!errorContainer) errorContainer = document.getElementById('dynamic-content') || document.body;
+    const oldAlert = document.getElementById('api-error-alert'); if (oldAlert) oldAlert.remove();
+    const errorHtml = `<div id="api-error-alert" class="alert alert-danger mt-3" role="alert" style="color:#842029;background-color:#f8d7da;padding:15px;margin-bottom:20px;"><strong>${t('title_error')}:</strong> ${escapeHtml(message)}<button type="button" class="close" data-dismiss="alert" onclick="document.getElementById('api-error-alert').remove()">&times;</button></div>`;
     errorContainer.insertAdjacentHTML('afterbegin', errorHtml);
     errorContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

@@ -3,7 +3,7 @@ package com.groom.manvsclass.controller;
 import com.groom.manvsclass.model.dto.HintResponse;
 import com.groom.manvsclass.service.HintService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -83,5 +83,36 @@ public class HintController {
             @CookieValue(name = "jwt") String jwtToken) {
         hintService.moveHint(id, direction, jwtToken);
         return new ResponseEntity<>("Ordine aggiornato.", HttpStatus.OK);
+    }
+
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadHintTemplate() {
+        String jsonTemplate = "[\n" +
+                "  {\n" +
+                "    \"type\": \"GENERIC\",\n" +
+                "    \"name\": \"Titolo del suggerimento generico\",\n" +
+                "    \"content\": \"Testo del contenuto...\",\n" +
+                "    \"imageUri\": \"nome_immagine.png\" \n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"type\": \"CLASS\",\n" +
+                "    \"classUTName\": \"NomeClasse.java\",\n" +
+                "    \"name\": \"Titolo del suggerimento specifico\",\n" +
+                "    \"content\": \"Testo del contenuto per la classe...\",\n" +
+                "    \"imageUri\": \"\" \n" +
+                "  }\n" +
+                "]";
+
+        byte[] content = jsonTemplate.getBytes();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Usa 'set' diretto per evitare problemi di compatibilità con versioni Spring diverse
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=hint_template.json");
+
+        headers.setContentLength(content.length);
+
+        return new ResponseEntity<>(content, headers, HttpStatus.OK);
     }
 }

@@ -33,108 +33,105 @@
             border-radius: .55rem;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
-        #loadingOverlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            z-index: 1050;
-        }
-        #loadingModal {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
     </style>
 </head>
 <body>
-<div id="main-content" class="file_manager">
-    <div class="container w-50">
-        <div class="card">
-            <div class="file text-center pt-3">
-                <p class="h3" th:text="#{hints_upload_title}">Caricamento Suggerimenti</p>
-                <div class="icon my-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="55" height="55" fill="currentColor" class="bi bi-lightbulb-fill text-warning" viewBox="0 0 16 16">
-                        <path d="M2 5a3 3 0 0 1 6 0a.75.75 0 0 0 1.5 0a4.5 4.5 0 0 0-9 0a.75.75 0 0 0 1.5 0zM12 5a4 4 0 0 0-8 0a.5.5 0 0 1-1 0a5 5 0 0 1 10 0a.5.5 0 0 1-1 0zM7 11.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5z"/>
-                        <path d="M6.5 14.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
-                        <path d="M11 5.5a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V6a.5.5 0 0 0-.5-.5zM5 5.5a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5z"/>
-                        <path d="M12.5 14.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2zM6 13.5a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H6z"/>
-                        <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14z"/>
-                    </svg>
+<div class="container mt-5">
+
+    <div class="text-center mb-4">
+        <h2 th:text="#{hints_upload_title}">Caricamento Suggerimenti</h2>
+    </div>
+
+    <div class="card bg-light mb-4 border-info">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="card-title text-info">
+                        <i class="fa fa-info-circle"></i> <span th:text="#{hints_upload_help_title}">Hai bisogno di aiuto?</span>
+                    </h5>
+                    <p class="card-text" th:text="#{hints_upload_help_desc}">Scarica il template...</p>
+                </div>
+                <div class="col-md-4 text-right">
+                    <a href="/hints/template" target="_blank" class="btn btn-outline-info btn-block">
+                        <i class="fa fa-download"></i> <span th:text="#{hints_upload_btn_download}">Scarica Template</span>
+                    </a>
                 </div>
             </div>
-            <div class="card-body">
-                <form id="uploadHintsForm">
-                    <div class="form-group">
-                        <label for="hintFile" th:text="#{hints_upload_file}">File JSON Suggerimenti (*)</label>
-                        <input type="file" class="form-control-file" id="hintFile" accept=".json">
-                        <small class="form-text text-muted" th:text="#{hints_upload_file_descr}">Carica un file JSON contenente un array di oggetti Hint.</small>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="imageFiles" th:text="#{hints_upload_images}">Immagini (Opzionale)</label>
-                        <input type="file" class="form-control-file" id="imageFiles" multiple>
-                        <small class="form-text text-muted" th:text="#{hints_upload_images_descr}">Allega le immagini i cui URI sono specificati nel JSON.</small>
-                    </div>
+            <button class="btn btn-link pl-0 mt-2" type="button" data-toggle="collapse" data-target="#jsonRulesCollapse" aria-expanded="false" aria-controls="jsonRulesCollapse">
+                <i class="fa fa-chevron-down"></i> <span th:text="#{hints_upload_btn_show_rules}">Mostra Regole</span>
+            </button>
 
-                    <div class="form-group text-center mt-4">
-                        <button type="button" onclick="uploadHints()" class="btn btn-success" id="uploadButton" th:text="#{hints_upload_button}">Carica Suggerimenti</button>
-                        <button type="button" onclick="goBack()" class="btn btn-secondary ml-2" th:text="#{uploadRobots_go_back}">Indietro</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+            <div class="collapse mt-3" id="jsonRulesCollapse">
+                <div class="card card-body">
+                    <h6 th:text="#{hints_upload_rules_title}">Struttura JSON:</h6>
+                    <ul class="small text-muted mb-3">
+                        <li th:utext="#{hints_upload_rules_list_1}">Array objects...</li>
+                        <li th:utext="#{hints_upload_rules_list_2}">Mandatory fields...</li>
+                        <li th:utext="#{hints_upload_rules_list_3}">Type Class...</li>
+                        <li th:utext="#{hints_upload_rules_list_4}">Images...</li>
+                    </ul>
 
-        <div id="loadingOverlay">
-            <div id="loadingModal">
-                <p th:text="#{uploadRobots_uploading}">Caricamento in corso...</p>
-            </div>
-        </div>
-
-        <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="successModalLabel" th:text="#{hints_upload_success_title}">Successo</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body" th:text="#{hints_upload_success}">
-                        Suggerimenti caricati con successo.
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" onclick="redirectToHintsMain()">OK</button>
-                    </div>
+                    <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd; font-size: 0.9em;"><code>[
+  {
+    <span style="color: #d63384">"type"</span>: <span style="color: #0d6efd">"GENERIC"</span>,
+    <span style="color: #d63384">"name"</span>: "Titolo Suggerimento",
+    <span style="color: #d63384">"content"</span>: "Il contenuto del suggerimento...",
+    <span style="color: #d63384">"imageUri"</span>: "immagine1.png" <span style="color: #999">// Opzionale</span>
+  },
+  {
+    <span style="color: #d63384">"type"</span>: <span style="color: #0d6efd">"CLASS"</span>,
+    <span style="color: #d63384">"classUTName"</span>: "Calcolatrice.java", <span style="color: #999">// Obbligatorio per type CLASS</span>
+    <span style="color: #d63384">"name"</span>: "Titolo Specifico",
+    <span style="color: #d63384">"content"</span>: "Suggerimento per questa classe..."
+  }
+]</code></pre>
                 </div>
             </div>
         </div>
-
-        <div class="modal fade" id="customErrorModal" tabindex="-1" role="dialog" aria-labelledby="customErrorModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content border-danger">
-                    <div class="modal-header bg-danger text-white">
-                        <h5 class="modal-title" id="customErrorModalLabel">Errore</h5>
-                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body text-danger font-weight-bold">
-                        <p id="customErrorText">Si è verificato un errore.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
-                    </div>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form id="uploadHintsForm">
+                <div class="form-group">
+                    <label for="hintsFile" th:text="#{hints_upload_file}">File JSON (*)</label>
+                    <input type="file" class="form-control-file" id="hintsFile" accept=".json" required>
+                    <small class="form-text text-muted" th:text="#{hints_upload_file_descr}">Carica un file JSON...</small>
                 </div>
+
+                <div class="form-group">
+                    <label for="hintImages" th:text="#{hints_upload_images}">Immagini (Opzionale)</label>
+                    <input type="file" class="form-control-file" id="hintImages" accept="image/*" multiple>
+                    <small class="form-text text-muted" th:text="#{hints_upload_images_descr}">Allega le immagini...</small>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-between">
+                    <button type="button" onclick="window.location.href='/hints/main'" class="btn btn-secondary" th:text="#{uploadRobots_go_back}">Indietro</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa fa-upload"></i> <span th:text="#{hints_upload_button}">Carica</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="messageModal" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageModalLabel">Informazione</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="messageModalBody" class="text-dark">...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
             </div>
         </div>
-
-        <br>
     </div>
 </div>
 
@@ -152,29 +149,7 @@
 <script th:src="@{/t1/js/utils/cookie_util.js}"></script>
 <script th:src="@{/t1/js/utils/renderErrors.js}"></script>
 
-<script th:src="@{/t1/js/hints/hints_upload.js}"></script>
+<script th:src="@{/t1/js/hints/hints_upload.js(v=2)}"></script>
 
-<script>
-    document.addEventListener("DOMContentLoaded", uploadButtonState);
-    document.getElementById("hintFile").addEventListener("change", uploadButtonState);
-
-    function uploadButtonState() {
-        const fileIsSelected = document.getElementById("hintFile").files.length > 0;
-        const uploadButton = document.getElementById('uploadButton');
-        if (!fileIsSelected) {
-            uploadButton.setAttribute("disabled", "disabled");
-        } else {
-            uploadButton.removeAttribute("disabled");
-        }
-    }
-
-    function goBack() {
-        window.history.back();
-    }
-
-    function redirectToHintsMain() {
-        window.location.href = VIEWS.HINTS_MAIN;
-    }
-</script>
 </body>
 </html>

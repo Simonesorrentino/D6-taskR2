@@ -1,85 +1,76 @@
 /*
- * hints_upload.js
- * Gestione upload diretta per bypassare gli alert globali.
+ * Copyright (c) 2025 Stefano Marano
+ * Gestione Upload Suggerimenti
  */
 
-async function uploadHints() {
-    const hintFileInput = document.getElementById('hintFile');
-    const imageFilesInput = document.getElementById('imageFiles');
-    const loadingOverlay = document.getElementById('loadingOverlay');
+document.addEventListener("DOMContentLoaded", () => {
+    const uploadForm = document.getElementById('uploadHintsForm');
 
-    const hintFile = hintFileInput.files[0];
-    const imageFiles = imageFilesInput.files;
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleUploadSubmit);
+    }
+});
 
-    // 1. Validazione input
-    if (!hintFile) {
-        showCustomError("Seleziona il file JSON dei suggerimenti.");
+async function handleUploadSubmit(event) {
+    // 1. BLOCCA IL RELOAD DELLA PAGINA
+    event.preventDefault();
+
+    // 2. Recupera i file
+    const fileInput = document.getElementById('hintsFile');
+    const imagesInput = document.getElementById('hintImages');
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+
+    if (!fileInput.files.length) {
+        alert("Seleziona il file JSON!");
         return;
     }
 
-    // 2. Preparazione dati
+    // 3. Prepara il FormData
     const formData = new FormData();
-    formData.append('file', hintFile);
+    formData.append('file', fileInput.files[0]);
 
-    if (imageFiles && imageFiles.length > 0) {
-        for (let i = 0; i < imageFiles.length; i++) {
-            formData.append('images', imageFiles[i]);
+    if (imagesInput.files.length > 0) {
+        for (let i = 0; i < imagesInput.files.length; i++) {
+            formData.append('images', imagesInput.files[i]);
         }
     }
 
-    if(loadingOverlay) loadingOverlay.style.display = 'block';
+    // 4. Feedback visivo (Disabilita bottone e mostra caricamento)
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fa fa-spinner fa-spin"></i> Caricamento...`;
 
-    // 3. CHIAMATA DIRETTA AJAX (Bypassa callUploadHints e i suoi alert)
-    // Assicurati che l'URL '/hints/upload' sia quello corretto del tuo Controller Spring
-    $.ajax({
-        url: '/hints/upload',
-        type: 'POST',
-        data: formData,
-        processData: false, // Indispensabile per FormData
-        contentType: false, // Indispensabile per FormData
-        success: function(response) {
-            if(loadingOverlay) loadingOverlay.style.display = 'none';
+    try {
+        const token = getCookie("jwtToken"); // Assicurati che cookie_util.js sia incluso
 
-            // Successo: Mostra la modale di successo esistente
-            $('#successModal').modal('show');
-        },
-        error: function(xhr, status, error) {
-            if(loadingOverlay) loadingOverlay.style.display = 'none';
-            console.error("Errore upload:", xhr);
+        // 5. Chiamata al Backend
+        const response = await fetch('/hints/upload', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token
+                // NOTA: Non impostare 'Content-Type': 'multipart/form-data' manualmente!
+                // Il browser lo fa in automatico con il boundary corretto quando usi FormData.
+            },
+            body: formData
+        });
 
-            let errorMessage = "Si è verificato un errore durante il caricamento.";
-
-            // --- Estrazione Messaggio Errore (Spring Boot) ---
-            // Analizza la risposta JSON (quella che vedi nel tab Network)
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                // Caso ideale: Spring ha ritornato un JSON pulito
-                errorMessage = xhr.responseJSON.message;
-            }
-            else if (xhr.responseText) {
-                // Caso fallback: prova a parsare la stringa se non è stata convertita autom.
-                try {
-                    const parsed = JSON.parse(xhr.responseText);
-                    if (parsed.message) {
-                        errorMessage = parsed.message;
-                    }
-                } catch(e) {
-                    // Se non è JSON, potrebbe essere un errore generico
-                    console.warn("Impossibile parsare responseText");
-                }
-            }
-
-            // 4. Mostra la NOSTRA modale di errore
-            showCustomError(errorMessage);
+        if (response.ok) {
+            // Successo
+            alert("Suggerimenti caricati con successo!");
+            // Pulisce il form
+            document.getElementById('uploadHintsForm').reset();
+        } else {
+            // Errore dal server
+            const errorText = await response.text();
+            alert("Errore durante il caricamento: " + errorText);
         }
-    });
-}
 
-/**
- * Funzione per aprire la modale di errore custom
- */
-function showCustomError(message) {
-    const msgEl = document.getElementById('customErrorText');
-    if(msgEl) msgEl.textContent = message;
-
-    $('#customErrorModal').modal('show');
+    } catch (error) {
+        console.error("Errore di rete:", error);
+        alert("Errore di comunicazione con il server.");
+    } finally {
+        // 6. Ripristina bottone
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
 }
