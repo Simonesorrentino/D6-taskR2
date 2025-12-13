@@ -1,12 +1,8 @@
 package com.groom.manvsclass.model.entity;
 
-import com.groom.manvsclass.model.entity.AdminEntity;
-import com.groom.manvsclass.model.entity.ClassUTEntity;
 import lombok.*;
-import org.hibernate.proxy.HibernateProxy;
 
 import javax.persistence.*;
-import java.util.Objects;
 
 @Getter
 @Setter

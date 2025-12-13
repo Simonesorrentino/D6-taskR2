@@ -4,18 +4,22 @@
 
 package com.groom.manvsclass.service;
 
-import com.groom.manvsclass.model.AssignmentMongoDB;
-import com.groom.manvsclass.model.TeamMongoDB;
-import com.groom.manvsclass.model.TeamAdminMongoDB;
-import com.groom.manvsclass.model.repository.mongo.AssignmentRepository;
-import com.groom.manvsclass.model.repository.mongo.TeamAdminRepository;
-import com.groom.manvsclass.model.repository.mongo.TeamRepository;
+import com.groom.manvsclass.model.entity.AdminEntity;
+import com.groom.manvsclass.model.entity.AssignmentEntity;
+import com.groom.manvsclass.model.entity.TeamAdminEntity;
+import com.groom.manvsclass.model.entity.TeamEntity;
+import com.groom.manvsclass.model.repository.jpa.AdminRepository;
+import com.groom.manvsclass.model.repository.jpa.AssignmentRepository;
+import com.groom.manvsclass.model.repository.jpa.TeamAdminRepository;
+import com.groom.manvsclass.model.repository.jpa.TeamRepository;
 import com.groom.manvsclass.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.client.HttpClientErrorException;
 
 import javax.mail.MessagingException;
 import java.util.List;
@@ -26,18 +30,10 @@ import java.util.stream.Collectors;
 public class TeamService {
 
     @Autowired
-    private TeamRepository teamRepository;
-    @Autowired
-    private TeamAdminRepository teamAdminRepository;
-
-    @Autowired
     private JwtService jwtService;  // Servizio per la validazione del JWT
 
     @Autowired
     private StudentService studentService; //Servizio per mandare query al T23
-
-    @Autowired
-    private AssignmentRepository assignmentRepository;
 
     @Autowired
     private EmailService emailService;
@@ -45,8 +41,20 @@ public class TeamService {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private AssignmentRepository assignmentRepository;
+
+    @Autowired
+    private TeamRepository teamRepository;
+
+    @Autowired
+    private TeamAdminRepository teamAdminRepository;
+
+    @Autowired
+    private AdminRepository adminRepository;
+
     //Metodo per creare un nuovo Team
-    public ResponseEntity<?> creaTeam(TeamMongoDB teamMongoDB, @CookieValue(name = "jwt", required = false) String jwt) {
+    public ResponseEntity<?> creaTeam(TeamEntity teamEntity, @CookieValue(name = "jwt", required = false) String jwt) {
 
         System.out.println("Creazione del team in corso...");
 
@@ -63,35 +71,41 @@ public class TeamService {
         }
 
         // 3. Controlla se il nome del team è valido
-        if (teamMongoDB.getName() == null || teamMongoDB.getName().isEmpty() || teamMongoDB.getName().length() < 3 || teamMongoDB.getName().length() > 20) {
+        if (teamEntity.getName() == null || teamEntity.getName().isEmpty() || teamEntity.getName().length() < 3 || teamEntity.getName().length() > 20) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nome del team non valido. Deve essere tra 3 e 20 caratteri.");
         }
 
         // 4. Controlla se esiste già un team con lo stesso nome
-        if (teamRepository.existsByName(teamMongoDB.getName())) {
+        if (teamRepository.existsByName(teamEntity.getName())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Un team con questo nome esiste già.");
         }
 
         // 5. Aggiungi un ID univoco al team (se non specificato)
-        if (teamMongoDB.getIdTeam() == null || teamMongoDB.getIdTeam().isEmpty()) {
-            teamMongoDB.setIdTeam(Util.generateUniqueId());
+        if (teamEntity.getIdTeam() == null || teamEntity.getIdTeam().isEmpty()) {
+            teamEntity.setIdTeam(Util.generateUniqueId());
         }
 
         // 6. Salva il team nel database
-        TeamMongoDB savedTeamMongoDB = teamRepository.save(teamMongoDB);
+        TeamEntity savedTeamEntity = teamRepository.save(teamEntity);
         // 7. Crea una relazione tra Admin e Team
-        TeamAdminMongoDB teamManagement = new TeamAdminMongoDB(
-                adminUsername,                           // ID dell'Admin -- Ussername.
-                savedTeamMongoDB.getIdTeam(),                   // ID del Team appena creato
-                savedTeamMongoDB.getName(),                     //Nome Team
-                "Owner",                            // Ruolo (può essere parametrizzato)
-                true                            // Relazione attiva
-        );
+
+        TeamAdminEntity teamManagement = new TeamAdminEntity();
+
+        AdminEntity admin = adminRepository.findByUsername(adminUsername);
+
+        if (admin == null) {
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Admin not found");
+        }
+
+        teamManagement.setAdmin(admin);
+        teamManagement.setTeam(savedTeamEntity);
+        teamManagement.setRole("Owner");
+        teamManagement.setActive(true);
 
         // 8. Salva la relazione nel database
         teamAdminRepository.save(teamManagement);
         // 9. Restituisci una risposta con il team creato
-        return ResponseEntity.ok().body(savedTeamMongoDB);
+        return ResponseEntity.ok().body(savedTeamEntity);
     }
 
     // Elimina un team dato il nome del team
@@ -108,25 +122,25 @@ public class TeamService {
         System.out.print("Id da eliminare: " + idTeam);
 
         // 3. Verifica che il team esista
-        TeamMongoDB teamMongoDBToDelete = teamRepository.findById(idTeam).orElse(null);
-        if (teamMongoDBToDelete == null) {
+        TeamEntity teamEntityToDelete = teamRepository.findById(idTeam).orElse(null);
+        if (teamEntityToDelete == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con l'ID '" + idTeam + "' non trovato.");
         }
 
         // 4. Verifica che l'admin sia effettivamente associato a questo team come "Owner"
-        TeamAdminMongoDB teamAdminMongoDB = teamAdminRepository.findByTeamId(idTeam); //`findByTeamId` restituisca una sola associazione
-        if (teamAdminMongoDB == null || !teamAdminMongoDB.getAdminId().equals(adminUsername) || !"Owner".equals(teamAdminMongoDB.getRole())) {
+        TeamAdminEntity teamAdminEntity = teamAdminRepository.findByTeam_IdTeam(idTeam).orElse(null); //`findByTeamId` restituisca una sola associazione
+        if (teamAdminEntity == null || !teamAdminEntity.getAdmin().getEmail().equals(adminUsername) || !"Owner".equals(teamAdminEntity.getRole())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per eliminare questo team.");
         }
 
         // 5. Elimina il team
-        teamRepository.delete(teamMongoDBToDelete);
+        teamRepository.delete(teamEntityToDelete);
 
         // 6. Elimina l'associazione
-        teamAdminRepository.delete(teamAdminMongoDB);
+        teamAdminRepository.delete(teamAdminEntity);
 
         // 7. Elimina gli Assignment associati al team
-        List<AssignmentMongoDB> assignmentsToDelete = assignmentRepository.findByTeamId(idTeam);
+        List<AssignmentEntity> assignmentsToDelete = assignmentRepository.findByTeam_IdTeam(idTeam);
         if (assignmentsToDelete != null && !assignmentsToDelete.isEmpty()) {
             assignmentRepository.deleteAll(assignmentsToDelete);
             System.out.println("Eliminati " + assignmentsToDelete.size() + " assignment associati al team.");
@@ -152,14 +166,14 @@ public class TeamService {
         String adminUsername = jwtService.getAdminFromJwt(jwt);
 
         // 3. Verifica se il team esiste
-        TeamMongoDB existingTeamMongoDB = teamRepository.findById(idTeam).orElse(null);
-        if (existingTeamMongoDB == null) {
+        TeamEntity existingTeamEntity = teamRepository.findById(idTeam).orElse(null);
+        if (existingTeamEntity == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con l'ID '" + idTeam + "' non trovato.");
         }
 
         // 4. Verifica che l'admin sia effettivamente associato a questo team come "Owner"
-        TeamAdminMongoDB teamAdminMongoDB = teamAdminRepository.findByTeamId(idTeam); // Assumiamo che `findByTeamId` restituisca una sola associazione
-        if (teamAdminMongoDB == null || !teamAdminMongoDB.getAdminId().equals(adminUsername) || !"Owner".equals(teamAdminMongoDB.getRole())) {
+        TeamAdminEntity teamAdminEntity = teamAdminRepository.findByTeam_IdTeam(idTeam).orElse(null); // Assumiamo che `findByTeamId` restituisca una sola associazione
+        if (teamAdminEntity == null || !teamAdminEntity.getAdmin().getEmail().equals(adminUsername) || !"Owner".equals(teamAdminEntity.getRole())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per modificare questo team.");
         }
 
@@ -182,13 +196,13 @@ public class TeamService {
         }
 
         // 7. Modifica il nome del team
-        existingTeamMongoDB.setName(newName);
+        existingTeamEntity.setName(newName);
 
         // 8. Salva il team aggiornato
-        teamRepository.save(existingTeamMongoDB);
+        teamRepository.save(existingTeamEntity);
 
         // 9. Restituisci il team aggiornato
-        return ResponseEntity.ok().body(existingTeamMongoDB);
+        return ResponseEntity.ok().body(existingTeamEntity);
     }
 
     // Metodo per visualizzare i team associati a un admin specifico
@@ -208,24 +222,24 @@ public class TeamService {
             }
 
             // 3. Recupera tutti i team associati all'Admin
-            List<TeamAdminMongoDB> teamAssociations = teamAdminRepository.findAllByAdminId(adminUsername);
+            List<TeamAdminEntity> teamAssociations = teamAdminRepository.findAllByAdmin_Email(adminUsername);
             if (teamAssociations == null || teamAssociations.isEmpty()) {
                 return ResponseEntity.ok("Non sei associato ad alcun team.");
             }
 
             // 4. Estrai gli ID dei team associati
             List<String> teamIds = teamAssociations.stream()
-                    .map(TeamAdminMongoDB::getTeamId)
+                    .map(assoc -> assoc.getTeam().getIdTeam())
                     .collect(Collectors.toList());
 
             // 5. Recupera tutti i team associati
-            List<TeamMongoDB> teamMongoDBS = (List<TeamMongoDB>) teamRepository.findAllById(teamIds);
-            if (teamMongoDBS == null || teamMongoDBS.isEmpty()) {
+            List<TeamEntity> teamEntityList = (List<TeamEntity>) teamRepository.findAllById(teamIds);
+            if (CollectionUtils.isEmpty(teamEntityList)) {
                 return ResponseEntity.ok("Nessun team trovato per gli ID specificati.");
             }
 
             // 6. Restituisce i team trovati
-            return ResponseEntity.ok(teamMongoDBS);
+            return ResponseEntity.ok(teamEntityList);
 
         } catch (Exception e) {
             // Gestione di eventuali errori inaspettati
@@ -244,13 +258,13 @@ public class TeamService {
         }
 
         // 3. Verifica se il team esiste
-        TeamMongoDB existingTeamMongoDB = teamRepository.findById(idTeam).orElse(null);
-        if (existingTeamMongoDB == null) {
+        TeamEntity existingTeamEntity = teamRepository.findById(idTeam).orElse(null);
+        if (existingTeamEntity == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con l'ID '" + idTeam + "' non trovato.");
         }
 
         // Restituisce il team
-        return ResponseEntity.ok().body(existingTeamMongoDB);
+        return ResponseEntity.ok().body(existingTeamEntity);
     }
 
     //Modifica 03/12/2024: Aggiunta dell'aggiungiStudenti
@@ -262,13 +276,13 @@ public class TeamService {
         // 2. Estrai l'ID dell'admin dal JWT
         String adminUsername = jwtService.getAdminFromJwt(jwt);
         // 3. Verifica se il team esiste
-        TeamMongoDB existingTeamMongoDB = teamRepository.findById(idTeam).orElse(null);
-        if (existingTeamMongoDB == null) {
+        TeamEntity existingTeamEntity = teamRepository.findById(idTeam).orElse(null);
+        if (existingTeamEntity == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con l'ID '" + idTeam + "' non trovato.");
         }
         // 4. Verifica che l'admin sia effettivamente associato a questo team come "Owner"
-        TeamAdminMongoDB teamAdminMongoDB = teamAdminRepository.findByTeamId(idTeam);
-        if (teamAdminMongoDB == null || !teamAdminMongoDB.getAdminId().equals(adminUsername) || !"Owner".equals(teamAdminMongoDB.getRole())) {
+        TeamAdminEntity teamAdminEntity = teamAdminRepository.findByTeam_IdTeam(idTeam).orElse(null);
+        if (teamAdminEntity == null || !teamAdminEntity.getAdmin().getEmail().equals(adminUsername) || !"Owner".equals(teamAdminEntity.getRole())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per modificare questo team.");
         }
         //4.1 Verifica che non ho un array di id vuoto!
@@ -277,7 +291,7 @@ public class TeamService {
         }
         // 5. Filtra gli studenti già presenti nel team
         List<String> nuoviStudenti = idStudenti.stream()
-                .filter(idStudente -> !existingTeamMongoDB.getStudenti().contains(idStudente))
+                .filter(idStudente -> !existingTeamEntity.getIdStudenti().contains(idStudente))
                 .collect(Collectors.toList());
 
         if (nuoviStudenti.isEmpty()) {
@@ -285,11 +299,11 @@ public class TeamService {
         }
 
         // 6. Aggiungi gli studenti validi al team
-        existingTeamMongoDB.getStudenti().addAll(nuoviStudenti);
+        existingTeamEntity.getIdStudenti().addAll(nuoviStudenti);
         // 7. Aggiorna il numero di studenti
-        existingTeamMongoDB.setNumStudenti(existingTeamMongoDB.getStudenti().size());
+        existingTeamEntity.setNumeroStudenti(existingTeamEntity.getIdStudenti().size());
         // 8. Salva il team aggiornato
-        TeamMongoDB updatedTeamMongoDB = teamRepository.save(existingTeamMongoDB);
+        TeamEntity updatedTeamEntity = teamRepository.save(existingTeamEntity);
         // 9. Recupero dettagli degli studenti per inviare le email.
         ResponseEntity<?> dettagliStudentiResponse = studentService.ottieniStudentiDettagli(nuoviStudenti, jwt);
         if (!HttpStatus.OK.equals(dettagliStudentiResponse.getStatusCode())) {
@@ -306,14 +320,14 @@ public class TeamService {
         // 11. Invia email di notifica agli studenti aggiunti
 
         try {
-            emailService.sendTeamAdditionNotificationToStudents(emails, existingTeamMongoDB.getName());
+            emailService.sendTeamAdditionNotificationToStudents(emails, existingTeamEntity.getName());
         } catch (MessagingException e) {
             System.out.println("Errore durante l'invio della email.");
         }
 
         // 12. notifica l'utente nella pagina web
         String Title = "Aggiunto al Team ";
-        String message = "Ora fai parte di " + existingTeamMongoDB.getName();
+        String message = "Ora fai parte di " + existingTeamEntity.getName();
         for (String email : emails) {
             try {
                 notificationService.sendNotification(email, null, Title, message, "Team");
@@ -323,7 +337,7 @@ public class TeamService {
         }
 
         // 10. Restituisci il team aggiornato come risposta
-        return ResponseEntity.ok().body(updatedTeamMongoDB);
+        return ResponseEntity.ok().body(updatedTeamEntity);
     }
 
     //Modifica 04/12/2024: Aggiunta ottieniStudentiTeam
@@ -337,20 +351,20 @@ public class TeamService {
         String adminUsername = jwtService.getAdminFromJwt(jwt);
 
         // 3. Verifica se il team esiste
-        TeamMongoDB existingTeamMongoDB = teamRepository.findById(idTeam).orElse(null);
-        if (existingTeamMongoDB == null) {
+        TeamEntity existingTeamEntity = teamRepository.findById(idTeam).orElse(null);
+        if (existingTeamEntity == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con l'ID '" + idTeam + "' non trovato.");
         }
 
         // 4. Verifica che l'admin sia effettivamente associato a questo team come "Owner"
         //In futuro si potrebbe prevedere che anche altri professori possano vedere gli studenti di un team
-        TeamAdminMongoDB teamAdminMongoDB = teamAdminRepository.findByTeamId(idTeam);
-        if (teamAdminMongoDB == null || !teamAdminMongoDB.getAdminId().equals(adminUsername) || !"Owner".equals(teamAdminMongoDB.getRole())) {
+        TeamAdminEntity teamAdminEntity = teamAdminRepository.findByTeam_IdTeam(idTeam).orElse(null);
+        if (teamAdminEntity == null || !teamAdminEntity.getAdmin().getEmail().equals(adminUsername) || !"Owner".equals(teamAdminEntity.getRole())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per visualizzare gli studenti di questo team.");
         }
 
         // 5. Recupera la lista degli id degli studenti dei team
-        List<String> studentiIds = existingTeamMongoDB.getStudenti(); //Lista di id degli studenti
+        List<String> studentiIds = existingTeamEntity.getIdStudenti(); //Lista di id degli studenti
         if (studentiIds == null || studentiIds.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Non ci sono studenti associati a questo team.");
         }
@@ -371,33 +385,33 @@ public class TeamService {
         String adminUsername = jwtService.getAdminFromJwt(jwt);
 
         // 3. Verifica se il team esiste
-        TeamMongoDB existingTeamMongoDB = teamRepository.findById(idTeam).orElse(null);
-        if (existingTeamMongoDB == null) {
+        TeamEntity existingTeamEntity = teamRepository.findById(idTeam).orElse(null);
+        if (existingTeamEntity == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Team con l'ID '" + idTeam + "' non trovato.");
         }
 
         // 4. Verifica che l'admin sia effettivamente associato a questo team come "Owner"
-        TeamAdminMongoDB teamAdminMongoDB = teamAdminRepository.findByTeamId(idTeam);
-        if (teamAdminMongoDB == null || !teamAdminMongoDB.getAdminId().equals(adminUsername) || !"Owner".equals(teamAdminMongoDB.getRole())) {
+        TeamAdminEntity teamAdminEntity = teamAdminRepository.findByTeam_IdTeam(idTeam).orElse(null);
+        if (teamAdminEntity == null || !teamAdminEntity.getAdmin().getEmail().equals(adminUsername) || !"Owner".equals(teamAdminEntity.getRole())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Non hai i permessi per modificare questo team.");
         }
 
         // 5. Verifica se lo studente è effettivamente nel team
-        if (!existingTeamMongoDB.getStudenti().contains(idStudente)) {
+        if (!existingTeamEntity.getIdStudenti().contains(idStudente)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Studente con ID '" + idStudente + "' non trovato nel team.");
         }
 
         // 6. Rimuovi lo studente dal team
-        existingTeamMongoDB.getStudenti().remove(idStudente);
+        existingTeamEntity.getIdStudenti().remove(idStudente);
 
         // 7. Aggiorna il numero di studenti
-        existingTeamMongoDB.setNumStudenti(existingTeamMongoDB.getStudenti().size());
+        existingTeamEntity.setNumeroStudenti(existingTeamEntity.getIdStudenti().size());
 
         // 8. Salva il team aggiornato
-        TeamMongoDB updatedTeamMongoDB = teamRepository.save(existingTeamMongoDB);
+        TeamEntity updatedTeamEntity = teamRepository.save(existingTeamEntity);
 
         // 9. Restituisci il team aggiornato come risposta
-        return ResponseEntity.ok().body(updatedTeamMongoDB);
+        return ResponseEntity.ok().body(updatedTeamEntity);
     }
 
 
@@ -407,7 +421,7 @@ public class TeamService {
      * @param idStudente l'identificativo dello studente
      * @return il team a cui lo studente appartiene
      */
-    public TeamMongoDB getTeamByStudentId(String idStudente) {
+    public TeamEntity getTeamByStudentId(String idStudente) {
         // Utilizzando il metodo di query derivata
         return teamRepository.findByIdStudenti(idStudente);
     }
@@ -415,13 +429,13 @@ public class TeamService {
     // Permetti a uno studente di vedere i componenti del proprio team 
     public ResponseEntity<?> GetStudentTeam(String studentId, String jwt) {
         // 1. Verifica se l'utente ha un team 
-        TeamMongoDB existingTeamMongoDB = getTeamByStudentId(studentId);
-        if (existingTeamMongoDB == null) {
+        TeamEntity existingTeamEntity = getTeamByStudentId(studentId);
+        if (existingTeamEntity == null) {
             //il team non esiste 
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("L'utente non è associato a un Team");
         }
         // 2. Recupera la lista degli id degli studenti dei team
-        List<String> studentiIds = existingTeamMongoDB.getStudenti(); //Lista di id degli studenti
+        List<String> studentiIds = existingTeamEntity.getIdStudenti(); //Lista di id degli studenti
         if (studentiIds == null || studentiIds.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Non ci sono studenti associati a questo team.");
         }

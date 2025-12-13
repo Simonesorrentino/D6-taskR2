@@ -1,7 +1,5 @@
 package com.groom.manvsclass.model.entity;
 
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import javax.persistence.*;
 
 @Entity(name = "achievements")

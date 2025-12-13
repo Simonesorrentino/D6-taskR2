@@ -1,8 +1,8 @@
 package com.groom.manvsclass.controller;
 
-import com.groom.manvsclass.model.AssignmentMongoDB;
-import com.groom.manvsclass.model.TeamMongoDB;
-import com.groom.manvsclass.model.repository.mongo.AssignmentRepository;
+import com.groom.manvsclass.model.entity.AssignmentEntity;
+import com.groom.manvsclass.model.entity.TeamEntity;
+import com.groom.manvsclass.model.repository.jpa.AssignmentRepository;
 import com.groom.manvsclass.service.TeamService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,9 @@ public class StudentController {
 
     private final Logger logger = LoggerFactory.getLogger(StudentController.class);
 
-    public StudentController(TeamService teamService, AssignmentRepository assignmentRepository) {
+    public StudentController(
+            TeamService teamService,
+            AssignmentRepository assignmentRepository) {
         this.teamService = teamService;
         this.assignmentRepository = assignmentRepository;
     }
@@ -35,22 +37,22 @@ public class StudentController {
         try {
 
             // 1. Verifica se l'utente ha un team 
-            TeamMongoDB existingTeamMongoDB = teamService.getTeamByStudentId(studentId);
-            if (existingTeamMongoDB == null) {
+            TeamEntity existingTeamEntity = teamService.getTeamByStudentId(studentId);
+            if (existingTeamEntity == null) {
                 //il team non esiste 
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body("L'utente non è associato a un Team");
             }
 
             // 2. Recupera gli Assignment associati al Team
-            List<AssignmentMongoDB> assignmentMongoDBS = assignmentRepository.findByTeamId(existingTeamMongoDB.getIdTeam());
-            if (assignmentMongoDBS == null || assignmentMongoDBS.isEmpty()) {
-                assignmentMongoDBS = new ArrayList<>();
+            List<AssignmentEntity> assignmentEntityList = assignmentRepository.findByTeam_IdTeam(existingTeamEntity.getIdTeam());
+            if (assignmentEntityList == null || assignmentEntityList.isEmpty()) {
+                assignmentEntityList = new ArrayList<>();
             }
 
             // 3. Crea la struttura di risposta
             Map<String, Object> response = new HashMap<>();
-            response.put("team", existingTeamMongoDB);
-            response.put("assignments", assignmentMongoDBS);
+            response.put("team", existingTeamEntity);
+            response.put("assignments", assignmentEntityList);
 
             // 4. Restituisci la risposta
             return ResponseEntity.ok(response);

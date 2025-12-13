@@ -1,8 +1,10 @@
 package com.groom.manvsclass.service;
 
 import com.groom.manvsclass.api.ApiGatewayClient;
-import com.groom.manvsclass.model.OpponentMongoDB;
-import com.groom.manvsclass.model.repository.mongo.OpponentRepository;
+import com.groom.manvsclass.model.entity.ClassUTEntity;
+import com.groom.manvsclass.model.entity.OpponentEntity;
+import com.groom.manvsclass.model.repository.jpa.ClassUTRepository;
+import com.groom.manvsclass.model.repository.jpa.OpponentRepository;
 import com.groom.manvsclass.util.filesystem.FileOperationUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -10,7 +12,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
 import testrobotchallenge.commons.models.dto.score.JacocoCoverageDTO;
@@ -49,10 +53,15 @@ public class UploadOpponentService {
 
     private final ApiGatewayClient apiGatewayClient;
     private final OpponentRepository opponentRepository;
+    private final ClassUTRepository classUTRepository;
 
-    public UploadOpponentService(ApiGatewayClient apiGatewayClient, OpponentRepository opponentRepository) {
+    public UploadOpponentService(
+            ApiGatewayClient apiGatewayClient,
+            OpponentRepository opponentRepository,
+            ClassUTRepository classUTRepository) {
         this.apiGatewayClient = apiGatewayClient;
         this.opponentRepository = opponentRepository;
+        this.classUTRepository = classUTRepository;
     }
 
     /*
@@ -397,15 +406,21 @@ public class UploadOpponentService {
             evosuiteScore.setMethodNoExceptionCoverage(new Coverage(evoSuiteStatistics[6][0], evoSuiteStatistics[6][1]));
             evosuiteScore.setCBranchCoverage(new Coverage(evoSuiteStatistics[7][0], evoSuiteStatistics[7][1]));
 
-            OpponentMongoDB opponentMongoDB = new OpponentMongoDB();
-            opponentMongoDB.setClassUT(classUTName);
-            opponentMongoDB.setOpponentType(robotType);
-            opponentMongoDB.setOpponentDifficulty(difficulty);
-            opponentMongoDB.setCoverage(coverage);
-            opponentMongoDB.setEvosuiteScore(evosuiteScore);
-            opponentMongoDB.setJacocoScore(jacocoScore);
+            ClassUTEntity classUTEntity = classUTRepository.findById(classUTName).orElse(null);
 
-            opponentRepository.saveOpponent(opponentMongoDB);
+            if (classUTEntity == null) {
+                throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Class UT not found");
+            }
+
+            OpponentEntity opponentEntity = new OpponentEntity();
+            opponentEntity.setClassUt(classUTEntity);
+            opponentEntity.setOpponentType(robotType);
+            opponentEntity.setOpponentDifficulty(difficulty);
+            opponentEntity.setCoverage(coverage);
+            opponentEntity.setEvosuiteScore(evosuiteScore);
+            opponentEntity.setJacocoScore(jacocoScore);
+
+            opponentRepository.save(opponentEntity);
 
             for (GameMode mode : GameMode.values()) {
                 apiGatewayClient.callAddNewOpponent(classUTName, mode, robotType, difficulty);

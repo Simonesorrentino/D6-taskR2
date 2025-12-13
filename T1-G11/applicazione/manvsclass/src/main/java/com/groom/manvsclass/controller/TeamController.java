@@ -1,6 +1,6 @@
 package com.groom.manvsclass.controller;
 
-import com.groom.manvsclass.model.TeamMongoDB;
+import com.groom.manvsclass.model.entity.TeamEntity;
 import com.groom.manvsclass.service.TeamModificationRequest;
 import com.groom.manvsclass.service.TeamService;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +20,8 @@ public class TeamController {
 
     // Endpoint per aggiungere un nuovo team
     @PostMapping("/creaTeam")
-    public ResponseEntity<?> creaTeam(@RequestBody TeamMongoDB teamMongoDB, @CookieValue(name = "jwt", required = false) String jwt) {
-        return teamService.creaTeam(teamMongoDB, jwt);
+    public ResponseEntity<?> creaTeam(@RequestBody TeamEntity teamEntity, @CookieValue(name = "jwt", required = false) String jwt) {
+        return teamService.creaTeam(teamEntity, jwt);
     }
 
     @GetMapping("/visualizzaTeams")
@@ -67,15 +67,15 @@ public class TeamController {
      * Queste chiamate sono accedibili a un utente se fa parte di quel team
      */
     @GetMapping("/ottieniTeamByStudentId")
-    public ResponseEntity<TeamMongoDB> getTeamByStudentId(@RequestParam("StudentId") String idStudente) {
+    public ResponseEntity<TeamEntity> getTeamByStudentId(@RequestParam("StudentId") String idStudente) {
         // Invoca il servizio per recuperare il team in base all'ID dello studente
-        TeamMongoDB teamMongoDB = teamService.getTeamByStudentId(idStudente);
+        TeamEntity teamEntity = teamService.getTeamByStudentId(idStudente);
         // Se il team non viene trovato, restituisce un 404 Not Found
-        if (teamMongoDB == null) {
+        if (teamEntity == null) {
             return ResponseEntity.notFound().build();
         }
         // Se il team viene trovato, restituisce un 200 OK con il team in formato JSON
-        return ResponseEntity.ok(teamMongoDB);
+        return ResponseEntity.ok(teamEntity);
     }
 
     @GetMapping("/GetStudentTeam")

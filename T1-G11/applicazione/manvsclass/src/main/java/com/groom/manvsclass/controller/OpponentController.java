@@ -1,8 +1,8 @@
 package com.groom.manvsclass.controller;
 
-import com.groom.manvsclass.model.OpponentMongoDB;
 import com.groom.manvsclass.model.dto.OpponentSummaryDTO;
 import com.groom.manvsclass.model.entity.ClassUTEntity;
+import com.groom.manvsclass.model.entity.OpponentEntity;
 import com.groom.manvsclass.service.OpponentService;
 import com.groom.manvsclass.util.filesystem.upload.FileUploadResponse;
 import org.slf4j.Logger;
@@ -50,7 +50,7 @@ public class OpponentController {
 
     // OPPONENTS ENDPOINT
     @GetMapping("")
-    public ResponseEntity<List<OpponentMongoDB>> getAllOpponents() {
+    public ResponseEntity<List<OpponentEntity>> getAllOpponents() {
         return ResponseEntity.ok(opponentService.getAllOpponents());
     }
 
@@ -70,18 +70,18 @@ public class OpponentController {
     @GetMapping("/summary")
     public ResponseEntity<List<OpponentSummaryDTO>> getAllOpponentsAsSummary() {
         logger.info("[GET /summary] Request received");
-        List<OpponentMongoDB> opponentMongoDBS = opponentService.getAllOpponents();
-        logger.info("[GET /summary] Opponents found: {}", opponentMongoDBS);
+        List<OpponentEntity> opponentEntityList = opponentService.getAllOpponents();
+        logger.info("[GET /summary] Opponents found: {}", opponentEntityList);
         List<OpponentSummaryDTO> response = new ArrayList<>();
-        for (OpponentMongoDB opponentMongoDB : opponentMongoDBS) {
-            response.add(new OpponentSummaryDTO(opponentMongoDB.getClassUT(),
-                    opponentMongoDB.getOpponentType(), opponentMongoDB.getOpponentDifficulty()));
+        for (OpponentEntity opponentEntity : opponentEntityList) {
+            response.add(new OpponentSummaryDTO(opponentEntity.getClassUt().getName(),
+                    opponentEntity.getOpponentType(), opponentEntity.getOpponentDifficulty()));
         }
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{classUT}/{opponentType}/{opponentDifficulty}/score")
-    public ResponseEntity<OpponentMongoDB> getOpponentData(@PathVariable("classUT") String classUT,
+    public ResponseEntity<OpponentEntity> getOpponentData(@PathVariable("classUT") String classUT,
                                                            @PathVariable("opponentType") String type,
                                                            @PathVariable("opponentDifficulty") OpponentDifficulty difficulty) {
         return ResponseEntity.ok(opponentService.getOpponentData(classUT, type, difficulty));

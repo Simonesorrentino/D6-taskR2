@@ -16,17 +16,6 @@ CREATE TABLE public.assignment (
 ALTER TABLE public.assignment OWNER TO "t1-g11";
 
 
-
---
--- Name: achievements achievements_pkey; Type: CONSTRAINT; Schema: public; Owner: t1-g11
---
-
-ALTER TABLE ONLY public.achievements
-    ADD CONSTRAINT achievements_pkey PRIMARY KEY (id);
-
-
-
-
 --
 -- Name: assignment assignment_pkey; Type: CONSTRAINT; Schema: public; Owner: t1-g11
 --

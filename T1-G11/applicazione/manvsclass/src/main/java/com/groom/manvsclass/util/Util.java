@@ -4,8 +4,8 @@
 package com.groom.manvsclass.util;
 
 import com.groom.manvsclass.model.interactionMongoDB;
-import com.groom.manvsclass.model.repository.mongo.InteractionRepository;
-import com.groom.manvsclass.model.repository.mongo.SearchRepositoryImpl;
+import com.groom.manvsclass.model.repository.mongo.InteractionRepositoryMongoDB;
+import com.groom.manvsclass.model.repository.mongo.SearchRepositoryImplMongoDB;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -22,10 +22,10 @@ import java.util.UUID;
 public class Util {
 
     @Autowired
-    private InteractionRepository repo_int;
+    private InteractionRepositoryMongoDB repo_int;
 
     @Autowired
-    private SearchRepositoryImpl srepo;
+    private SearchRepositoryImplMongoDB srepo;
 
     @Autowired
     private MongoTemplate mongoTemplate;
