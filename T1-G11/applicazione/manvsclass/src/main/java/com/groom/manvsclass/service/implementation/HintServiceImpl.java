@@ -25,6 +25,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.transaction.Transactional;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 import java.io.IOException;
@@ -81,6 +82,10 @@ public class HintServiceImpl implements HintService {
     public String createHintsFromFile(MultipartFile file, List<MultipartFile> imageFiles, String jwtToken) {
 
         jwtVerify(jwtToken);
+
+        if (imageFiles == null) {
+            imageFiles = Collections.emptyList();
+        }
 
         String adminEmail = jwtService.getAdminFromJwt(jwtToken);
         if (adminEmail == null) {
@@ -186,7 +191,8 @@ public class HintServiceImpl implements HintService {
                         String newFileName = System.currentTimeMillis() + "_" + identifier;
                         Path filePath = Paths.get(uploadDir, newFileName);
                         imageFile.transferTo(filePath.toFile());
-                        hintEntity.setImageUri(uploadDir + newFileName);
+                        //hintEntity.setImageUri(uploadDir + newFileName);
+                        hintEntity.setImageUri("/uploads/" + newFileName);
 
                     } catch (IOException e) {
                         log.error("Errore durante il salvataggio del file immagine {}: {}", identifier, e.getMessage());
@@ -267,23 +273,23 @@ public class HintServiceImpl implements HintService {
     }
 
     private void deleteImageFile(String imageUri) {
-        if (imageUri != null && !imageUri.trim().isEmpty()) {
+        if (imageUri != null && !imageUri.trim().isEmpty() && imageUri.startsWith("/uploads/")) {
             try {
-                Path filePath = Paths.get(imageUri);
+                // Rimuovi il prefisso HTTP "/uploads/" per ottenere il nome del file
+                String fileName = imageUri.substring("/uploads/".length());
 
-                if (imageUri.startsWith(uploadDir) && Files.exists(filePath)) {
+                // Ricostruisci il percorso fisico usando la directory di upload
+                Path filePath = Paths.get(uploadDir, fileName);
+
+                if (Files.exists(filePath)) {
                     Files.delete(filePath);
-                    log.info("File immagine eliminato con successo: {}", imageUri);
-
-                } else if (Files.exists(filePath)) {
-
-                    log.warn("File immagine trovato ma non nella directory di upload definita. Percorso: {}", imageUri);
+                    log.info("File immagine eliminato con successo: {}", filePath);
+                } else {
+                    log.warn("File immagine non trovato nel percorso fisico: {}", filePath);
                 }
             } catch (IOException e) {
-
                 log.error("Errore durante l'eliminazione del file immagine {}: {}", imageUri, e.getMessage());
             } catch (Exception e) {
-
                 log.error("Errore generico durante l'eliminazione del file immagine {}: {}", imageUri, e.getMessage());
             }
         }
@@ -293,5 +299,32 @@ public class HintServiceImpl implements HintService {
         if (jwtToken == null || jwtToken.isEmpty() || !jwtService.isJwtValid(jwtToken)) {
             throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Invalid JWT token");
         }
+    }
+
+    @Transactional
+    public String deleteHintsByType(String type, String jwtToken) {
+        jwtVerify(jwtToken);
+
+        HintTypeEnum typeEnum;
+        try {
+            typeEnum = HintTypeEnum.valueOf(type);
+        } catch (IllegalArgumentException e) {
+            return "Errore: Il tipo '" + type + "' non è valido. Usa 'CLASS' o 'GENERIC'.";
+        }
+
+        List<HintEntity> hintsToDelete = hintRepository.findByType(typeEnum);
+
+        if (hintsToDelete.isEmpty()) {
+            return "Nessun suggerimento di tipo " + type + " trovato.";
+        }
+        for (HintEntity hintEntity : hintsToDelete) {
+            if (hintEntity.getImageUri() != null && !hintEntity.getImageUri().isEmpty()) {
+                deleteImageFile(hintEntity.getImageUri());
+            }
+        }
+
+        hintRepository.deleteByType(typeEnum);
+
+        return "Tutti i suggerimenti di tipo " + type + " sono stati eliminati con successo.";
     }
 }

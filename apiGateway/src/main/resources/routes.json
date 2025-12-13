@@ -3,7 +3,7 @@
     "name": "t1-service",
     "path": "/t1/**",
     "method": "GET",
-    "targetService": "http://host.docker.internal:8081"
+    "targetService": "http://localhost:8081"
   },
   {
     "name": "t23-service",

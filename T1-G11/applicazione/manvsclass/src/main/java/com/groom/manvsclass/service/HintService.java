@@ -18,4 +18,5 @@ public interface HintService {
 
     String deleteHintByClassUTAndOrder(String classUT, Integer order, String jwtToken);
 
+    String deleteHintsByType(String type, String jwtToken);
 }

@@ -1,6 +1,7 @@
 package com.groom.manvsclass.model.repository;
 
 import com.groom.manvsclass.model.HintEntity;
+import com.groom.manvsclass.model.dto.Hint;
 import com.groom.manvsclass.model.enums.HintTypeEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -40,5 +41,5 @@ public interface HintRepository extends JpaRepository<HintEntity, Long>, JpaSpec
 
     HintEntity findByTypeAndOrder(HintTypeEnum type, Integer order);
 
-
+    void deleteByType(HintTypeEnum type);
 }

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title th:text="#{hints_upload_page_title}">Carica Suggerimenti</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link th:href="@{https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css}" rel="stylesheet">
+    <link th:href="@{https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css}" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f7f6;
+            margin-top: 20px;
+        }
+        .file_manager .file {
+            position: relative;
+            border-radius: .55rem;
+            overflow: hidden;
+            padding: 0 !important;
+        }
+        .file_manager .file .icon {
+            text-align: center;
+            padding: 15px 10px;
+        }
+        .file_manager .file .icon i {
+            font-size: 30px;
+            color: #777;
+        }
+        .card {
+            background: #fff;
+            transition: .5s;
+            border: 0;
+            margin-bottom: 30px;
+            border-radius: .55rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 1050;
+        }
+        #loadingModal {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+<div id="main-content" class="file_manager">
+    <div class="container w-50">
+        <div class="card">
+            <div class="file text-center pt-3">
+                <p class="h3" th:text="#{hints_upload_title}">Caricamento Suggerimenti</p>
+                <div class="icon my-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="55" height="55" fill="currentColor" class="bi bi-lightbulb-fill text-warning" viewBox="0 0 16 16">
+                        <path d="M2 5a3 3 0 0 1 6 0a.75.75 0 0 0 1.5 0a4.5 4.5 0 0 0-9 0a.75.75 0 0 0 1.5 0zM12 5a4 4 0 0 0-8 0a.5.5 0 0 1-1 0a5 5 0 0 1 10 0a.5.5 0 0 1-1 0zM7 11.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5z"/>
+                        <path d="M6.5 14.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/>
+                        <path d="M11 5.5a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V6a.5.5 0 0 0-.5-.5zM5 5.5a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M12.5 14.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2zM6 13.5a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H6z"/>
+                        <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="uploadHintsForm">
+                    <div class="form-group">
+                        <label for="hintFile" th:text="#{hints_upload_file}">File JSON Suggerimenti (*)</label>
+                        <input type="file" class="form-control-file" id="hintFile" accept=".json">
+                        <small class="form-text text-muted" th:text="#{hints_upload_file_descr}">Carica un file JSON contenente un array di oggetti Hint.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="imageFiles" th:text="#{hints_upload_images}">Immagini (Opzionale)</label>
+                        <input type="file" class="form-control-file" id="imageFiles" multiple>
+                        <small class="form-text text-muted" th:text="#{hints_upload_images_descr}">Allega le immagini i cui URI sono specificati nel JSON.</small>
+                    </div>
+
+                    <div class="form-group text-center mt-4">
+                        <button type="button" onclick="uploadHints()" class="btn btn-success" id="uploadButton" th:text="#{hints_upload_button}">Carica Suggerimenti</button>
+                        <button type="button" onclick="goBack()" class="btn btn-secondary ml-2" th:text="#{uploadRobots_go_back}">Indietro</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="loadingOverlay">
+            <div id="loadingModal">
+                <p th:text="#{uploadRobots_uploading}">Caricamento in corso...</p>
+            </div>
+        </div>
+
+        <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="successModalLabel" th:text="#{hints_upload_success_title}">Successo</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" th:text="#{hints_upload_success}">
+                        Suggerimenti caricati con successo.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="redirectToHintsMain()">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="customErrorModal" tabindex="-1" role="dialog" aria-labelledby="customErrorModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content border-danger">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="customErrorModalLabel">Errore</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body text-danger font-weight-bold">
+                        <p id="customErrorText">Si è verificato un errore.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Chiudi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <br>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+    const errors = {
+        notHandled: /*[[#{error.nothandled}]]*/ "Si è verificato un errore, riprova più tardi"
+    };
+</script>
+
+<script th:src="@{/t1/js/utils/endpoints.js}"></script>
+<script th:src="@{/t1/js/utils/api.js}"></script>
+<script th:src="@{/t1/js/utils/cookie_util.js}"></script>
+<script th:src="@{/t1/js/utils/renderErrors.js}"></script>
+
+<script th:src="@{/t1/js/hints/hints_upload.js}"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", uploadButtonState);
+    document.getElementById("hintFile").addEventListener("change", uploadButtonState);
+
+    function uploadButtonState() {
+        const fileIsSelected = document.getElementById("hintFile").files.length > 0;
+        const uploadButton = document.getElementById('uploadButton');
+        if (!fileIsSelected) {
+            uploadButton.setAttribute("disabled", "disabled");
+        } else {
+            uploadButton.removeAttribute("disabled");
+        }
+    }
+
+    function goBack() {
+        window.history.back();
+    }
+
+    function redirectToHintsMain() {
+        window.location.href = VIEWS.HINTS_MAIN;
+    }
+</script>
+</body>
+</html>

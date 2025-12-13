@@ -45,12 +45,21 @@ public class HintController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @DeleteMapping("/{classUTName}/{order}")
+    @DeleteMapping("/className/{classUTName}/order/{order}")
     public ResponseEntity<String> deleteHintsByClassUtNameAndOrder(
             @CookieValue(name = "jwt") String jwtToken,
             @PathVariable("classUTName") String classUTName,
             @PathVariable("order") Integer order) {
         String response = hintService.deleteHintByClassUTAndOrder(classUTName, order, jwtToken);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/type/{type}")
+    public ResponseEntity<String> deleteHintsByType(
+            @CookieValue(name = "jwt") String jwtToken,
+            @PathVariable("type") String type) {
+
+        String response = hintService.deleteHintsByType(type, jwtToken);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
