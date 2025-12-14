@@ -29,7 +29,7 @@ public class RedisConfig {
 
     @Bean
     public LettuceConnectionFactory redisConnectionFactory() {
-        String redisHost = System.getenv().getOrDefault("REDIS_HOST", "localhost"); // Usa env var o default
+        String redisHost = System.getenv().getOrDefault("REDIS_HOST", "redis-container"); // Usa env var o default
         int redisPort = Integer.parseInt(System.getenv().getOrDefault("REDIS_PORT", "6380")); // Converte la porta
 
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
