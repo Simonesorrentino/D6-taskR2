@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -119,6 +120,8 @@ public class OpponentServiceImpl implements OpponentService {
 
         // Parsing dei dettagli della classe
         ObjectMapper mapper = new ObjectMapper();
+        // Aggiungi il modulo JavaTimeModule se hai errori sulle date qui, come visto prima
+        // mapper.registerModule(new JavaTimeModule());
         ClassUTEntity classe = mapper.readValue(classUTDetails, ClassUTEntity.class);
 
         // Nome del file e dimensione
@@ -127,16 +130,16 @@ public class OpponentServiceImpl implements OpponentService {
 
         System.out.println("Salvataggio di " + classUTFileName + " nel filesystem condiviso");
 
-        // Salvataggio del file della classe e robot associati
-        FileUploadUtil.saveCLassFile(classUTFileName, classe.getName(), classUTFile);
-        saveOpponentsFromZip(classUTFileName, classe.getName(), classUTFile, robotTestsZip);
+        // --- MODIFICA INIZIA QUI ---
 
-        // Popola la risposta
+        // 1. Prima salviamo il file fisico
+        FileUploadUtil.saveCLassFile(classUTFileName, classe.getName(), classUTFile);
+
+        // 2. Prepariamo i dati dell'entità
         response.setFileName(classUTFileName);
         response.setSize(size);
         response.setDownloadUri("/downloadFile");
 
-        // Imposta i metadati della classe
         classe.setUri(String.format("%s/%s/%s/%s",
                 VOLUME_T0_BASE_PATH,
                 UNMODIFIED_SRC,
@@ -145,7 +148,14 @@ public class OpponentServiceImpl implements OpponentService {
 
         classe.setDate(LocalDate.now());
 
-        classUTRepository.save(classe);
+        // 3. SALVIAMO SU DB ORA (Prima di processare lo zip!)
+        // Usiamo saveAndFlush per garantire che findById lo trovi subito dopo
+        classUTRepository.saveAndFlush(classe);
+
+        // 4. ORA possiamo chiamare il metodo che cercherà questa classe nel DB
+        saveOpponentsFromZip(classUTFileName, classe.getName(), classUTFile, robotTestsZip);
+
+        // --- MODIFICA FINISCE QUI ---
 
         System.out.println("Operazione completata con successo (uploadTest)");
 
@@ -470,7 +480,9 @@ public class OpponentServiceImpl implements OpponentService {
             }
 
             Files.createDirectories(Paths.get(String.format("%s/%s", toTestPath, testPackagePath)).normalize());
-            Files.copy(src.toPath(), Paths.get(String.format("%s/%s/%s", toTestPath, testPackagePath, src.getName())).normalize());
+            Files.copy(src.toPath(),
+                    Paths.get(String.format("%s/%s/%s", toTestPath, testPackagePath, src.getName())), // O come stavi costruendo il path
+                    StandardCopyOption.REPLACE_EXISTING);
         }
 
         return new String[][]{srcPackageName, testPackageName};
@@ -507,12 +519,12 @@ public class OpponentServiceImpl implements OpponentService {
                     continue;
                 }
 
-                Files.copy(coverageFile.toPath(), Paths.get(String.format("%s/%s", coveragePath, coverageFile.getName())));
+                Files.copy(coverageFile.toPath(), Paths.get(String.format("%s/%s", coveragePath, coverageFile.getName())), StandardCopyOption.REPLACE_EXISTING);
                 jacocoFound = true;
             }
 
             if (coverageFile.getName().equals(EVOSUITE_COVERAGE_FILE)) {
-                Files.copy(coverageFile.toPath(), Paths.get(String.format("%s/%s", coveragePath, coverageFile.getName())));
+                Files.copy(coverageFile.toPath(), Paths.get(String.format("%s/%s", coveragePath, coverageFile.getName())), StandardCopyOption.REPLACE_EXISTING);
                 evosuiteFound = true;
             }
         }
@@ -675,7 +687,7 @@ public class OpponentServiceImpl implements OpponentService {
             opponentEntity.setEvosuiteScore(evosuiteScore);
             opponentEntity.setJacocoScore(jacocoScore);
 
-            opponentRepository.save(opponentEntity);
+            opponentRepository.saveAndFlush(opponentEntity);
 
             for (GameMode mode : GameMode.values()) {
                 apiGatewayClient.callAddNewOpponent(classUTName, mode, robotType, difficulty);

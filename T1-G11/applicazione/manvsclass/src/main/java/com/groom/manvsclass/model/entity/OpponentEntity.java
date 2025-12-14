@@ -40,6 +40,7 @@ public class OpponentEntity {
     @Column(name = "opponent_type")
     private String opponentType;
 
+    @Lob
     @Column(name = "coverage")
     private String coverage;
 
