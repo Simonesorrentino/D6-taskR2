@@ -6,10 +6,7 @@ import com.groom.manvsclass.model.entity.AdminEntity;
 import com.groom.manvsclass.model.entity.ClassUTEntity;
 import com.groom.manvsclass.model.entity.OperationEntity;
 import com.groom.manvsclass.model.entity.OpponentEntity;
-import com.groom.manvsclass.model.repository.AdminRepository;
-import com.groom.manvsclass.model.repository.ClassUTRepository;
-import com.groom.manvsclass.model.repository.OperationRepository;
-import com.groom.manvsclass.model.repository.OpponentRepository;
+import com.groom.manvsclass.model.repository.*;
 import com.groom.manvsclass.service.ClassUTService;
 import com.groom.manvsclass.service.OpponentService;
 import com.groom.manvsclass.service.exception.CoverageNotFoundException;
@@ -28,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +41,7 @@ import testrobotchallenge.commons.models.score.JacocoScore;
 import testrobotchallenge.commons.util.ExtractScore;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -88,6 +87,9 @@ public class OpponentServiceImpl implements OpponentService {
 
     @Autowired
     private OpponentService opponentService;
+
+    @Autowired
+    private HintRepository hintRepository;
 
     /*
      * Restituisce la lista di classi UT disponibili nel sistema
@@ -220,7 +222,7 @@ public class OpponentServiceImpl implements OpponentService {
             userAdminEntity.setUsername("default");
             userAdminEntity.setPassword("default");
             userAdminEntity.setSurname("default");
-            OperationEntity operationEntity1 = new OperationEntity((int) operationRepository.count(), userAdminEntity, newContent, 1, data);
+            OperationEntity operationEntity1 = new OperationEntity((int) operationRepository.count(), userAdminEntity, newContent.getName(), 1, data);
             operationRepository.save(operationEntity1);
             return new ResponseEntity<>("Aggiornamento eseguito correttamente.", HttpStatus.OK);
         } else {
@@ -229,45 +231,105 @@ public class OpponentServiceImpl implements OpponentService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<?> eliminaClasse(String name) {
+
+        // 1. Pulizia file su disco
         eliminaFile(name);
-        LocalDate currentDate = LocalDate.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String data = currentDate.format(formatter);
 
+        // 2. Controllo/Creazione Admin
         AdminEntity adminEntity = adminRepository.findByUsername("userAdmin");
-        ClassUTEntity classUTEntity = classUTRepository.findById(name).get();
+        if (adminEntity == null) {
+            // ... (codice creazione admin default come prima) ...
+            adminEntity = new AdminEntity();
+            adminEntity.setEmail("admin@default.com");
+            adminEntity.setUsername("userAdmin");
+            adminEntity.setPassword("default");
+            adminEntity.setName("System");
+            adminEntity.setSurname("Admin");
+            adminRepository.saveAndFlush(adminEntity);
+        }
 
-        OperationEntity operationEntity1 = new OperationEntity((int) operationRepository.count(), adminEntity, classUTEntity, 2, data);
-        operationRepository.save(operationEntity1);
-        ClassUTEntity deletedClass = classUTService.deleteClassUT(name);
+        ClassUTEntity classUTEntity = classUTRepository.findById(name).orElse(null);
 
-        opponentService.eliminaOpponent(name);
+        if (classUTEntity != null) {
 
-        apiGatewayClient.callDeleteAllClassUTOpponents(name);
-        if (deletedClass != null) {
-            return ResponseEntity.ok().body(deletedClass);
+            hintRepository.deleteByClassUt_Name(name);
+
+            // 2. Elimina Opponent (Avversari) - QUELLO CHE MANCAVA
+            // Usiamo il repository locale per pulire la tabella SQL 'opponent'
+            opponentRepository.deleteByClassUtName(name);
+
+            // Chiamata al microservizio esterno (per pulire l'altro lato, se esiste)
+            try {
+                apiGatewayClient.callDeleteAllClassUTOpponents(name);
+            } catch (Exception e) {
+                log.warn("Errore durante la chiamata al gateway per eliminare opponenti remoti: " + e.getMessage());
+            }
+
+            // 3. Pulisci Operation (se necessario, in base alla tua modifica precedente)
+            // Se hai tolto la FK, questo passaggio è opzionale ma male non fa
+            // operationRepository.deleteByClassName(name);
+
+            // === CRUCIALE: FLUSH ===
+            // Diciamo al database: "Esegui ORA queste cancellazioni, non aspettare!"
+            hintRepository.flush();
+            opponentRepository.flush();
+            // operationRepository.flush();
+
+            // === FASE DI LOG (Facoltativa, senza FK) ===
+            try {
+                // Assicurati che OperationEntity accetti la STRINGA 'name' nel costruttore
+                OperationEntity logDelete = new OperationEntity(
+                        (int) operationRepository.count() + 1,
+                        adminEntity,
+                        name, // Passiamo solo la stringa
+                        2,
+                        LocalDate.now().toString()
+                );
+                operationRepository.saveAndFlush(logDelete);
+            } catch (Exception e) {
+                log.warn("Log saltato: " + e.getMessage());
+            }
+
+            // === FASE FINALE: ELIMINAZIONE CLASSE ===
+            // Ora la tabella 'opponent' è vuota per questa classe, quindi il vincolo FK non scatterà.
+            ClassUTEntity deletedClass = classUTService.deleteClassUT(name);
+
+            return ResponseEntity.ok("Classe eliminata con successo");
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Classe non trovata");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Classe non trovata nel DB");
         }
     }
 
     @Override
     public void eliminaFile(String fileName) {
+        // Costruiamo i percorsi
         File directory = new File(String.format("%s/%s", VOLUME_T0_BASE_PATH, fileName));
         File directoryUnmodifiedSrc = new File(String.format("%s/%s/%s", VOLUME_T0_BASE_PATH, UNMODIFIED_SRC, fileName));
 
-        System.out.println("name: " + fileName);
+        log.info("Tentativo eliminazione cartella: {}", directory.getAbsolutePath());
+
+        // Tentativo 1: Eliminazione cartella principale
         if (directory.exists() && directory.isDirectory()) {
             try {
                 FileOperationUtil.deleteDirectoryRecursively(directory.toPath());
-                FileOperationUtil.deleteDirectoryRecursively(directoryUnmodifiedSrc.toPath());
-                log.info("Cartella eliminata con successo (/deleteFile/{fileName})");
+                log.info("Cartella eliminata: {}", directory.getName());
             } catch (IOException e) {
-                throw new RuntimeException("Impossibile eliminare la cartella.");
+                log.error("Errore eliminazione cartella {}", directory.getName(), e);
+                // Non lanciamo eccezione bloccante, proviamo a continuare
             }
         } else {
-            throw new RuntimeException("Cartella non trovata.");
+            log.warn("Attenzione: La cartella {} non esiste fisicamente su disco, procedo comunque con l'eliminazione dal DB.", directory.getAbsolutePath());
+        }
+
+        // Tentativo 2: Eliminazione src non modificato
+        if (directoryUnmodifiedSrc.exists() && directoryUnmodifiedSrc.isDirectory()) {
+            try {
+                FileOperationUtil.deleteDirectoryRecursively(directoryUnmodifiedSrc.toPath());
+            } catch (IOException e) {
+                log.error("Errore eliminazione src unmodified {}", directoryUnmodifiedSrc.getName(), e);
+            }
         }
     }
 

@@ -1,6 +1,5 @@
 package com.groom.manvsclass.service.implementation;
 
-
 import com.groom.manvsclass.model.entity.AdminEntity;
 import com.groom.manvsclass.model.entity.ClassUTEntity;
 import com.groom.manvsclass.model.repository.AdminRepository;
@@ -45,21 +44,37 @@ public class AdminServiceImpl implements AdminService {
         this.emailService = emailService;
     }
 
-
+    // --- METODO AGGIORNATO PER LA CREAZIONE AUTOMATICA ---
     @Override
     public ResponseEntity<AdminEntity> getAdminByUsername(String username, String jwt) {
         if (jwtService.isJwtValid(jwt)) {
 
-            log.debug("Token valido, può ricercare admin per username (/admins/{username})");
+            log.debug("Token valido, ricerca admin per username: {}", username);
 
-            Optional<AdminEntity> adminEntity = adminRepository.findById(username);
+            // 1. Cerchiamo l'admin per Username (non per ID, dato che l'ID sembra essere l'email)
+            // Assicurati che AdminRepository abbia: AdminEntity findByUsername(String username);
+            AdminEntity adminEntity = adminRepository.findByUsername(username);
 
-            if (adminEntity.isPresent()) {
-
-                log.debug("Operazione avvenuta con successo (/admins/{username})");
-                return ResponseEntity.ok().body(adminEntity.get());
+            if (adminEntity != null) {
+                log.debug("Admin trovato nel DB locale: {}", username);
+                return ResponseEntity.ok().body(adminEntity);
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                // 2. SE NON ESISTE: Lo creiamo al volo (Lazy Creation / Sincronizzazione da T23)
+                log.info("Admin '{}' non trovato nel DB locale. Creazione automatica.", username);
+
+                AdminEntity newAdmin = new AdminEntity();
+                newAdmin.setUsername(username);
+                newAdmin.setEmail(username);
+
+                newAdmin.setName("Nome");
+                newAdmin.setSurname("Cognome");
+                newAdmin.setPassword("password");
+
+                // Salviamo nel DB locale
+                adminRepository.saveAndFlush(newAdmin);
+                log.info("Nuovo admin salvato correttamente.");
+
+                return ResponseEntity.ok().body(newAdmin);
             }
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
@@ -78,7 +93,8 @@ public class AdminServiceImpl implements AdminService {
         }
 
         AdminEntity adminEntityInvited = adminRepository.findByInvitationToken(adminEntity.getInvitationToken());
-        if (!adminEntityInvited.getInvitationToken().equals(adminEntity.getInvitationToken())) {
+        // Fix potenziale NullPointerException: controlliamo se invited è null prima di chiamare i metodi
+        if (adminEntityInvited == null || !adminEntityInvited.getInvitationToken().equals(adminEntity.getInvitationToken())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token di invito invalido!");
         }
 

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
-import com.vladmihalcea.hibernate.type.json.JsonType;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.*;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
@@ -14,7 +14,6 @@ import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 @Getter
 @Setter
@@ -22,7 +21,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Entity(name = "class_ut")
-@TypeDef(name = "json", typeClass = JsonType.class)
+@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 public class ClassUTEntity {
 
     @Id
@@ -44,7 +43,7 @@ public class ClassUTEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Type(type = "json")
+    @Type(type = "jsonb")
     @Column(name = "category", columnDefinition = "jsonb")
     private List<String> category; // Mappato come String per un semplice JSONB
 

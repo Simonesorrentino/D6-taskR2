@@ -44,4 +44,6 @@ public interface HintRepository extends JpaRepository<HintEntity, Long>, JpaSpec
     );
 
     Optional<HintEntity> findByClassUtNameAndTypeAndOrder(String classUtName, HintTypeEnum type, Integer order);
+
+    void deleteByClassUt_Name(String name);
 }

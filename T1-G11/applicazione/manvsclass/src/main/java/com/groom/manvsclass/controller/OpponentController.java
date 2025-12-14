@@ -122,7 +122,7 @@ public class OpponentController {
     }
 
 
-    @GetMapping("/downloadFile/{name}")
+    @GetMapping("/download/{name}")
     public ResponseEntity<?> downloadClasse(@PathVariable("name") String name) {
         try {
             return opponentService.downloadClasse(name);

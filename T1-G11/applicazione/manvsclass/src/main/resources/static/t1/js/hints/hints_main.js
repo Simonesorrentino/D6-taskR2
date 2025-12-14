@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Stefano Marano
- * Versione: Full Bootstrap Modals (No native alerts)
+ * Versione: Full Bootstrap Modals (Fix Edit Reload)
  */
 
 // === CONFIGURAZIONE URL ===
@@ -65,7 +65,7 @@ function setDynamicContent(html) {
     document.getElementById('dynamic-content').innerHTML = html;
 }
 
-// === GESTIONE MODALI DI CONFERMA (Nuova Funzione) ===
+// === GESTIONE MODALI DI CONFERMA ===
 function showConfirmModal(message, confirmCallback) {
     // 1. Imposta il testo del messaggio
     document.getElementById('confirmModalBody').innerText = message;
@@ -79,7 +79,6 @@ function showConfirmModal(message, confirmCallback) {
 
 // Listener per il bottone "Sì" della modale (definito una volta sola all'avvio)
 document.addEventListener("DOMContentLoaded", () => {
-    // ... altri listener esistenti ...
     const confirmBtn = document.getElementById('confirmModalBtn');
     if(confirmBtn) {
         confirmBtn.addEventListener('click', () => {
@@ -142,7 +141,7 @@ function getActionButtons(hintId, isFirst) {
         </div>`;
 }
 
-// === FUNZIONI DI ELIMINAZIONE (Aggiornate per usare showConfirmModal) ===
+// === FUNZIONI DI ELIMINAZIONE ===
 
 // Wrapper per l'eliminazione singolo suggerimento
 function tryDeleteHint(classUTName, order) {
@@ -245,7 +244,7 @@ async function moveHintJS(id, direction) {
     } catch (e) { console.error("Errore rete", e); }
 }
 
-// === VISTE DI RENDERING (Aggiornati i button onclick) ===
+// === VISTE DI RENDERING ===
 
 async function renderGenericHintsView(addToHistory = true) {
     if (addToHistory) history.pushState({ view: 'generic' }, "Generic Hints", "#generic");
@@ -259,7 +258,6 @@ async function renderGenericHintsView(addToHistory = true) {
         if (searchTerm) queryParams += `&search=${encodeURIComponent(searchTerm)}`;
         const hints = await callGetHints(queryParams);
 
-        // NOTA: Aggiornato onclick per usare tryDeleteAllGeneric()
         const headerButtons = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>${getSearchBarHtml('placeholder_search', searchTerm)}</div>
@@ -298,7 +296,6 @@ async function renderClassHintsListView(addToHistory = true) {
         if (searchTerm) queryParams += `&search=${encodeURIComponent(searchTerm)}`;
         const hints = await callGetHints(queryParams);
 
-        // NOTA: Aggiornato onclick per usare tryDeleteAllClassHints()
         const headerButtons = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>${getSearchBarHtml('placeholder_class', searchTerm)}</div>
@@ -340,7 +337,6 @@ async function renderClassHintsDetailView(classUTName, addToHistory = true) {
         if (searchTerm) queryParams += `&search=${encodeURIComponent(searchTerm)}`;
         const hints = await callGetHints(queryParams);
 
-        // NOTA: Aggiornato onclick per usare tryDeleteAllSpecific()
         const headerButtons = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex align-items-center">${getSearchBarHtml('placeholder_simple', searchTerm)}</div>
@@ -384,7 +380,6 @@ async function renderHintDetailView(order, type, classUTName = null, addToHistor
         const currentClassUTName = hintData.classUTName || 'null';
         const safeName = escapeHtml(hintData.name);
 
-        // NOTA: onclick usa tryDeleteHint
         const detailHtml = `
             <h2>${t('title_detail', safeName)}</h2>
             <div class="card p-4 mt-3">
@@ -404,7 +399,7 @@ async function renderHintDetailView(order, type, classUTName = null, addToHistor
     } catch (e) { setDynamicContent(`<p class="text-danger">${t('msg_error_fetch', e.message)}</p>`); }
 }
 
-// === EDIT E MODALI (Invariati) ===
+// === EDIT E MODALI ===
 function openEditModal() {
     if (!currentActiveHint) { alert(t('err_data_missing')); return; }
     document.getElementById('editHintForm').reset();
@@ -413,14 +408,14 @@ function openEditModal() {
     document.getElementById('editHintContent').value = currentActiveHint.content;
     $('#editHintModal').modal('show');
 }
+
+// --- FUNZIONE AGGIORNATA ---
 async function submitEditHint() {
-    // Nota: qui ho lasciato l'alert per la validazione client side rapida, ma potresti volerlo sostituire.
-    // Per coerenza, se vuoi eliminare ANCHE QUESTI alert, dovremmo fare una modale informativa generica anche qui.
-    // Per ora mi limito a quelli di cancellazione come richiesto, ma fammi sapere se vuoi togliere anche questi.
     const id = document.getElementById('editHintId').value;
     const name = document.getElementById('editHintName').value;
     const content = document.getElementById('editHintContent').value;
     const imageInput = document.getElementById('editHintImage');
+
     if (!name || !content) { alert(t('err_fields_required')); return; }
 
     const formData = new FormData();
@@ -431,11 +426,39 @@ async function submitEditHint() {
     try {
         const token = getCookie("jwtToken");
         const response = await fetch(`/hints/update/${id}`, { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+
         if (response.ok) {
             $('#editHintModal').modal('hide');
-            if(currentActiveHint) { currentActiveHint.name = name; currentActiveHint.content = content; }
+
+            // Aggiorniamo i dati locali (opzionale, ma utile per fluidità)
+            if(currentActiveHint) {
+                currentActiveHint.name = name;
+                currentActiveHint.content = content;
+            }
+
+            // Setta i messaggi del modale
             document.getElementById('successModalLabel').innerText = t('title_success');
             document.getElementById('successMessageContent').innerText = t('msg_success_update');
+
+            // --- LA MODIFICA È QUI ---
+            // Invece di window.location.reload(), ricarichiamo la vista di dettaglio
+            $('#successModal .btn-primary').off('click').on('click', function() {
+                $('#successModal').modal('hide'); // Chiude il modale successo
+
+                if (currentActiveHint) {
+                    // Recuperiamo i parametri necessari per ri-renderizzare la vista
+                    const order = currentActiveHint.order;
+                    const type = currentActiveHint.type;
+                    const classUTName = currentActiveHint.classUTName || 'null';
+
+                    // Richiamiamo la funzione che disegna il dettaglio (false = non aggiungere alla history)
+                    renderHintDetailView(order, type, classUTName, false);
+                } else {
+                    // Fallback se per caso si sono persi i dati (ma non dovrebbe accadere)
+                    renderGenericHintsView(false);
+                }
+            });
+
             $('#successModal').modal('show');
         } else {
             const errorText = await response.text();
@@ -443,8 +466,8 @@ async function submitEditHint() {
         }
     } catch (error) { displayError(t('err_communication')); }
 }
+
 function displayError(message, containerId = null) {
-    // Questo crea un alert Bootstrap nella pagina, quindi va bene (non è un popup del browser)
     let errorContainer = containerId ? document.getElementById(containerId) : document.getElementById('api-error-alert-container');
     if (!errorContainer) errorContainer = document.getElementById('dynamic-content') || document.body;
     const oldAlert = document.getElementById('api-error-alert'); if (oldAlert) oldAlert.remove();
