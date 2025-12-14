@@ -26,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
                 org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class
         }
 )
+@EnableJpaRepositories(basePackages = "com.groom.manvsclass.model.repository")
 public class ManvsclassApplication {
 
     public static void main(String[] args) {

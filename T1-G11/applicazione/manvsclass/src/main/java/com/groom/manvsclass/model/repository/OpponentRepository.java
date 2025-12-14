@@ -1,4 +1,4 @@
-package com.groom.manvsclass.model.repository.jpa;
+package com.groom.manvsclass.model.repository;
 
 import com.groom.manvsclass.model.entity.OpponentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +9,7 @@ import testrobotchallenge.commons.models.opponent.OpponentDifficulty;
 import testrobotchallenge.commons.models.score.EvosuiteScore;
 import testrobotchallenge.commons.models.score.JacocoScore;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -49,5 +50,7 @@ public interface OpponentRepository extends JpaRepository<OpponentEntity, Long> 
             @Param("type") String type,
             @Param("difficulty") OpponentDifficulty difficulty
     );
+
+    List<OpponentEntity> findByClassUt_Name(String className);
 }
 

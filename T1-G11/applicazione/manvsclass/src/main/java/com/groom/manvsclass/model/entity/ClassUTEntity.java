@@ -1,7 +1,6 @@
 package com.groom.manvsclass.model.entity;
 
 import lombok.*;
-import org.hibernate.proxy.HibernateProxy;
 
 import javax.persistence.*;
 import java.time.LocalDate;

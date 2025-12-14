@@ -1,7 +1,7 @@
 package com.groom.manvsclass.controller.view;
 
 import com.groom.manvsclass.model.entity.ClassUTEntity;
-import com.groom.manvsclass.model.repository.jpa.ClassUTRepository;
+import com.groom.manvsclass.model.repository.ClassUTRepository;
 import com.groom.manvsclass.service.OpponentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

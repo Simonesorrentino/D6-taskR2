@@ -1,19 +1,36 @@
-package com.groom.manvsclass.service;
+package com.groom.manvsclass.service.implementation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groom.manvsclass.api.ApiGatewayClient;
+import com.groom.manvsclass.model.entity.AdminEntity;
 import com.groom.manvsclass.model.entity.ClassUTEntity;
+import com.groom.manvsclass.model.entity.OperationEntity;
 import com.groom.manvsclass.model.entity.OpponentEntity;
-import com.groom.manvsclass.model.repository.jpa.ClassUTRepository;
-import com.groom.manvsclass.model.repository.jpa.OpponentRepository;
+import com.groom.manvsclass.model.repository.AdminRepository;
+import com.groom.manvsclass.model.repository.ClassUTRepository;
+import com.groom.manvsclass.model.repository.OperationRepository;
+import com.groom.manvsclass.model.repository.OpponentRepository;
+import com.groom.manvsclass.service.ClassUTService;
+import com.groom.manvsclass.service.OpponentService;
+import com.groom.manvsclass.service.exception.CoverageNotFoundException;
+import com.groom.manvsclass.service.exception.OpponentNotFoundException;
+import com.groom.manvsclass.service.exception.ScoreNotFoundException;
 import com.groom.manvsclass.util.filesystem.FileOperationUtil;
+import com.groom.manvsclass.util.filesystem.download.FileDownloadUtil;
+import com.groom.manvsclass.util.filesystem.upload.FileUploadResponse;
+import com.groom.manvsclass.util.filesystem.upload.FileUploadUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import testrobotchallenge.commons.models.dto.score.EvosuiteCoverageDTO;
@@ -25,75 +42,313 @@ import testrobotchallenge.commons.models.score.EvosuiteScore;
 import testrobotchallenge.commons.models.score.JacocoScore;
 import testrobotchallenge.commons.util.ExtractScore;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
-public class UploadOpponentService {
-    public static final String VOLUME_T0_BASE_PATH = "/VolumeT0/FolderTree/ClassUT/";
-    public static final String UNMODIFIED_SRC = "unmodified_src";
-    public static final String BASE_SRC_PATH = "src/main/java";
-    public static final String BASE_TEST_PATH = "src/test/java";
-    public static final String BASE_COVERAGE_PATH = "coverage";
+public class OpponentServiceImpl implements OpponentService {
 
-    private static final String BASE_CODE_PATH = "project";
-    private static final String JACOCO_COVERAGE_FILE = "coveragetot.xml";
-    private static final String EVOSUITE_COVERAGE_FILE = "statistics.csv";
+//    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(String.valueOf(OpponentServiceImpl.class));
 
-    private final Logger logger = LoggerFactory.getLogger(UploadOpponentService.class);
+    @Autowired
+    private OpponentRepository opponentRepository;
 
-    private final ApiGatewayClient apiGatewayClient;
-    private final OpponentRepository opponentRepository;
-    private final ClassUTRepository classUTRepository;
+    private AdminEntity userAdminEntity = new AdminEntity();
 
-    public UploadOpponentService(
-            ApiGatewayClient apiGatewayClient,
-            OpponentRepository opponentRepository,
-            ClassUTRepository classUTRepository) {
-        this.apiGatewayClient = apiGatewayClient;
-        this.opponentRepository = opponentRepository;
-        this.classUTRepository = classUTRepository;
-    }
+    @Autowired
+    private ApiGatewayClient apiGatewayClient;
+
+    @Autowired
+    private ClassUTRepository classUTRepository;
+
+    @Autowired
+    private OperationRepository operationRepository;
+
+    @Autowired
+    private AdminRepository adminRepository;
+
+    @Autowired
+    private ClassUTService classUTService;
+
+    @Autowired
+    private OpponentService opponentService;
 
     /*
-     *
+     * Restituisce la lista di classi UT disponibili nel sistema
      */
+    @Override
+    public ResponseEntity<?> getNomiClassiUT(String jwt) {
+        // 2. Recupera tutte le ClassUT dal repository e restituisce solo i nomi
+        List<String> classNames = classUTRepository.findAll()
+                .stream()
+                .map(ClassUTEntity::getName) // Estrae solo i nomi
+                .collect(Collectors.toList());
+
+        // 3. Ritorna i nomi delle classi con lo status HTTP 200 (OK)
+        return ResponseEntity.ok(classNames);
+    }
+
+    @Override
+    public ResponseEntity<FileUploadResponse> uploadOpponent(
+            MultipartFile classUTFile,
+            String classUTDetails,
+            MultipartFile robotTestsZip) throws IOException {
+
+        FileUploadResponse response = new FileUploadResponse();
+
+        // Verifica che il file della classe sia stato ricevuto
+        if (classUTFile == null || classUTFile.isEmpty()) {
+            response.setErrorMessage("Errore: file della classe non ricevuto o vuoto.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        // Parsing dei dettagli della classe
+        ObjectMapper mapper = new ObjectMapper();
+        ClassUTEntity classe = mapper.readValue(classUTDetails, ClassUTEntity.class);
+
+        // Nome del file e dimensione
+        String classUTFileName = StringUtils.cleanPath(Objects.requireNonNull(classUTFile.getOriginalFilename()));
+        long size = classUTFile.getSize();
+
+        System.out.println("Salvataggio di " + classUTFileName + " nel filesystem condiviso");
+
+        // Salvataggio del file della classe e robot associati
+        FileUploadUtil.saveCLassFile(classUTFileName, classe.getName(), classUTFile);
+        saveOpponentsFromZip(classUTFileName, classe.getName(), classUTFile, robotTestsZip);
+
+        // Popola la risposta
+        response.setFileName(classUTFileName);
+        response.setSize(size);
+        response.setDownloadUri("/downloadFile");
+
+        // Imposta i metadati della classe
+        classe.setUri(String.format("%s/%s/%s/%s",
+                VOLUME_T0_BASE_PATH,
+                UNMODIFIED_SRC,
+                classe.getName(),
+                classUTFileName));
+
+        classe.setDate(LocalDate.now());
+
+        classUTRepository.save(classe);
+
+        System.out.println("Operazione completata con successo (uploadTest)");
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<?> downloadClasse(@PathVariable("name") String name) throws Exception {
+
+        System.out.println("/downloadFile/{name} (HomeController) - name: " + name);
+        System.out.println("test");
+        try {
+            List<ClassUTEntity> classe = classUTRepository.findByNameLike(name);
+            System.out.println("File download:");
+            System.out.println(classe.get(0).getUri());
+            ResponseEntity file = FileDownloadUtil.downloadClassFile(classe.get(0).getUri());
+            return file;
+        } catch (Exception e) {
+            System.out.println("Classe UT non trovata");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ClasseUT " + name + " non trovata");
+        }
+    }
+
+    @Override
+    public List<ClassUTEntity> getAllClassUTs() {
+        return classUTRepository.findAll();
+    }
+
+    @Override
+    public List<ClassUTEntity> filterByDifficulty(String difficulty) {
+        return classUTRepository.findByDifficulty(difficulty);
+    }
+
+    @Override
+    public List<ClassUTEntity> orderByDate() {
+        return classUTRepository.findAllByOrderByDateAsc();
+    }
+
+    @Override
+    public List<ClassUTEntity> orderByName() {
+        return classUTRepository.findAllByOrderByNameAsc();
+    }
+
+    @Override
+    public ResponseEntity<String> modificaClasse(String name, ClassUTEntity newContent, String jwt, HttpServletRequest request) {
+        System.out.println("Token valido, può aggiornare informazioni inerenti le classi (update/{name})");
+
+        ClassUTEntity classUTEntity = new ClassUTEntity();
+        classUTEntity.setName(newContent.getName());
+        classUTEntity.setDifficulty(newContent.getDifficulty());
+        classUTEntity.setDescription(newContent.getDescription());
+        classUTEntity.setDate(newContent.getDate());
+        classUTEntity.setCategory(newContent.getCategory());
+
+        long modifiedCount = classUTService.updateClassUT(name, classUTEntity);
+
+        if (modifiedCount > 0) {
+            LocalDate currentDate = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String data = currentDate.format(formatter);
+            userAdminEntity.setName("default");
+            userAdminEntity.setUsername("default");
+            userAdminEntity.setPassword("default");
+            userAdminEntity.setSurname("default");
+            OperationEntity operationEntity1 = new OperationEntity((int) operationRepository.count(), userAdminEntity, newContent, 1, data);
+            operationRepository.save(operationEntity1);
+            return new ResponseEntity<>("Aggiornamento eseguito correttamente.", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Nessuna classe trovata o nessuna modifica effettuata.", HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> eliminaClasse(String name) {
+        eliminaFile(name);
+        LocalDate currentDate = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String data = currentDate.format(formatter);
+
+        AdminEntity adminEntity = adminRepository.findByUsername("userAdmin");
+        ClassUTEntity classUTEntity = classUTRepository.findById(name).get();
+
+        OperationEntity operationEntity1 = new OperationEntity((int) operationRepository.count(), adminEntity, classUTEntity, 2, data);
+        operationRepository.save(operationEntity1);
+        ClassUTEntity deletedClass = classUTService.deleteClassUT(name);
+
+        opponentService.eliminaOpponent(name);
+
+        apiGatewayClient.callDeleteAllClassUTOpponents(name);
+        if (deletedClass != null) {
+            return ResponseEntity.ok().body(deletedClass);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Classe non trovata");
+        }
+    }
+
+    @Override
+    public void eliminaFile(String fileName) {
+        File directory = new File(String.format("%s/%s", VOLUME_T0_BASE_PATH, fileName));
+        File directoryUnmodifiedSrc = new File(String.format("%s/%s/%s", VOLUME_T0_BASE_PATH, UNMODIFIED_SRC, fileName));
+
+        System.out.println("name: " + fileName);
+        if (directory.exists() && directory.isDirectory()) {
+            try {
+                FileOperationUtil.deleteDirectoryRecursively(directory.toPath());
+                FileOperationUtil.deleteDirectoryRecursively(directoryUnmodifiedSrc.toPath());
+                log.info("Cartella eliminata con successo (/deleteFile/{fileName})");
+            } catch (IOException e) {
+                throw new RuntimeException("Impossibile eliminare la cartella.");
+            }
+        } else {
+            throw new RuntimeException("Cartella non trovata.");
+        }
+    }
+
+    @Override
+    public List<OpponentEntity> getAllOpponents() {
+        return opponentRepository.findAll();
+    }
+
+    @Override
+    public OpponentEntity getOpponentData(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
+        Optional<OpponentEntity> opponent = opponentRepository.findByClassUt_NameAndOpponentTypeAndOpponentDifficulty(classUT, opponentType, opponentDifficulty);
+        if (opponent.isEmpty())
+            throw new OpponentNotFoundException();
+
+        return opponent.get();
+    }
+
+    @Override
+    public EvosuiteScore getOpponentEvosuiteScore(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
+        Optional<EvosuiteScore> score = opponentRepository.findEvosuiteScore(classUT,
+                opponentType, opponentDifficulty);
+
+        if (score.isEmpty())
+            throw new ScoreNotFoundException();
+
+        return score.get();
+    }
+
+    @Override
+    public JacocoScore getOpponentJacocoScore(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
+        Optional<JacocoScore> score = opponentRepository.findJacocoScore(classUT,
+                opponentType, opponentDifficulty);
+
+        if (score.isEmpty())
+            throw new ScoreNotFoundException();
+
+        return score.get();
+    }
+
+    @Override
+    public String getOpponentCoverage(String classUT, String opponentType, OpponentDifficulty opponentDifficulty) {
+        Optional<String> coverage = opponentRepository.findCoverage(classUT,
+                opponentType, opponentDifficulty);
+
+        if (coverage.isEmpty())
+            throw new CoverageNotFoundException();
+
+        return coverage.get();
+    }
+
+
+    @Override
+    public void eliminaOpponent(String className) {
+        List<OpponentEntity> opponents = opponentRepository.findByClassUt_Name(className);
+
+        if (!CollectionUtils.isEmpty(opponents)) {
+            OpponentEntity toRemove = opponents.get(0);
+            opponentRepository.delete(toRemove);
+
+        }
+    }
+
+
+
     public void saveOpponentsFromZip(String classUTFileName, String classUTName, MultipartFile classUTFile, MultipartFile robotTestsZip) throws IOException {
         Path operationTmpFolder = Paths.get(String.format("%s/%s/tmp", VOLUME_T0_BASE_PATH, classUTName));
         FileOperationUtil.saveFileInFileSystem("robot.zip", operationTmpFolder, robotTestsZip);
         FileOperationUtil.extractZipIn(operationTmpFolder);
 
         Path unmodifiedSrcCodePath = Paths.get(String.format("%s/%s/%s", VOLUME_T0_BASE_PATH, UNMODIFIED_SRC, classUTName));
-        logger.info("Saving unmodified src in {}", unmodifiedSrcCodePath);
+        log.info("Saving unmodified src in {}", unmodifiedSrcCodePath);
         FileOperationUtil.saveFileInFileSystem(classUTFileName, unmodifiedSrcCodePath, classUTFile);
 
         File robotGroupFolder = Objects.requireNonNull(operationTmpFolder.toFile().listFiles())[0];
-        logger.info("Robot tests folder {}", robotGroupFolder);
+        log.info("Robot tests folder {}", robotGroupFolder);
         for (File robotFolder : Objects.requireNonNull(robotGroupFolder.listFiles())) {
             if (!robotFolder.isDirectory()) {
-                logger.info("Ignoring file {} because it is not a directory", robotFolder);
+                log.info("Ignoring file {} because it is not a directory", robotFolder);
                 continue;
             }
 
             String robotType = robotFolder.getName();
             if (!robotType.endsWith("Test")) {
-                logger.info("Ignoring directory {} because it does not follow the naming convention", robotFolder);
+                log.info("Ignoring directory {} because it does not follow the naming convention", robotFolder);
                 continue;
             }
             robotType = robotType.substring(0, robotType.length() - 4);
             robotType = Character.toUpperCase(robotType.charAt(0)) + robotType.substring(1);
 
-            logger.info("Robot folder {}", robotFolder);
-            logger.info("Saving robot type {}", robotType);
+            log.info("Robot folder {}", robotFolder);
+            log.info("Saving robot type {}", robotType);
 
             uploadNewOpponents(classUTFileName, classUTName, classUTFile, robotFolder.toPath(), robotType, Paths.get(VOLUME_T0_BASE_PATH));
         }
@@ -268,24 +523,24 @@ public class UploadOpponentService {
     private void uploadNewOpponents(String classUTFileName, String classUTName, MultipartFile classUTFile, Path operationTmpFolder, String robotType, Path volumeBasePath) throws IOException {
         for (File levelFolder : Objects.requireNonNull(operationTmpFolder.toFile().listFiles())) {
             if (!levelFolder.isDirectory()) {
-                logger.info("Ignoring file " + levelFolder.getName() + " because it is not a directory");
+                log.info("Ignoring file " + levelFolder.getName() + " because it is not a directory");
                 continue;
             }
 
             if (!levelFolder.getName().matches("\\d{2,}Level")) {
-                logger.info("Ignoring folder " + levelFolder.getName() + " because it is not a level");
+                log.info("Ignoring folder " + levelFolder.getName() + " because it is not a level");
             }
 
             String level = levelFolder.getName();
 
-            logger.info("Saving level " + level);
+            log.info("Saving level " + level);
             Path toSrcPath = Paths.get(String.format("%s/%s/%s/%s/%s/%s", volumeBasePath, classUTName, robotType, BASE_CODE_PATH, level, BASE_SRC_PATH));
             Path toTestPath = Paths.get(String.format("%s/%s/%s/%s/%s/%s", volumeBasePath, classUTName, robotType, BASE_CODE_PATH, level, BASE_TEST_PATH));
             Path toCoveragePath = Paths.get(String.format("%s/%s/%s/%s/%s", volumeBasePath, classUTName, robotType, BASE_COVERAGE_PATH, level));
 
-            logger.info("Save SRC path " + toSrcPath);
-            logger.info("Save TESTS path " + toTestPath);
-            logger.info("Save COVERAGE path " + toCoveragePath);
+            log.info("Save SRC path " + toSrcPath);
+            log.info("Save TESTS path " + toTestPath);
+            log.info("Save COVERAGE path " + toCoveragePath);
 
             Path fromTestPath;
             Path fromCoveragePath;
@@ -300,21 +555,21 @@ public class UploadOpponentService {
                     break;
             }
 
-            logger.info("Robot TESTS path " + fromTestPath);
-            logger.info("Robot COVERAGE path " + fromCoveragePath);
+            log.info("Robot TESTS path " + fromTestPath);
+            log.info("Robot COVERAGE path " + fromCoveragePath);
 
             if (!Files.exists(fromTestPath)) {
-                logger.info("Skipping folder " + fromTestPath + " because it does not exist");
+                log.info("Skipping folder " + fromTestPath + " because it does not exist");
                 continue;
             }
 
             if (fromTestPath.toFile().listFiles().length == 0) {
-                logger.info("Skipping folder " + fromTestPath + " because it does not have any files");
+                log.info("Skipping folder " + fromTestPath + " because it does not have any files");
                 continue;
             }
 
             if (Arrays.stream(fromTestPath.toFile().listFiles()).noneMatch(file -> file.getName().endsWith(".java"))) {
-                logger.info("Skipping folder " + fromTestPath + " because it does not contain any .java files");
+                log.info("Skipping folder " + fromTestPath + " because it does not contain any .java files");
                 continue;
             }
 
@@ -322,8 +577,8 @@ public class UploadOpponentService {
             String[] srcPackageNameSplit = splitPackageNames[0];
             saveSrcFileInVolume(classUTFile, toSrcPath, srcPackageNameSplit, classUTFileName);
 
-            logger.info("SRC package names split " + Arrays.toString(srcPackageNameSplit));
-            logger.info("TEST package names split " + Arrays.toString(splitPackageNames[1]));
+            log.info("SRC package names split " + Arrays.toString(srcPackageNameSplit));
+            log.info("TEST package names split " + Arrays.toString(splitPackageNames[1]));
 
             boolean[] coverageFound = saveCoverageFilesInVolume(fromCoveragePath, toCoveragePath);
 
@@ -368,7 +623,7 @@ public class UploadOpponentService {
                 File zip = new File(String.format("%s/src.zip", tmpFolder_ToZip));
 
                 if (!zip.exists()) {
-                    logger.error("Errore: Il file ZIP non è stato creato correttamente.");
+                    log.error("Errore: Il file ZIP non è stato creato correttamente.");
                     FileOperationUtil.deleteDirectoryRecursively(tmpFolder_ToZip);
                 } else {
                     JacocoCoverageDTO coverageDTO = apiGatewayClient.callGenerateMissingJacocoCoverage(zip);
@@ -381,11 +636,11 @@ public class UploadOpponentService {
 
             String evosuiteFileContent = Files.readString(Paths.get(String.format("%s/statistics.csv", toCoveragePath)));
             int[][] evoSuiteStatistics = ExtractScore.fromEvosuite(evosuiteFileContent);
-            logger.info("Evosuite Coverage: " + Arrays.deepToString(evoSuiteStatistics));
+            log.info("Evosuite Coverage: " + Arrays.deepToString(evoSuiteStatistics));
 
             String coverage = Files.readString(Paths.get(String.format("%s/coveragetot.xml", toCoveragePath)));
             int[][] jacocoStatistics = ExtractScore.fromJacoco(coverage);
-            logger.info("Jacoco Coverage: " + Arrays.deepToString(jacocoStatistics));
+            log.info("Jacoco Coverage: " + Arrays.deepToString(jacocoStatistics));
 
             int levelInt = Integer.parseInt(levelFolder.toString().substring(levelFolder.toString().length() - 7, levelFolder.toString().length() - 5));
 
@@ -430,6 +685,5 @@ public class UploadOpponentService {
 
         FileOperationUtil.deleteDirectoryRecursively(operationTmpFolder);
     }
-
 
 }

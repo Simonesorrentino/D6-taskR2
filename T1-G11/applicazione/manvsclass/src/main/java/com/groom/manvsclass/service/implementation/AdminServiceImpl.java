@@ -3,8 +3,8 @@ package com.groom.manvsclass.service.implementation;
 
 import com.groom.manvsclass.model.entity.AdminEntity;
 import com.groom.manvsclass.model.entity.ClassUTEntity;
-import com.groom.manvsclass.model.repository.jpa.AdminRepository;
-import com.groom.manvsclass.model.repository.jpa.ClassUTRepository;
+import com.groom.manvsclass.model.repository.AdminRepository;
+import com.groom.manvsclass.model.repository.ClassUTRepository;
 import com.groom.manvsclass.service.AdminService;
 import com.groom.manvsclass.service.EmailService;
 import com.groom.manvsclass.service.JwtService;

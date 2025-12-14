@@ -3,15 +3,6 @@ server:
     include-message: always
 
 spring:
-  data:
-    mongodb:
-      auto-index-creation: true
-      authentication-database: admin
-      username: root
-      password: osimhen
-      database: manvsclass
-      port: 27017
-      host: localhost
   flyway:
     enabled: true # <-- DA FALSE A TRUE: ATTIVA FLYWAY
     # CRUCIALE: Dice a Flyway di registrare la migrazione V1 come eseguita,
@@ -38,7 +29,3 @@ logging:
   level:
     org:
       springframework:
-        data:
-          mongodb:
-            core:
-              MongoTemplate: DEBUG

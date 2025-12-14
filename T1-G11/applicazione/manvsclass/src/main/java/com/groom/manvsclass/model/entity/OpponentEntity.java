@@ -1,6 +1,5 @@
 package com.groom.manvsclass.model.entity;
 
-import com.groom.manvsclass.model.entity.ClassUTEntity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

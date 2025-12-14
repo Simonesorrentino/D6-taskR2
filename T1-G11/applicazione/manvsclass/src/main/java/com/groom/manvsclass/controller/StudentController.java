@@ -2,7 +2,7 @@ package com.groom.manvsclass.controller;
 
 import com.groom.manvsclass.model.entity.AssignmentEntity;
 import com.groom.manvsclass.model.entity.TeamEntity;
-import com.groom.manvsclass.model.repository.jpa.AssignmentRepository;
+import com.groom.manvsclass.model.repository.AssignmentRepository;
 import com.groom.manvsclass.service.TeamService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

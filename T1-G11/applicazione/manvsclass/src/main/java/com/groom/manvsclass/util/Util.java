@@ -3,16 +3,17 @@
  */
 package com.groom.manvsclass.util;
 
-import com.groom.manvsclass.model.interactionMongoDB;
-import com.groom.manvsclass.model.repository.mongo.InteractionRepositoryMongoDB;
-import com.groom.manvsclass.model.repository.mongo.SearchRepositoryImplMongoDB;
+import com.groom.manvsclass.model.entity.ClassUTEntity;
+import com.groom.manvsclass.model.entity.InteractionEntity;
+import com.groom.manvsclass.model.repository.ClassUTRepository;
+import com.groom.manvsclass.model.repository.InteractionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
@@ -22,13 +23,10 @@ import java.util.UUID;
 public class Util {
 
     @Autowired
-    private InteractionRepositoryMongoDB repo_int;
+    private InteractionRepository interactionRepository;
 
     @Autowired
-    private SearchRepositoryImplMongoDB srepo;
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
+    private ClassUTRepository classUTRepository;
 
     // Metodo per generare un ID univoco (esempio con UUID)
     //Modifica 04/12/2024
@@ -36,73 +34,89 @@ public class Util {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 8);
     }
 
-    public List<interactionMongoDB> elencaInt() {
-        return repo_int.findAll();
+    public List<InteractionEntity> elencaInt() {
+        return interactionRepository.findAll();
     }
 
-    public List<interactionMongoDB> elencaReport() {
-        return srepo.findReport();
+    public List<InteractionEntity> elencaReport() {
+        return interactionRepository.findByInteractionType(0);
     }
 
     public long likes(String name) {
-        return srepo.getLikes(name);
+        return interactionRepository.countLikesByClassName(name);
     }
 
-    public interactionMongoDB uploadInteraction(interactionMongoDB interazione) {
-        return repo_int.save(interazione);
+    public InteractionEntity uploadInteraction(InteractionEntity interazione) {
+        return interactionRepository.save(interazione);
     }
 
-    public int API_id() {
+    public Long API_id() {
         Random random = new Random();
-        return random.nextInt(1000000 - 0 + 1) + 0;
+        return random.nextLong(1000000 - 0 + 1) + 0;
     }
 
-    public String API_email(int id_u) {
+    public String API_email(Long id_u) {
         return "prova." + id_u + "@email.com";
     }
 
     public String newLike(String name) {
-        interactionMongoDB newInteractionMongoDB = new interactionMongoDB();
-        int id_u = API_id();
+        InteractionEntity newInteractionEntity = new InteractionEntity();
+        Long id_u = API_id();
         String email_u = API_email(id_u);
         LocalDate currentDate = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String data = currentDate.format(formatter);
 
-        newInteractionMongoDB.setId_i(0);
-        newInteractionMongoDB.setId(id_u);
-        newInteractionMongoDB.setEmail(email_u);
-        newInteractionMongoDB.setName(name);
-        newInteractionMongoDB.setType(1);
-        newInteractionMongoDB.setDate(data);
-        repo_int.save(newInteractionMongoDB);
+        newInteractionEntity.setId(0);
+        newInteractionEntity.setUserId(id_u);
+        newInteractionEntity.setUserEmail(email_u);
+
+        ClassUTEntity classUTEntity = classUTRepository.findById(name).orElse(null);
+
+        if (classUTEntity == null) {
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Class not found");
+        }
+
+        newInteractionEntity.setClassUt(classUTEntity);
+        newInteractionEntity.setInteractionType(1);
+        newInteractionEntity.setCreatedAt(LocalDateTime.now());
+        interactionRepository.save(newInteractionEntity);
 
         return "Nuova interazione di tipo 'like' inserita per la classe: " + name;
     }
 
     public String newReport(String name, String commento) {
-        interactionMongoDB newInteractionMongoDB = new interactionMongoDB();
-        int id_u = API_id();
+        InteractionEntity newInteractionEntity = new InteractionEntity();
+        Long id_u = API_id();
         String email_u = API_email(id_u);
         LocalDate currentDate = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String data = currentDate.format(formatter);
 
-        newInteractionMongoDB.setId_i(0);
-        newInteractionMongoDB.setId(id_u);
-        newInteractionMongoDB.setEmail(email_u);
-        newInteractionMongoDB.setName(name);
-        newInteractionMongoDB.setType(0);
-        newInteractionMongoDB.setDate(data);
-        newInteractionMongoDB.setCommento(commento);
-        repo_int.save(newInteractionMongoDB);
+        newInteractionEntity.setId(0);
+        newInteractionEntity.setUserId(id_u);
+        newInteractionEntity.setUserEmail(email_u);
+
+        ClassUTEntity classUTEntity = classUTRepository.findById(name).orElse(null);
+        if (classUTEntity == null) {
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Class not found");
+        }
+
+        newInteractionEntity.setClassUt(classUTEntity);
+        newInteractionEntity.setInteractionType(0);
+        newInteractionEntity.setCreatedAt(LocalDateTime.now());
+        newInteractionEntity.setDescription(commento);
+        interactionRepository.save(newInteractionEntity);
 
         return "Nuova interazione di tipo 'report' inserita per la classe: " + name;
     }
 
-    public interactionMongoDB eliminaInteraction(int id_i) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where("id_i").is(id_i));
-        return mongoTemplate.findAndRemove(query, interactionMongoDB.class);
+    public InteractionEntity eliminaInteraction(int id_i) {
+        InteractionEntity interactionToDelete = interactionRepository.findById(id_i)
+                .orElse(null);
+        if (interactionToDelete != null) {
+            interactionRepository.delete(interactionToDelete);
+        }
+        return interactionToDelete;
     }
 }

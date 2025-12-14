@@ -1,4 +1,4 @@
-package com.groom.manvsclass.model.repository.jpa;
+package com.groom.manvsclass.model.repository;
 
 import com.groom.manvsclass.model.entity.HintEntity;
 import com.groom.manvsclass.model.enums.HintTypeEnum;

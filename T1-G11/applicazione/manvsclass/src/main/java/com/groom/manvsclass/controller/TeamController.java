@@ -1,7 +1,7 @@
 package com.groom.manvsclass.controller;
 
+import com.groom.manvsclass.model.dto.TeamUpdate;
 import com.groom.manvsclass.model.entity.TeamEntity;
-import com.groom.manvsclass.service.TeamModificationRequest;
 import com.groom.manvsclass.service.TeamService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,7 +42,7 @@ public class TeamController {
 
     // Endpoint per modificare il nome di un team
     @PutMapping("/modificaNomeTeam")
-    public ResponseEntity<?> modificaNomeTeam(@RequestBody TeamModificationRequest request, @CookieValue(name = "jwt", required = false) String jwt) {
+    public ResponseEntity<?> modificaNomeTeam(@RequestBody TeamUpdate request, @CookieValue(name = "jwt", required = false) String jwt) {
         return teamService.modificaNomeTeam(request, jwt);
     }
 

@@ -22,7 +22,7 @@
 package com.groom.manvsclass.controller;
 
 import com.groom.manvsclass.model.entity.ClassUTEntity;
-import com.groom.manvsclass.model.interactionMongoDB;
+import com.groom.manvsclass.model.entity.InteractionEntity;
 import com.groom.manvsclass.service.AdminService;
 import com.groom.manvsclass.util.Util;
 import org.springframework.http.ResponseEntity;
@@ -52,9 +52,9 @@ public class HomeController {
     }
 
     @PostMapping("/newinteraction")
-    public ResponseEntity<interactionMongoDB> uploadInteraction(@RequestBody interactionMongoDB interazione) {
-        interactionMongoDB savedInteractionMongoDB = utilsService.uploadInteraction(interazione);
-        return ResponseEntity.ok(savedInteractionMongoDB);
+    public ResponseEntity<InteractionEntity> uploadInteraction(@RequestBody InteractionEntity interazione) {
+        InteractionEntity savedInteractionEntity = utilsService.uploadInteraction(interazione);
+        return ResponseEntity.ok(savedInteractionEntity);
     }
 
     @GetMapping("/Cfilterby/{category}")
@@ -68,12 +68,12 @@ public class HomeController {
     }
 
     @GetMapping("/interaction")
-    public List<interactionMongoDB> elencaInt() {
+    public List<InteractionEntity> elencaInt() {
         return utilsService.elencaInt();
     }
 
     @GetMapping("/findReport")
-    public List<interactionMongoDB> elencaReport() {
+    public List<InteractionEntity> elencaReport() {
         return utilsService.elencaReport();
     }
 
@@ -88,7 +88,7 @@ public class HomeController {
     }
 
     @PostMapping("/deleteint/{id}")
-    public interactionMongoDB eliminaInteraction(@PathVariable int id) {
+    public InteractionEntity eliminaInteraction(@PathVariable int id) {
         return utilsService.eliminaInteraction(id);
     }
 }

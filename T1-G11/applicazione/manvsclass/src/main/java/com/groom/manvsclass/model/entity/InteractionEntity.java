@@ -20,6 +20,9 @@ public class InteractionEntity {
     @Column(name = "user_email", nullable = false)
     private String userEmail;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_name", referencedColumnName = "name", nullable = false)
     @ToString.Exclude
@@ -28,6 +31,7 @@ public class InteractionEntity {
     @Column(name = "interaction_type", nullable = false)
     private Integer interactionType; // 1 = Like, 0 = Report
 
+    //commento
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
