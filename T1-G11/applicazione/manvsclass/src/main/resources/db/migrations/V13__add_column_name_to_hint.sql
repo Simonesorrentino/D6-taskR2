@@ -1,0 +1,2 @@
+ALTER TABLE hint
+ADD COLUMN name VARCHAR(255) NOT NULL DEFAULT 'default_value';
