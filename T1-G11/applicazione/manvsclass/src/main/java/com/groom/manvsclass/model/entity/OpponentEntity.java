@@ -29,7 +29,7 @@ public class OpponentEntity {
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "class_ut_name", referencedColumnName = "name")
     private ClassUTEntity classUt;
 
