@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 import javax.transaction.Transactional;
 import javax.validation.ConstraintViolation;
@@ -92,8 +94,30 @@ public class HintServiceImpl implements HintService {
 
         jwtVerify(jwtToken);
 
+        String filename = file.getOriginalFilename();
+        // Nota: Assicurati che "hint.file.invalid.format" esista nel properties per questo caso
+        if (filename != null && !filename.toLowerCase().endsWith(".json")) {
+            throw new HttpClientErrorException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, getMessage("hint.file.invalid.format"));
+        }
+
         if (imageFiles == null) {
             imageFiles = Collections.emptyList();
+        }
+
+        if (file.isEmpty()) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, getMessage("hint.file.empty"));
+        }
+
+        // --- VALIDAZIONE TIPO FILE IMMAGINI CON I18N ---
+        for (MultipartFile img : imageFiles) {
+            String fileName = img.getOriginalFilename();
+            // String contentType = img.getContentType(); // Non usato, si può rimuovere se non serve
+
+            if (fileName != null && !isImageFile(fileName)) {
+                // USIAMO LA CHIAVE I18N passando il nome del file come parametro
+                throw new HttpClientErrorException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                        getMessage("hint.image.invalid.type", fileName));
+            }
         }
 
         String adminEmail = jwtService.getAdminFromJwt(jwtToken);
@@ -118,7 +142,21 @@ public class HintServiceImpl implements HintService {
                 }
             }
 
+        } catch (InvalidFormatException e) {
+            // 1. ERRORI DI TIPO (ENUM) CON I18N
+            String fieldName = e.getPath().isEmpty() ? "un campo" : e.getPath().get(0).getFieldName();
+            String invalidValue = e.getValue().toString();
+
+            // Usiamo la chiave 'hint.file.invalid.enum' passando valore e campo
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                    getMessage("hint.file.invalid.enum", invalidValue, fieldName));
+
+        } catch (JsonProcessingException e) {
+            // 2. JSON MALFORMATO CON I18N
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, getMessage("hint.file.malformed"));
+
         } catch (IOException e) {
+            // 3. ERRORE GENERICO I/O
             throw new HttpClientErrorException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, getMessage("hint.file.invalid.format"));
         }
 
@@ -126,9 +164,16 @@ public class HintServiceImpl implements HintService {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, getMessage("hint.file.empty"));
         }
 
+        // Logica Admin (Lazy Creation)
         AdminEntity adminEntity = adminRepository.findById(adminEmail).orElse(null);
         if (adminEntity == null) {
-            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, getMessage("hint.admin.notfound"));
+            adminEntity = new AdminEntity();
+            adminEntity.setEmail(adminEmail);
+            adminEntity.setUsername(adminEmail);
+            adminEntity.setName("Nome");
+            adminEntity.setSurname("Cognome");
+            adminEntity.setPassword("password");
+            adminRepository.saveAndFlush(adminEntity);
         }
 
         // Verifica esistenza classi UT
@@ -161,12 +206,12 @@ public class HintServiceImpl implements HintService {
 
             HintEntity hintEntity = hintMapper.dtoToEntity(hint);
 
-            // 1. VALIDAZIONE CAMPO CONTENT
+            // Validazione Content
             if (hintEntity.getContent() == null || hintEntity.getContent().trim().isEmpty()) {
                 throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY, getMessage("hint.content.missing"));
             }
 
-            // 2. VALIDAZIONE NUOVO CAMPO NAME
+            // Validazione Name
             if (hintEntity.getName() == null || hintEntity.getName().trim().isEmpty()) {
                 throw new HttpClientErrorException(HttpStatus.UNPROCESSABLE_ENTITY, getMessage("hint.name.missing"));
             }
@@ -213,13 +258,14 @@ public class HintServiceImpl implements HintService {
                         hintEntity.setImageUri("/uploads/" + newFileName);
 
                     } catch (IOException e) {
-                        log.error("Errore durante il salvataggio del file immagine {}: {}", identifier, e.getMessage());
+                        log.error("Errore salvataggio immagine {}: {}", identifier, e.getMessage());
                         throw new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
                                 getMessage("hint.image.save.error", identifier));
                     }
                 } else {
+                    // Immagine dichiarata nel JSON ma non presente nell'upload
                     throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
-                            getMessage("hint.image.missing.file"));
+                            getMessage("hint.image.missing.file")); // Assicurati che il testo di questa chiave sia generico o corretto (es: "URI immagine trovato nel JSON, ma file non allegato.")
                 }
             }
 
@@ -234,6 +280,14 @@ public class HintServiceImpl implements HintService {
         }
 
         return getMessage("hint.upload.success");
+    }
+
+    private boolean isImageFile(String fileName) {
+        String lowerCaseName = fileName.toLowerCase();
+        return lowerCaseName.endsWith(".png") ||
+                lowerCaseName.endsWith(".jpg") ||
+                lowerCaseName.endsWith(".jpeg") ||
+                lowerCaseName.endsWith(".gif");
     }
 
     @Override

@@ -19,9 +19,8 @@ public class OperationEntity {
     @JoinColumn(name = "email", nullable = false)
     private AdminEntity admin;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "name", nullable = false)
-    private ClassUTEntity classUt;
+    @Column(name = "class_name")
+    private String className;
 
     private int type;
     private String date;

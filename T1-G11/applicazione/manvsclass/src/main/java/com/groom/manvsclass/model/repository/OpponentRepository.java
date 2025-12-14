@@ -2,6 +2,7 @@ package com.groom.manvsclass.model.repository;
 
 import com.groom.manvsclass.model.entity.OpponentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -52,5 +53,9 @@ public interface OpponentRepository extends JpaRepository<OpponentEntity, Long> 
     );
 
     List<OpponentEntity> findByClassUt_Name(String className);
+
+    @Modifying
+    @Query("DELETE FROM OpponentEntity o WHERE o.classUt.name = :className")
+    void deleteByClassUtName(@Param("className") String className);
 }
 

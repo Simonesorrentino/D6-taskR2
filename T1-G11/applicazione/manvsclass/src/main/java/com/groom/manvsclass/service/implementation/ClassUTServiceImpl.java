@@ -76,7 +76,7 @@ public class ClassUTServiceImpl implements ClassUTService {
         // Lascia che sia il DB a generarlo (passa null o usa un costruttore senza ID).
         OperationEntity operationEntity = new OperationEntity();
         operationEntity.setAdmin(adminEntity);
-        operationEntity.setClassUt(classToDelete); // Attenzione ai vincoli FK!
+        operationEntity.setClassName(classToDelete.getName());
         operationEntity.setType(2);
         operationEntity.setDate(data);
 
