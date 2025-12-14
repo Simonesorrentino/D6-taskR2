@@ -90,6 +90,7 @@
             </div>
         </div>
     </div>
+
     <div class="card shadow-sm">
         <div class="card-body">
             <form id="uploadHintsForm">
@@ -116,17 +117,17 @@
     </div>
 </div>
 
-<div class="modal fade" id="messageModal" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+<div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="messageModalLabel">Informazione</h5>
+                <h5 class="modal-title" id="successModalLabel">Messaggio</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <p id="messageModalBody" class="text-dark">...</p>
+            <div class="modal-body" id="successMessageContent">
+                ...
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
@@ -149,7 +150,7 @@
 <script th:src="@{/t1/js/utils/cookie_util.js}"></script>
 <script th:src="@{/t1/js/utils/renderErrors.js}"></script>
 
-<script th:src="@{/t1/js/hints/hints_upload.js(v=2)}"></script>
+<script th:src="@{/t1/js/hints/hints_upload.js(v=3)}"></script>
 
 </body>
 </html>
