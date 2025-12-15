@@ -18,7 +18,7 @@ services:
     ports:
       - "8085:8085"
     environment:
-      - REDIS_HOST=redis
+      - REDIS_HOST=t5-redis
       - REDIS_PORT=6379
     depends_on:
       - redis
