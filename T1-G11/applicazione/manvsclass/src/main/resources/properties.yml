@@ -12,7 +12,7 @@ spring:
     locations: classpath:db/migrations
 
   datasource:
-    url: ${POSTGRES_URL:jdbc:postgresql://postgres-db:5432/manvsclass}
+    url: ${POSTGRES_URL:jdbc:postgresql://t1-postgres-db:5432/manvsclass}
     username: ${POSTGRES_USERNAME:t1-g11}
     password: ${POSTGRES_PASSWORD:'947!"p1Yv;qf'}
     driver-class-name: org.postgresql.Driver
