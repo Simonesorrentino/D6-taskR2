@@ -6,8 +6,6 @@ services:
     container_name: t8-controller
     expose:
       - 8088
-    ports:
-      - "8088:8088"
     networks:
       - global-network
     volumes:
