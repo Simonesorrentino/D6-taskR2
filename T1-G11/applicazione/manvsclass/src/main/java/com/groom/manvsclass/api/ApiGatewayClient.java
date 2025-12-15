@@ -38,7 +38,7 @@ public class ApiGatewayClient {
 
     private final RestExchangeTemplateHelper exchangeHelper;
     private final Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
-    @Value("${API_GATEWAY_ENDPOINT:localhost}")
+    @Value("${API_GATEWAY_ENDPOINT:api_gateway-controller}")
     private String apiGatewayHost;
     @Value("${API_GATEWAY_PORT:8090}")
     private int apiGatewayPort;

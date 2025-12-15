@@ -7,6 +7,8 @@ services:
     restart: always
     expose:
       - 8087
+    ports:
+      - "8087:8087"
     networks:
       - global-network
 

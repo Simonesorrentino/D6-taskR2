@@ -2,13 +2,17 @@ server:
   port: 8090
 
 spring:
-  redis: 
-    host: redis_rate_limiter
-    port: 6380
-    timeout: 20000  
+  redis:
+    #host: redis_rate_limiter
+    host: t5-redis
+    port: 6379
+    #host: localhost
+    #port: 6380
+    #port: 6380
+    timeout: 20000
   
   cache:
-    type: redis 
+    type: redis
 
   cloud:
     gateway:
@@ -46,6 +50,7 @@ spring:
                 services: "http://httpbin.org/get, http://httpbin.org/bytes/10"
         - id: gamerepo-route
           uri: http://t4-controller:8084
+          #uri: http://localhost:8084
           predicates:
             - Path=/gamerepo/**
           filters:
@@ -58,6 +63,7 @@ spring:
                 methods: "GET"
         - id: T7-route
           uri: http://t7-controller:8087
+          #uri: http://localhost:8087
           predicates:
             - Path=/compile/jacoco/**
           filters:
@@ -70,6 +76,7 @@ spring:
                 redis-rate-limiter.requestedTokens: 1
         - id: T8-route
           uri: http://t8-controller:8088
+          #uri: http://localhost:8088
           predicates:
             - Path=/compile/evosuite/**
           filters:
@@ -81,20 +88,22 @@ spring:
                 redis-rate-limiter.burstCapacity: 15
                 redis-rate-limiter.requestedTokens: 1
         - id: T1-route
-          #uri: http://t1-controller:8081
-          uri: http://localhost:8081
+          uri: http://t1-controller:8081
+          #uri: http://localhost:8081
           predicates:
             - Path=/adminService/**
           filters:
             - RewritePath=/adminService/(?<segment>.*), /${segment}
         - id: T23-route
-          uri: http://localhost:8082
+          uri: http://t23-controller:8082
+          #uri: http://localhost:8082
           predicates:
             - Path=/userService/**
           filters:
             - RewritePath=/userService/(?<segment>.*), /${segment}
         - id: T5-route
           uri: http://t5-controller:8085
+          #uri: http://localhost:8085
           predicates:
             - Path=/gameEngine/**
           filters:

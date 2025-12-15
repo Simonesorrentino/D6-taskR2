@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -87,30 +88,28 @@ public class HintController {
 
     @GetMapping("/template")
     public ResponseEntity<byte[]> downloadHintTemplate() {
-        String jsonTemplate = "[\n" +
-                "  {\n" +
-                "    \"type\": \"GENERIC\",\n" +
-                "    \"name\": \"Titolo del suggerimento generico\",\n" +
-                "    \"content\": \"Testo del contenuto...\",\n" +
-                "    \"imageUri\": \"nome_immagine.png\" \n" +
-                "  },\n" +
-                "  {\n" +
-                "    \"type\": \"CLASS\",\n" +
-                "    \"classUTName\": \"NomeClasse.java\",\n" +
-                "    \"name\": \"Titolo del suggerimento specifico\",\n" +
-                "    \"content\": \"Testo del contenuto per la classe...\",\n" +
-                "    \"imageUri\": \"\" \n" +
-                "  }\n" +
-                "]";
+        String jsonTemplate = """
+            [
+              {
+                "type": "GENERIC",
+                "name": "Titolo del suggerimento generico",
+                "content": "Testo del contenuto...",
+                "imageUri": "nome_immagine.png"
+              },
+              {
+                "type": "CLASS",
+                "classUTName": "NomeClasse.java",
+                "name": "Titolo del suggerimento specifico",
+                "content": "Testo del contenuto per la classe...",
+                "imageUri": ""
+              }
+            ]""";
 
-        byte[] content = jsonTemplate.getBytes();
+        byte[] content = jsonTemplate.getBytes(StandardCharsets.UTF_8);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-
-        // Usa 'set' diretto per evitare problemi di compatibilità con versioni Spring diverse
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=hint_template.json");
-
         headers.setContentLength(content.length);
 
         return new ResponseEntity<>(content, headers, HttpStatus.OK);
