@@ -2,8 +2,8 @@ name: t1
 
 services:
   controller:
-    #image: mick0974/a13:t1-g11
-    image: t1-service:v2.0
+    image: mick0974/a13:t1-g11
+    #image: t1-service:v2.0
     container_name: t1-controller
     restart: always
     expose:
@@ -14,7 +14,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
 
       # Variabili d'ambiente per PostgreSQL
-      SPRING_DATASOURCE_URL: jdbc:postgresql://t1-postgres-db:5433/${POSTGRES_DATABASE}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://t1-postgres-db:5432/${POSTGRES_DATABASE}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
@@ -55,4 +55,3 @@ volumes:
   VolumeT0:
     external: true
   postgres_data_t1:
-  mongodb_data_volume:
