@@ -15,7 +15,6 @@ services:
 
       # Variabili d'ambiente per PostgreSQL
       SPRING_DATASOURCE_URL: jdbc:postgresql://t1-postgres-db:5432/${POSTGRES_DATABASE}
-      #SPRING_DATASOURCE_URL: jdbc:postgresql://t1-postgres-db:5433/${POSTGRES_DATABASE}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
@@ -56,4 +55,3 @@ volumes:
   VolumeT0:
     external: true
   postgres_data_t1:
-  mongodb_data_volume:

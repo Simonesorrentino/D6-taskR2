@@ -9,6 +9,7 @@
         updated_at timestamp,
         admin_email varchar(255),
         class_ut_name varchar(255),
+        name VARCHAR(255) NOT NULL DEFAULT 'default_value',
         primary key (id)
     );
 
